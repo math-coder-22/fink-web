@@ -29,10 +29,11 @@ export const MonthContext = createContext<MonthContextValue>({
 export const useMonthContext = () => useContext(MonthContext)
 
 const NAV_ITEMS = [
-  { href:'/dashboard', label:'Dashboard'   },
-  { href:'/bulanan',   label:'Monthly'     },
-  { href:'/tabungan',  label:'Smart Saving'},
-  { href:'/settings',  label:'Settings'   },
+  { href:'/dashboard', label:'Dashboard',    icon:'▦' },
+  { href:'/bulanan',   label:'Monthly',      icon:'◷' },
+  { href:'/tabungan',  label:'Smart Saving', icon:'◇' },
+  { href:'/portofolio',label:'Portfolio',    icon:'△' },
+  { href:'/settings',  label:'Settings',     icon:'⚙' },
 ]
 
 export default function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {

@@ -162,81 +162,67 @@ export default function GoalCard({ goal, calc, onEdit, onTopup, onWithdraw, onSt
   const progColor = calc.trackStatus === 'behind' ? '#b91c1c' : calc.trackStatus === 'complete' ? '#1d4ed8' : '#1a5c42'
 
   return (
-    <div style={{ background:'#fff', border:'1.5px solid #e4e1d9', borderRadius:'10px', overflow:'hidden', transition:'box-shadow .15s' }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,.07)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
-
-      {/* MAIN ROW — klik seluruh card untuk toggle riwayat */}
-      <div
-        style={{ display:'flex', alignItems:'stretch', cursor:'pointer' }}
-        onClick={() => setShowHistory(v => !v)}>
-
-        {/* LEFT */}
-        <div style={{ flex:'2', minWidth:'150px', padding:'12px 14px', borderRight:'1px solid #f3f4f6' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'3px', flexWrap:'wrap' as const }}>
-            <div style={{ fontSize:'13.5px', fontWeight:700, color:'#111827' }}>{goal.name}</div>
+    <div className="savings-goal-card">
+      <div className="savings-goal-main" onClick={() => setShowHistory(v => !v)}>
+        <div className="savings-goal-left">
+          <div className="savings-goal-title-row">
+            <div className="savings-goal-title">{goal.name}</div>
             <TrackBadge status={calc.trackStatus} />
           </div>
-          <div style={{ fontSize:'11px', color:'#9ca3af', marginBottom:'7px' }}>
+          <div className="savings-goal-subtitle">
             {TYPE_LABEL[goal.type]}
             {goal.deadline && ` · ${new Date(goal.deadline).toLocaleDateString('id-ID', { month:'short', year:'numeric' })}`}
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:'7px' }}>
-            <div style={{ flex:1, background:'#e4e1d9', borderRadius:'99px', height:'4px', overflow:'hidden' }}>
-              <div style={{ height:'4px', borderRadius:'99px', background:progColor, width:`${Math.min(100,pct)}%`, transition:'width .4s ease' }} />
+          <div className="savings-goal-progress-row">
+            <div className="savings-goal-progress">
+              <div style={{ background: progColor, width:`${Math.min(100,pct)}%` }} />
             </div>
-            <span style={{ fontSize:'10px', fontWeight:700, color:progColor, minWidth:'28px', textAlign:'right' as const }}>{pct}%</span>
+            <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
           </div>
           {goal.type === 'darurat' && calc.coverage !== undefined && (
-            <div style={{ marginTop:'5px', fontSize:'10.5px', fontWeight:500, color: calc.coverageStatus==='Risiko Tinggi'?'#991b1b':calc.coverageStatus==='Aman'?'#065f46':'#92400e' }}>
+            <div className="savings-goal-status-note" style={{ color: calc.coverageStatus==='Risiko Tinggi'?'#991b1b':calc.coverageStatus==='Aman'?'#065f46':'#92400e' }}>
               {calc.coverageStatus} · {calc.coverage.toFixed(1)}× pengeluaran
               {(calc.excessDana ?? 0) > 0 && <span style={{ color:'#065f46' }}> · Kelebihan {fmt(calc.excessDana!)}</span>}
             </div>
           )}
         </div>
 
-        {/* MIDDLE */}
-        <div style={{ flex:'1.5', minWidth:'110px', padding:'12px 14px', borderRight:'1px solid #f3f4f6', display:'flex', flexDirection:'column' as const, justifyContent:'center', gap:'8px' }}>
-          <div>
-            <div style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'.5px' }}>Terkumpul</div>
-            <div style={{ fontSize:'13px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:progColor }}>{fmt(goal.current)}</div>
+        <div className="savings-goal-middle">
+          <div className="savings-goal-stat primary">
+            <div className="savings-label">Terkumpul</div>
+            <div className="savings-value" style={{ color: progColor }}>{fmt(goal.current)}</div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
-            <div>
-              <div style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'.5px' }}>Target</div>
-              <div style={{ fontSize:'11px', fontWeight:500, fontFamily:'JetBrains Mono,monospace', color:'#6b7280' }}>{fmt(goal.target)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'.5px' }}>Sisa</div>
-              <div style={{ fontSize:'11px', fontWeight:500, fontFamily:'JetBrains Mono,monospace', color:'#9ca3af' }}>{fmt(calc.sisa)}</div>
-            </div>
+          <div className="savings-goal-stat">
+            <div className="savings-label">Target</div>
+            <div className="savings-value small">{fmt(goal.target)}</div>
+          </div>
+          <div className="savings-goal-stat">
+            <div className="savings-label">Sisa</div>
+            <div className="savings-value small" style={{ color:'#9ca3af' }}>{fmt(calc.sisa)}</div>
           </div>
         </div>
 
-        {/* RIGHT: rekomendasi + kebab */}
-        <div style={{ flex:'1.5', minWidth:'110px', padding:'12px 14px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-          <div>
-            <div style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase' as const, letterSpacing:'.5px', marginBottom:'2px' }}>Rekomendasi/Bln</div>
-            <div style={{ fontSize:'14px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:'#1a5c42' }}>{fmt(calc.monthlyNeeded)}</div>
+        <div className="savings-goal-right">
+          <div className="savings-goal-rec">
+            <div className="savings-label">Rekomendasi/Bln</div>
+            <div className="savings-rec-value">{fmt(calc.monthlyNeeded)}</div>
             {goal.monthly > 0 && (
-              <div style={{ fontSize:'10px', color: goal.monthly >= calc.monthlyNeeded ? '#065f46' : '#9ca3af', fontFamily:'JetBrains Mono,monospace', marginTop:'1px' }}>
+              <div className="savings-rec-meta" style={{ color: goal.monthly >= calc.monthlyNeeded ? '#065f46' : '#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>
                 Aktual: {fmt(goal.monthly)}
               </div>
             )}
             {calc.months > 0 && goal.deadline && (
-              <div style={{ fontSize:'10px', color:'#9ca3af', marginTop:'1px' }}>{calc.months} bln tersisa</div>
+              <div className="savings-rec-meta">{calc.months} bln tersisa</div>
             )}
             {goal.useInvest && (
-              <div style={{ fontSize:'10px', color:'#6b7280', marginTop:'1px' }}>⚡ {goal.returnRate}%/thn</div>
+              <div className="savings-rec-meta" style={{ color:'#6b7280' }}>⚡ {goal.returnRate}%/thn</div>
             )}
-            {/* History hint */}
-            <div style={{ fontSize:'9.5px', color:'#d0cdc6', marginTop:'8px' }}>
+            <div className="savings-history-hint">
               {showHistory ? '▲ tutup riwayat' : `▼ ${goal.history?.length || 0} riwayat`}
             </div>
           </div>
 
-          {/* KEBAB — stop propagation */}
-          <div onClick={e => e.stopPropagation()}>
+          <div className="savings-kebab-wrap" onClick={e => e.stopPropagation()}>
             <KebabMenu
               goal={goal}
               onTopup={() => onTopup(goal.id)}
@@ -249,7 +235,6 @@ export default function GoalCard({ goal, calc, onEdit, onTopup, onWithdraw, onSt
         </div>
       </div>
 
-      {/* HISTORY — muncul langsung di bawah card, tidak geser tombol */}
       {showHistory && <HistoryPanel history={goal.history || []} />}
     </div>
   )

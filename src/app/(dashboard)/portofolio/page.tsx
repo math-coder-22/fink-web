@@ -1,15 +1,34 @@
+import { AppButton, AppCard, EmptyState, PageHeader } from '@/components/ui/design'
+
 export default function PortofolioPage() {
   return (
     <div>
-      <div style={{ marginBottom: '18px' }}>
-        <h1 style={{ fontSize: '19px', fontWeight: 700, letterSpacing: '-.3px' }}>Investment Portfolio</h1>
-        <p style={{ fontSize: '12.5px', color: '#9ca3af', marginTop: '3px' }}>Mutual Funds · Stocks · Gold · Bonds</p>
-      </div>
-      <div style={{ background:'#fff',borderRadius:'8px',padding:'40px',textAlign:'center',boxShadow:'0 1px 3px rgba(0,0,0,.07)',color:'#9ca3af' }}>
-        <div style={{ fontSize:'32px',marginBottom:'10px' }}>📈</div>
-        <h3 style={{ fontSize:'15px',fontWeight:600,color:'#4b5563',marginBottom:'5px' }}>Coming Soon</h3>
-        <p style={{ fontSize:'13px' }}>The portfolio page is under development.</p>
-      </div>
+      <PageHeader
+        title="Investment Portfolio"
+        subtitle="Mutual Funds · Stocks · Gold · Bonds"
+        action={<AppButton variant="secondary">+ Tambah Aset</AppButton>}
+      />
+
+      <AppCard style={{ marginBottom: 14 }}>
+        <div style={{ padding:'16px', display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:'12px' }}>
+          <div>
+            <div style={{ fontSize:'10px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px' }}>Total Aset</div>
+            <div style={{ fontSize:'22px', fontWeight:850, fontFamily:'JetBrains Mono,monospace', color:'#1a5c42', marginTop:4 }}>Rp 0</div>
+          </div>
+          <div>
+            <div style={{ fontSize:'10px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px' }}>Return</div>
+            <div style={{ fontSize:'22px', fontWeight:850, fontFamily:'JetBrains Mono,monospace', color:'#111827', marginTop:4 }}>0%</div>
+          </div>
+          <div>
+            <div style={{ fontSize:'10px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px' }}>Status</div>
+            <div style={{ fontSize:'13px', fontWeight:700, color:'#4b5563', marginTop:8 }}>Belum ada data portofolio</div>
+          </div>
+        </div>
+      </AppCard>
+
+      <EmptyState icon="📈" title="Portfolio Coming Soon">
+        Halaman portofolio sedang disiapkan dengan gaya visual yang sama seperti Dashboard dan Smart Saving.
+      </EmptyState>
     </div>
   )
 }

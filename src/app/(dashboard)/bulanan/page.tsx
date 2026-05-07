@@ -95,7 +95,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
 
 
 
-  const card: React.CSSProperties      = { background:'#fff', borderRadius:'8px', boxShadow:'0 1px 3px rgba(0,0,0,.07)', marginBottom:'14px', overflow:'hidden' }
+  const card: React.CSSProperties      = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', boxShadow:'0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.07)', marginBottom:'14px', overflow:'hidden' }
   const cardHead: React.CSSProperties  = { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 16px', borderBottom:'1px solid #e3e7ee', gap:'10px' }
   const cardTitle: React.CSSProperties = { fontSize:'12.5px', fontWeight:600, color:'#111827' }
   const cardSub: React.CSSProperties   = { fontSize:'11px', color:'#9ca3af', marginTop:'2px' }
@@ -189,6 +189,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
+          {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
           {/* Reflection → Reconcile → Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
@@ -217,7 +218,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
             style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:800, display:'flex', alignItems:'flex-start', justifyContent:'flex-end', padding:'60px 20px 20px' }}>
             <div style={{
               background:'#fff', borderRadius:'12px', width:'100%', maxWidth:'400px',
-              maxHeight:'calc(100vh - 80px)', overflowY:'auto',
+              maxHeight:'calc(100dvh - 80px)', overflowY:'auto',
               boxShadow:'0 20px 60px rgba(0,0,0,.2)',
               animation:'slideIn .2s ease',
             }}>

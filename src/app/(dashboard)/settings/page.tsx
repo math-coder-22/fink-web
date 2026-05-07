@@ -1,15 +1,31 @@
+import { AppCard, EmptyState, PageHeader } from '@/components/ui/design'
+
 export default function SettingsPage() {
   return (
     <div>
-      <div style={{ marginBottom: '18px' }}>
-        <h1 style={{ fontSize: '19px', fontWeight: 700, letterSpacing: '-.3px' }}>Settings</h1>
-        <p style={{ fontSize: '12.5px', color: '#9ca3af', marginTop: '3px' }}>Manage your account and app preferences</p>
-      </div>
-      <div style={{ background:'#fff',borderRadius:'8px',padding:'40px',textAlign:'center',boxShadow:'0 1px 3px rgba(0,0,0,.07)',color:'#9ca3af' }}>
-        <div style={{ fontSize:'32px',marginBottom:'10px' }}>⚙️</div>
-        <h3 style={{ fontSize:'15px',fontWeight:600,color:'#4b5563',marginBottom:'5px' }}>Coming Soon</h3>
-        <p style={{ fontSize:'13px' }}>The settings page is under development.</p>
-      </div>
+      <PageHeader
+        title="Settings"
+        subtitle="Manage your account, preferences, and FiNK workspace"
+      />
+
+      <AppCard style={{ marginBottom: 14 }}>
+        <div style={{ padding:'16px', display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:'12px' }}>
+          {[
+            ['Profile', 'Kelola identitas dan email akun.'],
+            ['Currency', 'Format mata uang dan preferensi angka.'],
+            ['Security', 'Pengaturan login dan keamanan data.'],
+          ].map(([title, desc]) => (
+            <div key={title} style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#f7f8fa' }}>
+              <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>{title}</div>
+              <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>{desc}</div>
+            </div>
+          ))}
+        </div>
+      </AppCard>
+
+      <EmptyState icon="⚙️" title="Settings Coming Soon">
+        Struktur halaman sudah diseragamkan. Fitur detail pengaturan dapat ditambahkan bertahap.
+      </EmptyState>
     </div>
   )
 }

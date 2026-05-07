@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(145deg, #0f2a1e 0%, #1a5c42 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px'

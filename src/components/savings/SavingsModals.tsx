@@ -94,27 +94,33 @@ export function WithdrawModal({ goal, onConfirm, onClose }: {
 export function SummaryCard({ summary }: { summary: { totalTarget: number; totalCollected: number; totalMonthly: number; pct: number; count: number } }) {
   const { totalTarget, totalCollected, totalMonthly, pct, count } = summary
   return (
-    <div style={{ background:'linear-gradient(135deg,#1a5c42,#15803d)', borderRadius:'12px', padding:'20px', marginBottom:'20px', color:'#fff' }}>
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap' as const, gap:'10px', marginBottom:'16px' }}>
-        <div>
-          <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase' as const, letterSpacing:'.8px', opacity:.7, marginBottom:'3px' }}>Total Dana Terkumpul</div>
-          <div style={{ fontSize:'24px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', letterSpacing:'-.5px' }}>{fmt(totalCollected)}</div>
-          <div style={{ fontSize:'12px', opacity:.7, marginTop:'1px' }}>dari {fmt(totalTarget)}</div>
+    <div className="savings-summary-card">
+      <div className="savings-summary-top">
+        <div className="savings-summary-block">
+          <div className="savings-summary-label">Total Dana Terkumpul</div>
+          <div className="savings-summary-value">{fmt(totalCollected)}</div>
+          <div className="savings-summary-note">dari {fmt(totalTarget)}</div>
         </div>
-        <div style={{ textAlign:'right' as const }}>
-          <div style={{ fontSize:'10px', fontWeight:700, textTransform:'uppercase' as const, letterSpacing:'.8px', opacity:.7, marginBottom:'3px' }}>Kebutuhan/Bulan</div>
-          <div style={{ fontSize:'20px', fontWeight:700, fontFamily:'JetBrains Mono,monospace' }}>{fmt(totalMonthly)}</div>
-          <div style={{ fontSize:'12px', opacity:.7, marginTop:'1px' }}>{count} goal aktif</div>
+
+        <div className="savings-summary-block">
+          <div className="savings-summary-label">Kebutuhan/Bulan</div>
+          <div className="savings-summary-value">{fmt(totalMonthly)}</div>
+          <div className="savings-summary-note">{count} goal aktif</div>
+        </div>
+
+        <div className="savings-summary-progress-wrap">
+          <div className="savings-summary-label">Progress Keseluruhan</div>
+          <div className="savings-progress-line">
+            <div className="savings-progress-fill" style={{ width:`${Math.min(100,pct)}%` }} />
+          </div>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:'10.5px', opacity:.74 }}>
+            <span>Akumulasi semua target</span>
+            <span style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:800 }}>{Math.round(pct)}%</span>
+          </div>
         </div>
       </div>
-      <div style={{ background:'rgba(255,255,255,.2)', borderRadius:'99px', height:'6px', marginBottom:'5px', overflow:'hidden' }}>
-        <div style={{ height:'6px', borderRadius:'99px', background:'#fff', width:`${Math.min(100,pct)}%`, transition:'width .6s ease' }} />
-      </div>
-      <div style={{ display:'flex', justifyContent:'space-between', fontSize:'10.5px', opacity:.7 }}>
-        <span>Progress keseluruhan</span>
-        <span style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:600 }}>{Math.round(pct)}%</span>
-      </div>
-      <div style={{ marginTop:'12px', padding:'9px 12px', background:'rgba(255,255,255,.12)', borderRadius:'8px', fontSize:'12.5px', opacity:.9 }}>
+
+      <div className="savings-summary-tip">
         {count === 0
           ? '💡 Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan.'
           : `💡 Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
@@ -122,4 +128,3 @@ export function SummaryCard({ summary }: { summary: { totalTarget: number; total
     </div>
   )
 }
-
