@@ -122,7 +122,7 @@ export default function DashboardPage() {
         <div>
           <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Dashboard</h1>
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>
-            Ringkasan keuangan {MONTH_NAMES[curMonth]} {curYear} · FiNK Family Finance Manager
+            Ringkasan keuangan {MONTH_NAMES[curMonth]} {curYear} · Smart Family Finance
           </p>
         </div>
         <div className="dash-actions" style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>

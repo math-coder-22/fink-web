@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
+import { useSavings } from '@/hooks/useSavings'
 import type { Transaction, BudgetCategory, IncomeCategory, SavingRow } from '@/types/database'
 
 interface Props {
@@ -15,12 +16,6 @@ interface Props {
 }
 
 const fmtAmt = (n: number) => n ? Math.round(n).toLocaleString('id-ID') : ''
-const normalizeDay = (d: string | number | undefined | null) => {
-  const n = Number(String(d ?? '').replace(/\D/g, ''))
-  if (!Number.isFinite(n) || n < 1) return ''
-  return String(Math.min(n, 31)).padStart(2, '0')
-}
-
 
 export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpdate, onDelete }: Props) {
   const today = (() => {
@@ -40,6 +35,12 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   const [editId,  setEditId]  = useState<string|null>(null)
   const [editData,setEditData]= useState<Partial<Transaction>>({})
   const [editCatOpts, setEditCatOpts] = useState<{group:string;items:string[]}[]>([])
+  const { goals, topupGoal } = useSavings()
+  const activeGoals = useMemo(() => goals.filter(g => g.status === 'active' || g.status === 'pending'), [goals])
+  const [savingModalOpen, setSavingModalOpen] = useState(false)
+  const [syncToGoal, setSyncToGoal] = useState(true)
+  const [selectedGoalId, setSelectedGoalId] = useState('')
+  const [goalNote, setGoalNote] = useState('')
 
   // Category options grouped by category
   const catGroups = (() => {
@@ -48,14 +49,32 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
     return [{ group: 'Savings', items: saving.map(r => r.label) }]
   })()
 
+  async function commitAddTransaction(goalId?: string | null) {
+    setLoading(true)
+    const day = date.split('-')[2].padStart(2, '0')
+    const amount = pNum(amt)
+    await onAdd({ date:day, type, cat, note: note || cat || type, amt: amount, debt: isDebt, settled: false })
+    if (type === 'save' && goalId) {
+      const goal = activeGoals.find(g => g.id === goalId)
+      topupGoal(goalId, amount, goalNote || note || `Setoran dari Monthly - ${goal?.name || cat || 'Smart Saving'}`)
+    }
+    setAmt(''); setNote(''); setCat(''); setIsDebt(false); setGoalNote('')
+    setLoading(false)
+    setSavingModalOpen(false)
+    window.dispatchEvent(new Event('hutang-refresh'))
+  }
+
   async function handleAdd() {
     if (!date || !amt) return
-    setLoading(true)
-    const day = normalizeDay(date.split('-')[2])
-    await onAdd({ date: day, type, cat, note: note || cat || type, amt: pNum(amt), debt: isDebt, settled: false })
-    setAmt(''); setNote(''); setCat(''); setIsDebt(false)
-    setLoading(false)
-    window.dispatchEvent(new Event('hutang-refresh'))
+    if (type === 'save') {
+      const fallbackGoal = activeGoals.find(g => g.name === cat) || activeGoals[0]
+      setSelectedGoalId(fallbackGoal?.id || '')
+      setSyncToGoal(!!fallbackGoal)
+      setGoalNote(note || cat || 'Setoran tabungan')
+      setSavingModalOpen(true)
+      return
+    }
+    await commitAddTransaction(null)
   }
 
   function openEdit(t: Transaction) {
@@ -71,17 +90,12 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
   async function saveEdit() {
     if (!editId) return
-    const updates: Partial<Transaction> = {
-      ...editData,
-      date: normalizeDay(editData.date),
-    }
-    await onUpdate(editId, updates)
+    await onUpdate(editId, editData.date ? { ...editData, date: String(editData.date).padStart(2, '0') } : editData)
     setEditId(null)
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
   const debtCount = tx.filter(t => t.debt && !t.settled).length
-  const sortedTx = [...tx].sort((a, b) => Number(normalizeDay(b.date)) - Number(normalizeDay(a.date)))
 
   // Base styles — konsisten Inter font
   const baseFont: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px' }
@@ -147,6 +161,55 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
         </button>
       </div>
 
+      {savingModalOpen && (
+        <div
+          onClick={e => { if (e.currentTarget === e.target && !loading) setSavingModalOpen(false) }}
+          style={{ position:'fixed', inset:0, background:'rgba(17,24,39,.45)', zIndex:900, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
+          <div style={{ width:'100%', maxWidth:'420px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
+            <div style={{ padding:'18px 20px', borderBottom:'1px solid #e3e7ee', display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'flex-start' }}>
+              <div>
+                <div style={{ fontSize:'16px', fontWeight:800, color:'#111827' }}>Hubungkan ke Smart Saving?</div>
+                <div style={{ fontSize:'12.5px', color:'#6b7280', marginTop:'4px' }}>Transaksi saving sebesar <b>{fmt(pNum(amt))}</b> bisa langsung menambah saldo tujuan tabungan.</div>
+              </div>
+              <button onClick={()=>!loading && setSavingModalOpen(false)} style={{ border:'none', background:'#f7f8fa', borderRadius:'8px', width:'30px', height:'30px', cursor:'pointer', color:'#6b7280', fontSize:'18px' }}>×</button>
+            </div>
+            <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:'12px' }}>
+              <label style={{ display:'flex', alignItems:'flex-start', gap:'10px', padding:'12px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'12px', cursor:'pointer' }}>
+                <input type="checkbox" checked={syncToGoal} disabled={activeGoals.length === 0} onChange={e=>setSyncToGoal(e.target.checked)} style={{ marginTop:'2px', width:'16px', height:'16px', accentColor:'#1a5c42' }} />
+                <span>
+                  <span style={{ display:'block', fontSize:'13.5px', fontWeight:700, color:'#14532d' }}>Ya, masukkan juga ke Smart Saving</span>
+                  <span style={{ display:'block', fontSize:'12px', color:'#4b5563', marginTop:'2px' }}>Jika tidak dicentang, transaksi hanya tercatat di Monthly.</span>
+                </span>
+              </label>
+              {syncToGoal && (
+                <>
+                  <div>
+                    <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'5px' }}>Tujuan Tabungan</div>
+                    <select style={sel} value={selectedGoalId} onChange={e=>setSelectedGoalId(e.target.value)} disabled={activeGoals.length === 0}>
+                      {activeGoals.length === 0 && <option value="">Belum ada tujuan tabungan aktif</option>}
+                      {activeGoals.map(g => <option key={g.id} value={g.id}>{g.name} · {g.status}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'5px' }}>Catatan Riwayat Smart Saving</div>
+                    <input style={inp} value={goalNote} onChange={e=>setGoalNote(e.target.value)} placeholder="Contoh: Setoran rutin bulanan" />
+                  </div>
+                </>
+              )}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop:'4px' }}>
+                <button onClick={()=>setSavingModalOpen(false)} disabled={loading} style={{ padding:'10px', borderRadius:'10px', border:'1px solid #e3e7ee', background:'#fff', color:'#4b5563', fontWeight:700, cursor:'pointer' }}>Batal</button>
+                <button
+                  onClick={()=>commitAddTransaction(syncToGoal ? selectedGoalId : null)}
+                  disabled={loading || (syncToGoal && !selectedGoalId)}
+                  style={{ padding:'10px', borderRadius:'10px', border:'none', background:(loading || (syncToGoal && !selectedGoalId))?'#9ca3af':'#1a5c42', color:'#fff', fontWeight:800, cursor:(loading || (syncToGoal && !selectedGoalId))?'not-allowed':'pointer' }}>
+                  {loading ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── HISTORY HEADER ── */}
       <div style={{ padding: '8px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e3e7ee' }}>
         <div style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.7px' }}>Transaction History</div>
@@ -166,7 +229,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
           </div>
         )}
 
-        {sortedTx.map(t => {
+        {tx.slice().sort((a, b) => Number(b.date) - Number(a.date)).map(t => {
           const isEdit = editId === t.id
           const bc = t.type === 'inn' ? '#d1eadd' : t.type === 'save' ? '#eff6ff' : '#fee2e2'
           const tc = t.type === 'inn' ? '#1a5c42' : t.type === 'save' ? '#1e40af' : '#991b1b'
@@ -177,14 +240,8 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Date</div>
-                  <input type="text" inputMode="numeric" maxLength={2} style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'JetBrains Mono,monospace' }}
-                    value={editData.date || ''}
-                    onChange={e => {
-                      const raw = e.target.value.replace(/\D/g, '').slice(0, 2)
-                      const n = Number(raw)
-                      setEditData(p => ({ ...p, date: raw === '' ? '' : String(Math.min(Math.max(n, 1), 31)).padStart(raw.length >= 2 ? 2 : raw.length, '0') }))
-                    }}
-                    onBlur={() => setEditData(p => ({ ...p, date: normalizeDay(p.date) }))} />
+                  <input type="number" min="1" max="31" style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
+                    value={editData.date || ''} onChange={e => setEditData(p => ({ ...p, date: e.target.value }))} />
                 </div>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
@@ -255,7 +312,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
-              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'JetBrains Mono,monospace' }}>{normalizeDay(t.date)}</div>
+              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'JetBrains Mono,monospace' }}>{t.date}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
