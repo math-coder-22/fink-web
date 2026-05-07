@@ -34,6 +34,7 @@
 
 html, body {
   height: 100%;
+  min-height: 100%;
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
   color: var(--tx);
@@ -41,6 +42,18 @@ html, body {
   line-height: 1.55;
   overflow: hidden;
 }
+
+@supports (height: 100dvh) {
+  html, body {
+    min-height: 100dvh;
+  }
+}
+
+/* Mobile browser fix: prevent content from being hidden behind browser bars / safe areas */
+body {
+  -webkit-text-size-adjust: 100%;
+}
+
 
 button, input, select {
   font-family: inherit;

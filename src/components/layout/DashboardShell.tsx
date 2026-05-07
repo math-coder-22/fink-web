@@ -90,7 +90,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
 
   return (
     <MonthContext.Provider value={{ curMonth, curYear, setCurMonth:handleSetMonth, setCurYear }}>
-      <div style={{ display:'flex', flexDirection:'column', height:'100vh' }}>
+      <div style={{ display:'flex', flexDirection:'column', minHeight:'100dvh', height:'100dvh' }}>
 
         {/* ── TOPNAV ── */}
         <nav style={{
@@ -258,7 +258,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
           )}
 
           {/* Main content */}
-          <main style={{ flex:1, overflowY:'auto', padding: isMobile?'14px 12px':'22px', minHeight:0 }}>
+          <main style={{ flex:1, overflowY:'auto', WebkitOverflowScrolling:'touch', padding: isMobile?'14px 12px calc(28px + env(safe-area-inset-bottom))':'22px', minHeight:0 }}>
             {children}
           </main>
         </div>
