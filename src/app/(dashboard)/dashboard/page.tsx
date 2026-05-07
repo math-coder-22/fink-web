@@ -40,7 +40,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
 
 function CardHead({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', padding:'14px 16px', borderBottom:'1px solid #e3e7ee' }}>
+    <div className="dash-card-head" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', padding:'14px 16px', borderBottom:'1px solid #e3e7ee' }}>
       <div>
         <div style={{ fontSize:'13px', fontWeight:700, color:'#111827' }}>{title}</div>
         {subtitle && <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{subtitle}</div>}
@@ -116,28 +116,28 @@ export default function DashboardPage() {
   const insight = getInsight(totalIncome, totalExpense, totalSaving, rawSisa)
 
   return (
-    <div>
+    <div className="fink-dashboard-page">
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
+      <div className="dash-header" style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
         <div>
           <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Dashboard</h1>
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>
             Ringkasan keuangan {MONTH_NAMES[curMonth]} {curYear} · FiNK Family Finance Manager
           </p>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>
+        <div className="dash-actions" style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading data...</span>}
-          <Link href="/bulanan" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', border:'1.5px solid #e3e7ee', color:'#4b5563', fontSize:'12px', fontWeight:700 }}>
+          <Link href="/bulanan" className="dash-action-link" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', border:'1.5px solid #e3e7ee', color:'#4b5563', fontSize:'12px', fontWeight:700 }}>
             📝 Buka Monthly
           </Link>
-          <Link href="/tabungan" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', background:'#1a5c42', color:'#fff', fontSize:'12px', fontWeight:700 }}>
+          <Link href="/tabungan" className="dash-action-link" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', background:'#1a5c42', color:'#fff', fontSize:'12px', fontWeight:700 }}>
             🏦 Smart Saving
           </Link>
         </div>
       </div>
 
       {/* Main metrics */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:'12px', marginBottom:'14px' }}>
+      <div className="dash-metrics-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:'12px', marginBottom:'14px' }}>
         <MetricCard label="Income" value={fmt(totalIncome)} note={plannedIncome > 0 ? `${pct((totalIncome/plannedIncome)*100)} dari rencana pemasukan` : 'Total pemasukan aktual bulan ini'} tone="green" />
         <MetricCard label="Expense" value={fmt(totalExpense)} note={totalIncome > 0 ? `${pct(expenseRate)} dari pemasukan` : 'Total pengeluaran aktual bulan ini'} tone={expenseRate > 80 ? 'red' : 'neutral'} />
         <MetricCard label="Saving" value={fmt(totalSaving)} note={totalIncome > 0 ? `Saving rate ${pct(savingRate)}` : 'Alokasi tabungan bulan ini'} tone="blue" />
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      <div style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(320px, .85fr)', gap:'14px', alignItems:'start' }}>
+      <div className="dash-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(320px, .85fr)', gap:'14px', alignItems:'start' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Cashflow overview */}
           <Card>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'10px' }}>
+              <div className="dash-mini-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'10px' }}>
                 <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
                   <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Expense Rate</div>
                   <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:expenseRate > 80 ? '#b91c1c' : '#111827', fontFamily:'JetBrains Mono,monospace' }}>{pct(expenseRate)}</div>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize:'12px', color:'#9ca3af' }}>Loading target tabungan...</div>
               ) : (
                 <>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px', marginBottom:'12px' }}>
+                  <div className="dash-saving-summary-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px', marginBottom:'12px' }}>
                     <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'9px', padding:'10px' }}>
                       <div style={{ fontSize:'10px', color:'#1d4ed8', fontWeight:800, textTransform:'uppercase' }}>Collected</div>
                       <div style={{ fontSize:'15px', fontFamily:'JetBrains Mono,monospace', fontWeight:800, color:'#1d4ed8', marginTop:'4px' }}>{fmt(summary.totalCollected)}</div>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                 const isIn = t.type === 'inn'
                 const isSave = t.type === 'save'
                 return (
-                  <div key={t.id} style={{ display:'flex', alignItems:'center', gap:'10px', padding:'9px 16px', borderBottom:'1px solid #f3f4f6' }}>
+                  <div key={t.id} className="dash-tx-row" style={{ display:'flex', alignItems:'center', gap:'10px', padding:'9px 16px', borderBottom:'1px solid #f3f4f6' }}>
                     <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:isIn?'#f0fdf4':isSave?'#eff6ff':'#fef2f2', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:'13px' }}>
                       {isIn ? '↗' : isSave ? '🏦' : '↘'}
                     </div>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize:'12px', fontWeight:700, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || t.cat}</div>
                       <div style={{ fontSize:'10.5px', color:'#9ca3af', marginTop:'2px' }}>{String(t.date).padStart(2,'0')} · {t.cat}</div>
                     </div>
-                    <div style={{ fontSize:'12px', fontWeight:800, fontFamily:'JetBrains Mono,monospace', color:isIn?'#15803d':isSave?'#1d4ed8':'#b91c1c' }}>
+                    <div className="dash-tx-amount" style={{ fontSize:'12px', fontWeight:800, fontFamily:'JetBrains Mono,monospace', color:isIn?'#15803d':isSave?'#1d4ed8':'#b91c1c', whiteSpace:'nowrap' }}>
                       {isIn ? '+' : '-'}{fmt(t.amt)}
                     </div>
                   </div>
@@ -283,8 +283,116 @@ export default function DashboardPage() {
       </div>
 
       <style>{`
+        .fink-dashboard-page {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          padding-bottom: max(18px, env(safe-area-inset-bottom));
+        }
+
         @media (max-width: 920px) {
-          div[style*="grid-template-columns: minmax(0, 1.15fr)"] { grid-template-columns: 1fr !important; }
+          .fink-dashboard-page .dash-main-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .fink-dashboard-page {
+            padding-bottom: calc(72px + env(safe-area-inset-bottom));
+          }
+
+          .fink-dashboard-page .dash-header {
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .fink-dashboard-page .dash-header > div:first-child {
+            width: 100%;
+          }
+
+          .fink-dashboard-page .dash-header h1 {
+            font-size: 18px !important;
+          }
+
+          .fink-dashboard-page .dash-header p {
+            font-size: 11.5px !important;
+            line-height: 1.45 !important;
+          }
+
+          .fink-dashboard-page .dash-actions {
+            width: 100%;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px !important;
+          }
+
+          .fink-dashboard-page .dash-actions > span {
+            grid-column: 1 / -1;
+          }
+
+          .fink-dashboard-page .dash-action-link {
+            min-height: 36px;
+            padding: 8px 10px !important;
+            font-size: 11.5px !important;
+          }
+
+          .fink-dashboard-page .dash-metrics-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 9px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .fink-dashboard-page .dash-metrics-grid > div {
+            padding: 11px 10px !important;
+            min-width: 0;
+          }
+
+          .fink-dashboard-page .dash-metrics-grid > div > div:nth-child(2) {
+            font-size: 15px !important;
+            letter-spacing: -0.3px !important;
+            overflow-wrap: anywhere;
+          }
+
+          .fink-dashboard-page .dash-metrics-grid > div > div:nth-child(3) {
+            font-size: 10.5px !important;
+            line-height: 1.35 !important;
+          }
+
+          .fink-dashboard-page .dash-card-head {
+            padding: 12px 13px !important;
+            align-items: flex-start !important;
+          }
+
+          .fink-dashboard-page .dash-card-head > div:first-child {
+            min-width: 0;
+          }
+
+          .fink-dashboard-page .dash-mini-grid,
+          .fink-dashboard-page .dash-saving-summary-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .fink-dashboard-page .dash-tx-row {
+            padding: 10px 13px !important;
+            align-items: flex-start !important;
+          }
+
+          .fink-dashboard-page .dash-tx-amount {
+            font-size: 11px !important;
+            max-width: 118px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .fink-dashboard-page .dash-metrics-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .fink-dashboard-page .dash-actions {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </div>
