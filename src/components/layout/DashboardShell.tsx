@@ -31,9 +31,7 @@ export const useMonthContext = () => useContext(MonthContext)
 const NAV_ITEMS = [
   { href:'/dashboard', label:'Dashboard',    icon:'▦' },
   { href:'/bulanan',   label:'Monthly',      icon:'◷' },
-  { href:'/tabungan',  label:'Smart Saving', icon:'◇' },
-  { href:'/portofolio',label:'Portfolio',    icon:'△' },
-  { href:'/settings',  label:'Settings',     icon:'⚙' },
+  { href:'/tabungan',  label:'Smart Saving', icon:'◇' },  { href:'/settings',  label:'Settings',     icon:'⚙' },
 ]
 
 export default function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {

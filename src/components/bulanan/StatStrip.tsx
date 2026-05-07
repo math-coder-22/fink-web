@@ -107,11 +107,11 @@ export default function StatStrip({ income, saving, budget, isMobile, rawSisa }:
 
         return (
           <div key={s.label} style={{
-            background: '#fff',
+            background: s.label==='Income' ? '#f4fbf4' : s.label==='Savings' ? '#f5f8ff' : s.label==='Balance' ? '#faf8f1' : '#fff',
             borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,.07)',
+            boxShadow: '0 1px 2px rgba(0,0,0,.04)',
             padding: isMobile ? '10px 12px 8px' : '12px 16px 8px',
-            borderTop: `3px solid ${s.border}`,
+            border: `1px solid ${s.border}22`,
           }}>
             {/* Label */}
             <div style={{
