@@ -15,6 +15,12 @@ interface Props {
 }
 
 const fmtAmt = (n: number) => n ? Math.round(n).toLocaleString('id-ID') : ''
+const normalizeDay = (d: string | number | undefined | null) => {
+  const n = Number(String(d ?? '').replace(/\D/g, ''))
+  if (!Number.isFinite(n) || n < 1) return ''
+  return String(Math.min(n, 31)).padStart(2, '0')
+}
+
 
 export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpdate, onDelete }: Props) {
   const today = (() => {
@@ -45,8 +51,8 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   async function handleAdd() {
     if (!date || !amt) return
     setLoading(true)
-    const day = date.split('-')[2]
-    await onAdd({ date:day, type, cat, note: note || cat || type, amt: pNum(amt), debt: isDebt, settled: false })
+    const day = normalizeDay(date.split('-')[2])
+    await onAdd({ date: day, type, cat, note: note || cat || type, amt: pNum(amt), debt: isDebt, settled: false })
     setAmt(''); setNote(''); setCat(''); setIsDebt(false)
     setLoading(false)
     window.dispatchEvent(new Event('hutang-refresh'))
@@ -65,12 +71,17 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
   async function saveEdit() {
     if (!editId) return
-    await onUpdate(editId, editData)
+    const updates: Partial<Transaction> = {
+      ...editData,
+      date: normalizeDay(editData.date),
+    }
+    await onUpdate(editId, updates)
     setEditId(null)
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
   const debtCount = tx.filter(t => t.debt && !t.settled).length
+  const sortedTx = [...tx].sort((a, b) => Number(normalizeDay(b.date)) - Number(normalizeDay(a.date)))
 
   // Base styles — konsisten Inter font
   const baseFont: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px' }
@@ -155,7 +166,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
           </div>
         )}
 
-        {tx.map(t => {
+        {sortedTx.map(t => {
           const isEdit = editId === t.id
           const bc = t.type === 'inn' ? '#d1eadd' : t.type === 'save' ? '#eff6ff' : '#fee2e2'
           const tc = t.type === 'inn' ? '#1a5c42' : t.type === 'save' ? '#1e40af' : '#991b1b'
@@ -166,8 +177,14 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Date</div>
-                  <input type="number" min="1" max="31" style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
-                    value={editData.date || ''} onChange={e => setEditData(p => ({ ...p, date: e.target.value }))} />
+                  <input type="text" inputMode="numeric" maxLength={2} style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'JetBrains Mono,monospace' }}
+                    value={editData.date || ''}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '').slice(0, 2)
+                      const n = Number(raw)
+                      setEditData(p => ({ ...p, date: raw === '' ? '' : String(Math.min(Math.max(n, 1), 31)).padStart(raw.length >= 2 ? 2 : raw.length, '0') }))
+                    }}
+                    onBlur={() => setEditData(p => ({ ...p, date: normalizeDay(p.date) }))} />
                 </div>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
@@ -238,7 +255,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
-              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'JetBrains Mono,monospace' }}>{t.date}</div>
+              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'JetBrains Mono,monospace' }}>{normalizeDay(t.date)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
