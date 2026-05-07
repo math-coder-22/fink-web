@@ -23,7 +23,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^15.3.1",
-    "typescript": "^5",
-    "@cloudflare/next-on-pages": "^1"
+    "typescript": "^5"
   }
 }
