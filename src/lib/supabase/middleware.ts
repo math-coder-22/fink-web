@@ -49,15 +49,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const authMode = request.nextUrl.searchParams.get('mode')
-  const authType = request.nextUrl.searchParams.get('type')
-
-  if (
-    user &&
-    request.nextUrl.pathname === '/login' &&
-    !authMode &&
-    authType !== 'recovery'
-  ) {
+  if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/bulanan'
     return NextResponse.redirect(url)

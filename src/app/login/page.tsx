@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -27,7 +27,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: '6px',
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -70,15 +70,6 @@ export default function LoginPage() {
     setConfirmPassword('')
     setNewPassword('')
     clearFeedback()
-
-    if (typeof window !== 'undefined') {
-      const url =
-        nextMode === 'register' ? '/login?mode=register' :
-        nextMode === 'forgot' ? '/login?mode=forgot' :
-        nextMode === 'reset' ? '/login?type=recovery' :
-        '/login'
-      window.history.replaceState(null, '', url)
-    }
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -262,28 +253,9 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Masuk'}
             </button>
 
-            <div style={{
-              marginTop: '8px',
-              paddingTop: '16px',
-              borderTop: '1px solid #eef2f7',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              textAlign: 'center',
-            }}>
-              <button type="button" onClick={() => switchMode('register')} style={{
-                ...linkButtonStyle,
-                fontSize: '14px',
-              }}>
-                Belum punya akun? Daftar Akun Baru
-              </button>
-              <button type="button" onClick={() => switchMode('forgot')} style={{
-                ...linkButtonStyle,
-                color: '#6b7280',
-                fontSize: '13px',
-              }}>
-                Lupa Password?
-              </button>
+            <div style={{ textAlign:'center', fontSize:'13px', color:'#6b7280', marginTop:'4px' }}>
+              Belum punya akun?{' '}
+              <button type="button" onClick={() => switchMode('register')} style={linkButtonStyle}>Daftar sekarang</button>
             </div>
           </form>
         )}
@@ -395,5 +367,26 @@ function Feedback({ type, text }: { type: 'error' | 'success'; text: string }) {
     }}>
       {text}
     </div>
+  )
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100dvh',
+        background: 'linear-gradient(145deg, #0f2a1e 0%, #1a5c42 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontWeight: 700,
+      }}>
+        Loading...
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
