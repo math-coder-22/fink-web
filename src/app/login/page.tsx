@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -27,7 +27,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: '6px',
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -367,5 +367,26 @@ function Feedback({ type, text }: { type: 'error' | 'success'; text: string }) {
     }}>
       {text}
     </div>
+  )
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        minHeight: '100dvh',
+        background: 'linear-gradient(145deg, #0f2a1e 0%, #1a5c42 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontWeight: 700,
+      }}>
+        Loading...
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
