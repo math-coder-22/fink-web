@@ -1,180 +1,149 @@
 'use client'
 
-import type { BudgetCategory, IncomeCategory, SavingRow } from '@/types/database'
+import type { BudgetCat, IncomeCat, SavingItem } from '@/types/database'
 
-const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
-
-function pct(actual: number, planned: number) {
-  if (!planned) return null
-  return Math.round((actual / planned) * 100)
-}
-
-interface Props {
-  income:    IncomeCategory[]
-  saving:    SavingRow[]
-  budget:    BudgetCategory[]
+type Props = {
+  income: IncomeCat[]
+  saving: SavingItem[]
+  budget: BudgetCat[]
   isMobile?: boolean
-  rawSisa?:  number
+  rawSisa?: number
 }
 
-export default function StatStrip({ income, saving, budget, isMobile, rawSisa }: Props) {
-  const incP = income.reduce((s,c) => s+c.items.reduce((ss,i)=>ss+(i.plan  ||0),0), 0)
-  const incA = income.reduce((s,c) => s+c.items.reduce((ss,i)=>ss+(i.actual||0),0), 0)
-  const savP = saving.reduce((s,r) => s+(r.plan  ||0), 0)
-  const savA = saving.reduce((s,r) => s+(r.actual||0), 0)
-  const expP = budget.reduce((s,c) => s+c.items.reduce((ss,i)=>ss+(i.plan  ||0),0), 0)
-  const expA = budget.reduce((s,c) => s+c.items.reduce((ss,i)=>ss+(i.actual||0),0), 0)
-  const sisa = rawSisa !== undefined ? rawSisa : incA - expA - savA
+const fmt = (n: number) => 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID')
+const pct = (actual: number, planned: number) => planned > 0 ? Math.round((actual / planned) * 100) : 0
 
-  // Planned balance = planned income - planned expenses - planned savings
-  const sisaP = incP - expP - savP
+export default function StatStrip({ income, saving, budget, isMobile = false, rawSisa = 0 }: Props) {
+  const totalIncomePlan = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.planned || 0), 0), 0)
+  const totalIncomeActual = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
 
-  const stats = [
+  const totalBudgetPlan = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.planned || 0), 0), 0)
+  const totalBudgetActual = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
+
+  const totalSavingPlan = saving.reduce((s, i) => s + (i.planned || 0), 0)
+  const totalSavingActual = saving.reduce((s, i) => s + (i.actual || 0), 0)
+
+  const balancePlanned = totalIncomePlan - totalBudgetPlan - totalSavingPlan
+  const balanceActual = rawSisa
+
+  const items = [
     {
-      label:   'Income',
-      val:     incA,
-      planned: incP,
-      pct:     pct(incA, incP),
-      note:    `planned ${fmt(incP)}`,
-      color:   '#15803d',
-      border:  '#16a34a',
-      // overspent = actuals < plan for income is fine, no warning needed
-      warn:    false,
+      label: 'INCOME',
+      value: totalIncomeActual,
+      sub: `${pct(totalIncomeActual, totalIncomePlan)}% · planned ${fmt(totalIncomePlan)}`,
+      color: '#3f7f4a',
+      accent: '#51a45b',
+      bg: '#f6fff8',
+      progress: pct(totalIncomeActual, totalIncomePlan),
     },
     {
-      label:   'Expenses',
-      val:     expA,
-      planned: expP,
-      pct:     pct(expA, expP),
-      note:    `planned ${fmt(expP)}`,
-      color:   '#b91c1c',
-      border:  '#dc2626',
-      warn:    expP > 0 && expA > expP,  // overspent
+      label: 'EXPENSES',
+      value: totalBudgetActual,
+      sub: `${pct(totalBudgetActual, totalBudgetPlan)}% · planned ${fmt(totalBudgetPlan)}`,
+      color: '#a5302d',
+      accent: '#c83a36',
+      bg: '#fffafa',
+      progress: pct(totalBudgetActual, totalBudgetPlan),
     },
     {
-      label:   'Savings',
-      val:     savA,
-      planned: savP,
-      pct:     pct(savA, savP),
-      note:    `planned ${fmt(savP)}`,
-      color:   '#1d4ed8',
-      border:  '#2563eb',
-      warn:    false,
+      label: 'SAVINGS',
+      value: totalSavingActual,
+      sub: `planned ${fmt(totalSavingPlan)}`,
+      color: '#2b55d9',
+      accent: '#4b63ff',
+      bg: '#f7fbff',
+      progress: pct(totalSavingActual, totalSavingPlan),
     },
     {
-      label:   'Balance',
-      val:     sisa,
-      planned: sisaP,
-      pct:     null,   // Balance pakai format 'vs planned', bukan %
-      note:    sisaP !== 0
-        ? `vs planned ${sisaP < 0 ? '-' : ''}Rp ${Math.abs(Math.round(sisaP)).toLocaleString('id-ID')}`
-        : 'income − expenses − savings',
-      color:   sisa >= 0 ? '#a16207' : '#b91c1c',
-      border:  sisa >= 0 ? '#ca8a04' : '#dc2626',
-      warn:    sisa < 0,
+      label: 'BALANCE',
+      value: balanceActual,
+      sub: `vs planned ${fmt(balancePlanned)}`,
+      color: '#98631b',
+      accent: '#ba7a20',
+      bg: '#fffdf7',
+      progress: pct(balanceActual, Math.max(balancePlanned, 1)),
     },
   ]
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
-      gap: isMobile ? '8px' : '10px',
-      marginBottom: isMobile ? '12px' : '18px',
+    <section style={{
+      background: '#fff',
+      border: '1px solid #e3e7ee',
+      borderRadius: isMobile ? '14px' : '16px',
+      boxShadow: '0 2px 10px rgba(15,23,42,.05)',
+      marginBottom: isMobile ? '12px' : '14px',
+      overflow: 'hidden',
     }}>
-      {stats.map(s => {
-        const p = s.pct
-        const isBalance = s.label === 'Balance'
-
-        // Balance card: bar = progress hari ini dalam bulan (misal hari 26 dari 30 = 87%)
-        const today = new Date()
-        const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate()
-        const dayProgress = Math.round((today.getDate() / daysInMonth) * 100)
-
-        const barW = isBalance
-          ? dayProgress
-          : (p === null ? 0 : Math.min(100, Math.max(0, p)))
-        // Bar color: green if ok, amber if >85%, red if >100% or warn
-        const barColor = isBalance
-          ? s.border  // Balance: selalu pakai warna card (amber/merah)
-          : s.warn
-            ? '#dc2626'
-            : p !== null && p >= 100
-              ? '#dc2626'
-              : p !== null && p >= 85
-                ? '#d97706'
-                : s.border
-
-        return (
-          <div key={s.label} style={{
-            background: '#fff',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,.07)',
-            padding: isMobile ? '10px 12px 8px' : '12px 16px 8px',
-            borderTop: `3px solid ${s.border}`,
-          }}>
-            {/* Label */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+      }}>
+        {items.map((item, idx) => (
+          <div
+            key={item.label}
+            style={{
+              padding: isMobile ? '12px 12px' : '14px 20px',
+              background: item.bg,
+              borderTop: `3px solid ${item.accent}`,
+              borderRight: !isMobile && idx < items.length - 1 ? '1px solid #e7ebf0' : 'none',
+              borderBottom: isMobile && idx < 2 ? '1px solid #e7ebf0' : 'none',
+              minWidth: 0,
+            }}
+          >
             <div style={{
-              fontSize: isMobile ? '9.5px' : '10.5px',
-              fontWeight: 600, color: '#9ca3af',
-              textTransform: 'uppercase', letterSpacing: '.5px',
-              marginBottom: '3px',
+              fontSize: isMobile ? '10.5px' : '11.5px',
+              fontWeight: 800,
+              color: '#9ca3af',
+              textTransform: 'uppercase',
+              letterSpacing: '.7px',
+              marginBottom: '6px',
+              whiteSpace: 'nowrap',
             }}>
-              {s.label}
+              {item.label}
             </div>
 
-            {/* Actual value */}
             <div style={{
-              fontSize: isMobile ? '14px' : '16px',
-              fontWeight: 700,
-              fontFamily: 'JetBrains Mono,monospace',
-              letterSpacing: '-.5px',
-              color: s.color,
-              lineHeight: 1.2,
+              fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize: isMobile ? '18px' : '21px',
+              fontWeight: 800,
+              color: item.color,
+              letterSpacing: '-.8px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              lineHeight: 1.18,
             }}>
-              {fmt(s.val)}
+              {fmt(item.value)}
             </div>
 
-            {/* Progress bar — 2px, compact */}
-            {s.planned !== 0 && (
+            <div style={{
+              height: isMobile ? '3px' : '3.5px',
+              background: '#e5e7eb',
+              borderRadius: '999px',
+              margin: isMobile ? '8px 0 5px' : '9px 0 6px',
+              overflow: 'hidden',
+            }}>
               <div style={{
-                height: '2px',
-                background: '#e3e7ee',
-                borderRadius: '1px',
-                margin: '6px 0 4px',
-              }}>
-                <div style={{
-                  height: '2px',
-                  borderRadius: '1px',
-                  background: barColor,
-                  width: `${barW}%`,
-                  transition: 'width .4s ease',
-                }} />
-              </div>
-            )}
+                width: `${Math.min(Math.max(item.progress, 0), 100)}%`,
+                height: '100%',
+                background: item.accent,
+                borderRadius: '999px',
+              }} />
+            </div>
 
-            {/* Planned note — same line, compact */}
-            {!isMobile && (
-              <div style={{
-                fontSize: '10.5px',
-                color: s.warn ? '#b91c1c' : '#9ca3af',
-                fontFamily: 'JetBrains Mono,monospace',
-                lineHeight: 1.4,
-              }}>
-                {!isBalance && p !== null && (
-                  <span style={{ color: s.warn ? '#b91c1c' : p >= 85 ? '#d97706' : '#9ca3af' }}>
-                    {p}%{' · '}
-                  </span>
-                )}
-                <span style={{ color: s.warn ? '#b91c1c' : '#9ca3af' }}>
-                  {s.note}
-                </span>
-                {s.warn && s.label === 'Expenses' ? ' ⚠' : ''}
-              </div>
-            )}
+            <div style={{
+              fontSize: isMobile ? '10.5px' : '11.5px',
+              color: '#9ca3af',
+              fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {item.sub}
+            </div>
           </div>
-        )
-      })}
-    </div>
+        ))}
+      </div>
+    </section>
   )
 }
