@@ -10,9 +10,11 @@ export interface Database {
           id: string
           email: string
           full_name: string | null
-          role: 'user' | 'admin'
+          role: 'user' | 'admin' | 'super_admin' | 'super_admin'
           created_at: string
           updated_at: string
+          suspended: boolean
+          deleted_at: string | null
         }
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
@@ -25,6 +27,7 @@ export interface Database {
           plan: 'free' | 'premium'
           status: 'active' | 'trialing' | 'past_due' | 'canceled'
           current_period_end: string | null
+          is_lifetime: boolean
           created_at: string
           updated_at: string
         }

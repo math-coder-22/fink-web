@@ -46,7 +46,11 @@ function LoginContent() {
     const requestedMode = searchParams.get('mode')
     const authError = searchParams.get('error')
 
-    if (authError === 'missing_auth_code') {
+    if (authError === 'suspended') {
+      setError('Akun Anda sedang dinonaktifkan sementara. Hubungi admin FiNK.')
+    } else if (authError === 'deleted') {
+      setError('Akun Anda sudah dihapus atau tidak aktif. Hubungi admin FiNK.')
+    } else if (authError === 'missing_auth_code') {
       setError('Link autentikasi tidak valid. Silakan minta link baru.')
     } else if (authError === 'auth_callback_failed') {
       setError('Link autentikasi gagal diproses. Silakan coba lagi atau minta link baru.')

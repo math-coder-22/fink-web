@@ -81,7 +81,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
         const res = await fetch('/api/subscription', { cache:'no-store' })
         if (!res.ok) return
         const json = await res.json()
-        if (alive) setIsAdmin(json.profile?.role === 'admin')
+        if (alive) setIsAdmin(json.isAdmin || json.profile?.role === 'admin' || json.profile?.role === 'super_admin')
       } catch {
         // Jika tabel subscription belum dibuat, sidebar tetap berjalan tanpa menu Admin.
       }
