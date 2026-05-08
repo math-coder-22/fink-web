@@ -28,6 +28,12 @@ type AdminUser = {
   expired: boolean
 }
 
+type MenuState = {
+  user: AdminUser
+  x: number
+  y: number
+} | null
+
 const fmtDate = (s?: string | null) => {
   if (!s) return '-'
   return new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
@@ -46,6 +52,16 @@ function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone
   return <span style={{ display:'inline-flex', alignItems:'center', border:`1px solid ${border}`, background:bg, color, borderRadius:'999px', padding:'3px 8px', fontSize:'10.5px', fontWeight:800, textTransform:'uppercase', letterSpacing:'.4px', whiteSpace:'nowrap' }}>{children}</span>
 }
 
+function getUserStatus(user: AdminUser) {
+  if (user.deleted_at) return { label: 'deleted', tone: 'red' as const }
+  if (user.suspended) return { label: 'suspended', tone: 'red' as const }
+  if (user.expired) return { label: 'expired', tone: 'gold' as const }
+  if (user.subscription?.status && user.subscription.status !== 'active') {
+    return { label: user.subscription.status, tone: 'neutral' as const }
+  }
+  return { label: 'active', tone: 'green' as const }
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [currentAdminRole, setCurrentAdminRole] = useState<Role>('user')
@@ -54,6 +70,7 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [dateMap, setDateMap] = useState<Record<string, string>>({})
+  const [openMenu, setOpenMenu] = useState<MenuState>(null)
 
   const isSuperAdmin = currentAdminRole === 'super_admin'
 
@@ -75,9 +92,25 @@ export default function AdminPage() {
 
   useEffect(() => { loadUsers() }, [])
 
+  useEffect(() => {
+    function close() { setOpenMenu(null) }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') close()
+    }
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
+
   async function adminPatch(userId: string, body: Record<string, unknown>) {
     setSavingId(userId)
     setError('')
+    setOpenMenu(null)
     try {
       const res = await fetch('/api/admin/users', {
         method:'PATCH',
@@ -95,6 +128,7 @@ export default function AdminPage() {
   }
 
   async function hardDelete(user: AdminUser) {
+    setOpenMenu(null)
     const ok = confirm(`Hapus permanen user ${user.email}?\n\nData transaksi, monthly plan, subscription, profile, dan Auth user akan dihapus. Aksi ini tidak bisa dibatalkan.`)
     if (!ok) return
 
@@ -125,6 +159,19 @@ export default function AdminPage() {
       current_period_end: new Date(`${date}T23:59:59`).toISOString(),
       is_lifetime: false,
     })
+  }
+
+  function openActionMenu(user: AdminUser, e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const menuWidth = 230
+    const menuHeight = 305
+    const margin = 12
+    const x = Math.min(Math.max(margin, rect.right - menuWidth), window.innerWidth - menuWidth - margin)
+    const canOpenBelow = rect.bottom + menuHeight + margin < window.innerHeight
+    const y = canOpenBelow
+      ? Math.min(rect.bottom + 8, window.innerHeight - menuHeight - margin)
+      : Math.max(margin, rect.top - menuHeight - 8)
+    setOpenMenu({ user, x, y })
   }
 
   const filtered = useMemo(() => {
@@ -244,12 +291,10 @@ export default function AdminPage() {
                         {sub?.is_lifetime ? 'Seumur hidup' : fmtDate(sub?.current_period_end)}
                       </td>
                       <td style={{ padding:'12px 14px', verticalAlign:'top' }}>
-                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                          <Badge tone={u.deleted_at ? 'red' : u.suspended ? 'red' : 'green'}>
-                            {u.deleted_at ? 'deleted' : u.suspended ? 'suspended' : 'active'}
-                          </Badge>
-                          <Badge tone={sub?.status === 'active' ? 'green' : 'neutral'}>{sub?.status || 'active'}</Badge>
-                        </div>
+                        {(() => {
+                          const status = getUserStatus(u)
+                          return <Badge tone={status.tone}>{status.label}</Badge>
+                        })()}
                       </td>
                       <td style={{ padding:'12px 14px', verticalAlign:'top' }}>
                         <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -265,22 +310,25 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td style={{ padding:'12px 14px', textAlign:'right', verticalAlign:'top' }}>
-                        <div style={{ display:'inline-flex', gap:6, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                          <button disabled={disabled || !!u.deleted_at} onClick={()=>adminPatch(u.id, { action:'grant_duration', duration_amount:3, duration_unit:'years' })} style={btn('#1d4ed8','#fff')}>Premium 3Y</button>
-                          <button disabled={disabled || !!u.deleted_at} onClick={()=>adminPatch(u.id, { action:'lifetime' })} style={btn('#5b21b6','#fff')}>Lifetime</button>
-                          <button disabled={disabled || !!u.deleted_at} onClick={()=>adminPatch(u.id, { action:'downgrade' })} style={btn('#fff','#4b5563')}>Free</button>
-                          {u.suspended ? (
-                            <button disabled={disabled || !!u.deleted_at} onClick={()=>adminPatch(u.id, { action:'activate' })} style={btn('#15803d','#fff')}>Activate</button>
-                          ) : (
-                            <button disabled={disabled || !!u.deleted_at} onClick={()=>adminPatch(u.id, { action:'suspend' })} style={btn('#fff','#991b1b')}>Suspend</button>
-                          )}
-                          {isSuperAdmin && (u.deleted_at ? (
-                            <button disabled={disabled} onClick={()=>adminPatch(u.id, { action:'restore' })} style={btn('#fff','#15803d')}>Restore</button>
-                          ) : (
-                            <button disabled={disabled} onClick={()=>adminPatch(u.id, { action:'soft_delete' })} style={btn('#fff','#991b1b')}>Soft Delete</button>
-                          ))}
-                          {isSuperAdmin && <button disabled={disabled || u.role === 'super_admin'} onClick={()=>hardDelete(u)} style={btn('#991b1b','#fff')}>Hard Delete</button>}
-                        </div>
+                        <button
+                          disabled={disabled}
+                          onClick={(e)=>openActionMenu(u, e)}
+                          aria-label={`Open actions for ${u.email}`}
+                          style={{
+                            width:34,
+                            height:34,
+                            border:'1px solid #e3e7ee',
+                            background:'#fff',
+                            borderRadius:10,
+                            cursor:disabled ? 'wait' : 'pointer',
+                            fontSize:18,
+                            lineHeight:1,
+                            color:'#4b5563',
+                            boxShadow:'0 2px 8px rgba(15,23,42,.04)',
+                          }}
+                        >
+                          ⋮
+                        </button>
                       </td>
                     </tr>
                   )
@@ -291,6 +339,19 @@ export default function AdminPage() {
         )}
       </AppCard>
 
+      {openMenu && (
+        <>
+          <div onClick={() => setOpenMenu(null)} style={{ position:'fixed', inset:0, zIndex:900 }} />
+          <ActionFloatingMenu
+            menu={openMenu}
+            isSuperAdmin={isSuperAdmin}
+            savingId={savingId}
+            onPatch={adminPatch}
+            onHardDelete={hardDelete}
+          />
+        </>
+      )}
+
       <style>{`
         @media (max-width: 640px) {
           .fink-admin-page { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
@@ -300,16 +361,108 @@ export default function AdminPage() {
   )
 }
 
-function btn(bg: string, color: string): React.CSSProperties {
-  return {
-    border: bg === '#fff' ? '1px solid #e3e7ee' : `1px solid ${bg}`,
-    background: bg,
-    borderRadius: 7,
-    padding: '7px 10px',
-    fontSize: 11.5,
-    fontWeight: 800,
-    color,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
+
+function ActionFloatingMenu({
+  menu,
+  isSuperAdmin,
+  savingId,
+  onPatch,
+  onHardDelete,
+}: {
+  menu: Exclude<MenuState, null>
+  isSuperAdmin: boolean
+  savingId: string | null
+  onPatch: (userId: string, body: Record<string, unknown>) => void
+  onHardDelete: (user: AdminUser) => void
+}) {
+  const user = menu.user
+  const disabled = savingId === user.id
+
+  const item = (
+    label: string,
+    onClick: () => void,
+    tone: 'normal'|'green'|'blue'|'purple'|'red' = 'normal',
+    isDisabled = false
+  ) => {
+    const color =
+      tone === 'green' ? '#15803d' :
+      tone === 'blue' ? '#1d4ed8' :
+      tone === 'purple' ? '#5b21b6' :
+      tone === 'red' ? '#991b1b' :
+      '#374151'
+
+    return (
+      <button
+        disabled={disabled || isDisabled}
+        onClick={onClick}
+        style={{
+          width:'100%',
+          display:'flex',
+          alignItems:'center',
+          justifyContent:'space-between',
+          gap:10,
+          padding:'10px 12px',
+          border:'none',
+          background:'transparent',
+          color,
+          cursor: disabled || isDisabled ? 'not-allowed' : 'pointer',
+          fontSize:12.5,
+          fontWeight:800,
+          textAlign:'left',
+          borderRadius:8,
+          opacity: disabled || isDisabled ? .45 : 1,
+        }}
+        onMouseEnter={(e)=>{ if (!disabled && !isDisabled) e.currentTarget.style.background = '#f7f8fa' }}
+        onMouseLeave={(e)=>{ e.currentTarget.style.background = 'transparent' }}
+      >
+        <span>{label}</span>
+        <span style={{ color:'#c0c4cc' }}>›</span>
+      </button>
+    )
   }
+
+  return (
+    <div
+      style={{
+        position:'fixed',
+        left: menu.x,
+        top: menu.y,
+        width:230,
+        maxHeight:'min(360px, calc(100dvh - 24px))',
+        overflowY:'auto',
+        background:'#fff',
+        border:'1px solid #e3e7ee',
+        borderRadius:14,
+        boxShadow:'0 20px 55px rgba(15,23,42,.20)',
+        zIndex:901,
+        padding:8,
+      }}
+    >
+      <div style={{ padding:'8px 10px 10px', borderBottom:'1px solid #eef2f7', marginBottom:6 }}>
+        <div style={{ fontSize:12.5, fontWeight:900, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</div>
+        <div style={{ fontSize:10.5, color:'#9ca3af', marginTop:2 }}>Action menu</div>
+      </div>
+
+      {item('Premium 3 Tahun', () => onPatch(user.id, { action:'grant_duration', duration_amount:3, duration_unit:'years' }), 'blue', !!user.deleted_at)}
+      {item('Lifetime Premium', () => onPatch(user.id, { action:'lifetime' }), 'purple', !!user.deleted_at)}
+      {item('Ubah ke Free', () => onPatch(user.id, { action:'downgrade' }), 'normal', !!user.deleted_at)}
+
+      <div style={{ height:1, background:'#eef2f7', margin:'6px 0' }} />
+
+      {user.suspended
+        ? item('Activate User', () => onPatch(user.id, { action:'activate' }), 'green', !!user.deleted_at)
+        : item('Suspend User', () => onPatch(user.id, { action:'suspend' }), 'red', !!user.deleted_at)
+      }
+
+      {isSuperAdmin && (
+        <>
+          {user.deleted_at
+            ? item('Restore Soft Delete', () => onPatch(user.id, { action:'restore' }), 'green')
+            : item('Soft Delete', () => onPatch(user.id, { action:'soft_delete' }), 'red')
+          }
+          {item('Hard Delete Permanen', () => onHardDelete(user), 'red', user.role === 'super_admin')}
+        </>
+      )}
+    </div>
+  )
 }
