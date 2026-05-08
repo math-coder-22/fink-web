@@ -43,7 +43,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     const type = searchParams.get('type')
+    const requestedMode = searchParams.get('mode')
     if (type === 'recovery') setMode('reset')
+    else if (requestedMode === 'register') setMode('register')
+    else if (requestedMode === 'forgot') setMode('forgot')
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
