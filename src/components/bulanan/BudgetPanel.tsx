@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { BudgetCategory, SavingRow } from '@/types/database'
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
@@ -33,6 +35,7 @@ interface Props {
 }
 
 export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
+  const { isPremium } = useSubscription()
   const [hovRow,   setHovRow]   = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
   const catDragSrc  = useRef<number|null>(null)
@@ -46,6 +49,15 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
   function onItemDrop(e: React.DragEvent, toCi: number, toIi: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const src=itemDragSrc.current; if(!src) return; if(src.ci===toCi&&src.ii===toIi) return; const next=budget.map(c=>({...c,items:[...c.items]})); const [m]=next[src.ci].items.splice(src.ii,1); next[toCi].items.splice(toIi,0,m); onBudgetChange(next); itemDragSrc.current=null }
   function onSavDragStart(e: React.DragEvent, i: number) { savDragSrc.current=i; e.dataTransfer.effectAllowed='move' }
   function onSavDrop(e: React.DragEvent, i: number) { e.preventDefault(); const from=savDragSrc.current; if(from===null||from===i) return; const next=[...saving]; const [m]=next.splice(from,1); next.splice(i,0,m); onSavingChange(next); savDragSrc.current=null; setDragOver(null) }
+
+
+  function handleAddBudgetCategory() {
+    if (!isPremium && budget.length >= FREE_PLAN_LIMITS.budgetCategories) {
+      alert(upgradeMessage(`Kategori budget Free maksimal ${FREE_PLAN_LIMITS.budgetCategories}`))
+      return
+    }
+    onBudgetChange([...budget,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
+  }
 
   const totExpP = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
   const totExpA = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
@@ -172,7 +184,7 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
       {/* Bottom buttons */}
       <div style={{ display:'flex', gap:'6px', marginTop:'2px' }}>
         <AddBtn label="+ add item to last category" onClick={()=>{ if(!budget.length) return; const last=budget.length-1; onBudgetChange(budget.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]})) }} />
-        <AddBtn label="+ add category" onClick={()=>onBudgetChange([...budget,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])} />
+        <AddBtn label="+ add category" onClick={handleAddBudgetCategory} />
       </div>
 
       {/* Total Expenses */}

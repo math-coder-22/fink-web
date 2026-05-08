@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { IncomeCategory } from '@/types/database'
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
@@ -30,6 +32,7 @@ interface Props {
 }
 
 export default function IncomePanel({ income, onIncomeChange, onRename, isMobile }: Props) {
+  const { isPremium } = useSubscription()
   const [hovRow,   setHovRow]   = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
   const catDragSrc  = useRef<number|null>(null)
@@ -39,6 +42,15 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
   function onCatDrop(e: React.DragEvent, ci: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const from=catDragSrc.current; if(from===null||from===ci) return; const next=[...income]; const [m]=next.splice(from,1); next.splice(ci,0,m); onIncomeChange(next); catDragSrc.current=null }
   function onItemDragStart(e: React.DragEvent, ci: number, ii: number) { itemDragSrc.current={ci,ii}; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','item'); e.stopPropagation() }
   function onItemDrop(e: React.DragEvent, toCi: number, toIi: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const src=itemDragSrc.current; if(!src) return; if(src.ci===toCi&&src.ii===toIi) return; const next=income.map(c=>({...c,items:[...c.items]})); const [m]=next[src.ci].items.splice(src.ii,1); next[toCi].items.splice(toIi,0,m); onIncomeChange(next); itemDragSrc.current=null }
+
+
+  function handleAddIncomeCategory() {
+    if (!isPremium && income.length >= FREE_PLAN_LIMITS.incomeCategories) {
+      alert(upgradeMessage(`Kategori income Free maksimal ${FREE_PLAN_LIMITS.incomeCategories}`))
+      return
+    }
+    onIncomeChange([...income,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
+  }
 
   const totP = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
   const totA = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
@@ -154,7 +166,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
       {/* Bottom buttons */}
       <div style={{ display:'flex', gap:'6px', marginTop:'2px' }}>
         <AddBtn label="+ add item to last category" onClick={()=>{ if(!income.length) return; const last=income.length-1; onIncomeChange(income.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]})) }} />
-        <AddBtn label="+ add category" onClick={()=>onIncomeChange([...income,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])} />
+        <AddBtn label="+ add category" onClick={handleAddIncomeCategory} />
       </div>
 
       {/* Total */}

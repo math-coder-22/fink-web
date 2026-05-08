@@ -11,6 +11,8 @@ import {
   ReconcileModal,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader } from "@/components/ui/design";
+import { useSubscription } from "@/hooks/useSubscription";
+import { FREE_PLAN_LIMITS, upgradeMessage } from "@/lib/subscription/limits";
 import type { SavingsGoal } from "@/types/savings";
 
 type TabKey = "active" | "pending" | "complete" | "archived";
@@ -41,6 +43,7 @@ export default function TabunganPage() {
   const [topupId, setTopupId] = useState<string | null>(null);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [reconcileId, setReconcileId] = useState<string | null>(null);
+  const { isPremium } = useSubscription();
 
   const filtered = goals.filter((g) => g.status === tab);
   const topupGoalObj = topupId
@@ -52,6 +55,14 @@ export default function TabunganPage() {
   const rcGoalObj = reconcileId
     ? (goals.find((g) => g.id === reconcileId) ?? null)
     : null;
+
+  function openNewGoal() {
+    if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
+      alert(upgradeMessage(`Akun Smart Saving Free maksimal ${FREE_PLAN_LIMITS.savingGoals}`));
+      return;
+    }
+    setShowNew(true);
+  }
 
   if (!loaded)
     return (
@@ -75,13 +86,20 @@ export default function TabunganPage() {
         title="Smart Saving"
         subtitle="Perencanaan tabungan goal-based · Rekomendasi otomatis"
         action={
-          <AppButton onClick={() => setShowNew(true)}>
+          <AppButton onClick={openNewGoal}>
             + Tambah Tabungan
           </AppButton>
         }
       />
 
       <SummaryCard summary={summary} />
+
+
+      {!isPremium && (
+        <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#9a3412', fontSize:'12px', fontWeight:600 }}>
+          Paket Free: maksimal {FREE_PLAN_LIMITS.savingGoals} akun Smart Saving. Saat ini: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
+        </div>
+      )}
 
       <div className="savings-tabs-row">
         <div className="savings-tabs">
@@ -102,7 +120,7 @@ export default function TabunganPage() {
           })}
         </div>
         <div className="savings-tabs-action">
-          <AppButton variant="secondary" onClick={() => setShowNew(true)}>
+          <AppButton variant="secondary" onClick={openNewGoal}>
             + Goal Baru
           </AppButton>
         </div>
@@ -114,7 +132,7 @@ export default function TabunganPage() {
           title="Belum ada goal di kategori ini"
           action={
             tab === "active" ? (
-              <AppButton onClick={() => setShowNew(true)}>
+              <AppButton onClick={openNewGoal}>
                 + Tambah Goal Pertama
               </AppButton>
             ) : undefined
