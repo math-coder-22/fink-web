@@ -28,12 +28,14 @@ export const MonthContext = createContext<MonthContextValue>({
 })
 export const useMonthContext = () => useContext(MonthContext)
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href:'/dashboard', label:'Dashboard',    icon:'▦' },
   { href:'/bulanan',   label:'Monthly',      icon:'◷' },
   { href:'/tabungan',  label:'Smart Saving', icon:'◇' },
   { href:'/settings',  label:'Settings',     icon:'⚙' },
 ]
+
+const ADMIN_NAV_ITEM = { href:'/admin', label:'Admin', icon:'◆' }
 
 export default function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {
   const router   = useRouter()
@@ -47,6 +49,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
   const [sidebarOpen,    setSidebarOpen]    = useState(true)
   const [isMobile,       setIsMobile]       = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Ref untuk detect klik di luar dropdown — tidak pakai overlay terpisah
   const ddRef = useRef<HTMLDivElement>(null)
@@ -69,6 +72,25 @@ export default function DashboardShell({ user, children }: { user: User; childre
     mq.addEventListener('change', h)
     return () => mq.removeEventListener('change', h)
   }, [])
+
+
+  useEffect(() => {
+    let alive = true
+    async function loadSubscription() {
+      try {
+        const res = await fetch('/api/subscription', { cache:'no-store' })
+        if (!res.ok) return
+        const json = await res.json()
+        if (alive) setIsAdmin(json.profile?.role === 'admin')
+      } catch {
+        // Jika tabel subscription belum dibuat, sidebar tetap berjalan tanpa menu Admin.
+      }
+    }
+    loadSubscription()
+    return () => { alive = false }
+  }, [])
+
+  const navItems = isAdmin ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM] : BASE_NAV_ITEMS
 
   const todayLabel = (() => {
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -207,7 +229,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
               boxShadow:'4px 0 20px rgba(0,0,0,.12)',
             }}>
               <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'1.2px', padding:'8px 10px', marginBottom:'4px' }}>Navigation</div>
-              {NAV_ITEMS.map(item => (
+              {navItems.map(item => (
                 <Link key={item.href} href={item.href} onClick={()=>setMobileMenuOpen(false)} style={{
                   display:'flex', alignItems:'center', gap:'10px',
                   padding:'10px 12px', borderRadius:'8px',
@@ -241,7 +263,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
               transition:'width .22s ease, padding .22s ease',
             }}>
               <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'1.2px', padding:'10px 10px 5px', whiteSpace:'nowrap' }}>Navigation</div>
-              {NAV_ITEMS.map(item => (
+              {navItems.map(item => (
                 <Link key={item.href} href={item.href} style={{
                   display:'flex', alignItems:'center', gap:'9px',
                   padding:'8px 10px', borderRadius:'6px',

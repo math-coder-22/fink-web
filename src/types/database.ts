@@ -10,11 +10,26 @@ export interface Database {
           id: string
           email: string
           full_name: string | null
+          role: 'user' | 'admin'
           created_at: string
           updated_at: string
         }
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+      }
+
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan: 'free' | 'premium'
+          status: 'active' | 'trialing' | 'past_due' | 'canceled'
+          current_period_end: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['subscriptions']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>
       }
       monthly_plans: {
         Row: {
