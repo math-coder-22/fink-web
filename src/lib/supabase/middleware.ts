@@ -30,9 +30,18 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isPublicPath =
-    request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth')
+  const publicPaths = [
+    '/',
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/auth',
+  ]
+
+  const isPublicPath = publicPaths.some((path) =>
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(`${path}/`)
+  )
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
@@ -40,7 +49,15 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && request.nextUrl.pathname === '/login') {
+  const authMode = request.nextUrl.searchParams.get('mode')
+  const authType = request.nextUrl.searchParams.get('type')
+
+  if (
+    user &&
+    request.nextUrl.pathname === '/login' &&
+    !authMode &&
+    authType !== 'recovery'
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = '/bulanan'
     return NextResponse.redirect(url)

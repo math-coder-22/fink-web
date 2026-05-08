@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function ResetPasswordRedirectPage() {
+export default function Page() {
   redirect('/login?type=recovery')
 }

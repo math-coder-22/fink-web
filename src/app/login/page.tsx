@@ -70,6 +70,15 @@ export default function LoginPage() {
     setConfirmPassword('')
     setNewPassword('')
     clearFeedback()
+
+    if (typeof window !== 'undefined') {
+      const url =
+        nextMode === 'register' ? '/login?mode=register' :
+        nextMode === 'forgot' ? '/login?mode=forgot' :
+        nextMode === 'reset' ? '/login?type=recovery' :
+        '/login'
+      window.history.replaceState(null, '', url)
+    }
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -253,9 +262,28 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Masuk'}
             </button>
 
-            <div style={{ textAlign:'center', fontSize:'13px', color:'#6b7280', marginTop:'4px' }}>
-              Belum punya akun?{' '}
-              <button type="button" onClick={() => switchMode('register')} style={linkButtonStyle}>Daftar sekarang</button>
+            <div style={{
+              marginTop: '8px',
+              paddingTop: '16px',
+              borderTop: '1px solid #eef2f7',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              textAlign: 'center',
+            }}>
+              <button type="button" onClick={() => switchMode('register')} style={{
+                ...linkButtonStyle,
+                fontSize: '14px',
+              }}>
+                Belum punya akun? Daftar Akun Baru
+              </button>
+              <button type="button" onClick={() => switchMode('forgot')} style={{
+                ...linkButtonStyle,
+                color: '#6b7280',
+                fontSize: '13px',
+              }}>
+                Lupa Password?
+              </button>
             </div>
           </form>
         )}
