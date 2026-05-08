@@ -44,6 +44,13 @@ function LoginContent() {
   useEffect(() => {
     const type = searchParams.get('type')
     const requestedMode = searchParams.get('mode')
+    const authError = searchParams.get('error')
+
+    if (authError === 'missing_auth_code') {
+      setError('Link autentikasi tidak valid. Silakan minta link baru.')
+    } else if (authError === 'auth_callback_failed') {
+      setError('Link autentikasi gagal diproses. Silakan coba lagi atau minta link baru.')
+    }
     if (type === 'recovery') setMode('reset')
     else if (requestedMode === 'register') setMode('register')
     else if (requestedMode === 'forgot') setMode('forgot')
@@ -111,7 +118,7 @@ function LoginContent() {
       email,
       password,
       options: {
-        emailRedirectTo: `${origin}/login`,
+        emailRedirectTo: `${origin}/auth/callback`,
       },
     })
 
@@ -140,7 +147,7 @@ function LoginContent() {
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/login?type=recovery`,
+      redirectTo: `${origin}/auth/callback?type=recovery`,
     })
 
     if (error) {
