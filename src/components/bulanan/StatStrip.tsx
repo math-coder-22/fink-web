@@ -14,13 +14,13 @@ const fmt = (n: number) => 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID
 const pct = (actual: number, planned: number) => planned > 0 ? Math.round((actual / planned) * 100) : 0
 
 export default function StatStrip({ income, saving, budget, isMobile = false, rawSisa = 0 }: Props) {
-  const totalIncomePlan = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.planned || 0), 0), 0)
+  const totalIncomePlan = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
   const totalIncomeActual = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
 
-  const totalBudgetPlan = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.planned || 0), 0), 0)
+  const totalBudgetPlan = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
   const totalBudgetActual = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
 
-  const totalSavingPlan = saving.reduce((s, i) => s + (i.planned || 0), 0)
+  const totalSavingPlan = saving.reduce((s, i) => s + (i.plan || 0), 0)
   const totalSavingActual = saving.reduce((s, i) => s + (i.actual || 0), 0)
 
   const balancePlanned = totalIncomePlan - totalBudgetPlan - totalSavingPlan

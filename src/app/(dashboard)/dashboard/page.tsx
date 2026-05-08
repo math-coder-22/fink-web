@@ -34,6 +34,22 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   return (
     <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 1px 3px rgba(0,0,0,.06)', overflow:'hidden', ...style }}>
       {children}
+      <style>{`
+        @media (max-width: 760px) {
+          .dash-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .dash-summary-grid > div {
+            padding: 12px !important;
+          }
+          .dash-summary-grid > div:nth-child(2n) {
+            border-right: none !important;
+          }
+          .dash-summary-grid > div:nth-child(-n+2) {
+            border-bottom: 1px solid #e7ebf0 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
@@ -46,6 +62,22 @@ function CardHead({ title, subtitle, right }: { title: string; subtitle?: string
         {subtitle && <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{subtitle}</div>}
       </div>
       {right}
+      <style>{`
+        @media (max-width: 760px) {
+          .dash-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .dash-summary-grid > div {
+            padding: 12px !important;
+          }
+          .dash-summary-grid > div:nth-child(2n) {
+            border-right: none !important;
+          }
+          .dash-summary-grid > div:nth-child(-n+2) {
+            border-bottom: 1px solid #e7ebf0 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
@@ -59,6 +91,22 @@ function MetricCard({ label, value, note, tone = 'neutral' }: { label: string; v
       <div style={{ fontSize:'10px', fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>{label}</div>
       <div style={{ fontSize:'20px', fontWeight:800, fontFamily:'JetBrains Mono, monospace', color, letterSpacing:'-.5px' }}>{value}</div>
       <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'7px', lineHeight:1.4 }}>{note}</div>
+      <style>{`
+        @media (max-width: 760px) {
+          .dash-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .dash-summary-grid > div {
+            padding: 12px !important;
+          }
+          .dash-summary-grid > div:nth-child(2n) {
+            border-right: none !important;
+          }
+          .dash-summary-grid > div:nth-child(-n+2) {
+            border-bottom: 1px solid #e7ebf0 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
@@ -67,7 +115,144 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
   return (
     <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'999px', overflow:'hidden' }}>
       <div style={{ height:'100%', width:`${Math.min(100, Math.max(0, value))}%`, background:color, borderRadius:'999px', transition:'width .3s' }} />
+      <style>{`
+        @media (max-width: 760px) {
+          .dash-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .dash-summary-grid > div {
+            padding: 12px !important;
+          }
+          .dash-summary-grid > div:nth-child(2n) {
+            border-right: none !important;
+          }
+          .dash-summary-grid > div:nth-child(-n+2) {
+            border-bottom: 1px solid #e7ebf0 !important;
+          }
+        }
+      `}</style>
     </div>
+  )
+}
+
+
+function SummaryPanel({
+  totalIncome,
+  plannedIncome,
+  totalExpense,
+  plannedExpense,
+  totalSaving,
+  plannedSaving,
+  rawSisa,
+  plannedBalance,
+}: {
+  totalIncome: number
+  plannedIncome: number
+  totalExpense: number
+  plannedExpense: number
+  totalSaving: number
+  plannedSaving: number
+  rawSisa: number
+  plannedBalance: number
+}) {
+  const items = [
+    {
+      label: 'INCOME',
+      value: totalIncome,
+      sub: `${plannedIncome > 0 ? Math.round((totalIncome / plannedIncome) * 100) : 0}% · planned ${fmt(plannedIncome)}`,
+      color: '#3f7f4a',
+      accent: '#51a45b',
+      bg: '#f6fff8',
+      progress: plannedIncome > 0 ? (totalIncome / plannedIncome) * 100 : 0,
+    },
+    {
+      label: 'EXPENSES',
+      value: totalExpense,
+      sub: `${plannedExpense > 0 ? Math.round((totalExpense / plannedExpense) * 100) : 0}% · planned ${fmt(plannedExpense)}`,
+      color: '#a5302d',
+      accent: '#c83a36',
+      bg: '#fffafa',
+      progress: plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0,
+    },
+    {
+      label: 'SAVINGS',
+      value: totalSaving,
+      sub: `planned ${fmt(plannedSaving)}`,
+      color: '#2b55d9',
+      accent: '#4b63ff',
+      bg: '#f7fbff',
+      progress: plannedSaving > 0 ? (totalSaving / plannedSaving) * 100 : 0,
+    },
+    {
+      label: 'LEFT TO SPEND',
+      value: rawSisa,
+      sub: `vs planned ${fmt(plannedBalance)}`,
+      color: '#98631b',
+      accent: '#ba7a20',
+      bg: '#fffdf7',
+      progress: plannedBalance > 0 ? (rawSisa / plannedBalance) * 100 : 0,
+    },
+  ]
+
+  return (
+    <section className="dash-summary-panel" style={{
+      background: '#fff',
+      border: '1px solid #e3e7ee',
+      borderRadius: '16px',
+      boxShadow: '0 2px 10px rgba(15,23,42,.05)',
+      marginBottom: '14px',
+      overflow: 'hidden',
+    }}>
+      <div className="dash-summary-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+      }}>
+        {items.map((item, idx) => (
+          <div key={item.label} style={{
+            padding: '14px 20px',
+            background: item.bg,
+            borderTop: `3px solid ${item.accent}`,
+            borderRight: idx < items.length - 1 ? '1px solid #e7ebf0' : 'none',
+            minWidth: 0,
+          }}>
+            <div style={{ fontSize:'11.5px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'6px', whiteSpace:'nowrap' }}>
+              {item.label}
+            </div>
+            <div style={{
+              fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize:'21px',
+              fontWeight:800,
+              color:item.color,
+              letterSpacing:'-.8px',
+              whiteSpace:'nowrap',
+              overflow:'hidden',
+              textOverflow:'ellipsis',
+              lineHeight:1.18,
+            }}>
+              {rawSisa < 0 && item.label === 'LEFT TO SPEND' ? '-' : ''}{fmt(item.value)}
+            </div>
+            <div style={{ height:'3.5px', background:'#e5e7eb', borderRadius:'999px', margin:'9px 0 6px', overflow:'hidden' }}>
+              <div style={{
+                width:`${Math.min(Math.max(item.progress, 0), 100)}%`,
+                height:'100%',
+                background:item.accent,
+                borderRadius:'999px',
+              }} />
+            </div>
+            <div style={{
+              fontSize:'11.5px',
+              color:'#9ca3af',
+              fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+              whiteSpace:'nowrap',
+              overflow:'hidden',
+              textOverflow:'ellipsis',
+            }}>
+              {item.sub}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -96,6 +281,8 @@ export default function DashboardPage() {
   const totalExpense = sumBudget(budget)
   const plannedExpense = sumBudgetPlan(budget)
   const totalSaving = sumSaving(saving)
+  const plannedSaving = saving.reduce((s, r) => s + (r.plan || 0), 0)
+  const plannedBalance = plannedIncome - plannedExpense - plannedSaving
   const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
   const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
   const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
@@ -137,12 +324,16 @@ export default function DashboardPage() {
       </div>
 
       {/* Main metrics */}
-      <div className="dash-metrics-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:'12px', marginBottom:'14px' }}>
-        <MetricCard label="Income" value={fmt(totalIncome)} note={plannedIncome > 0 ? `${pct((totalIncome/plannedIncome)*100)} dari rencana pemasukan` : 'Total pemasukan aktual bulan ini'} tone="green" />
-        <MetricCard label="Expense" value={fmt(totalExpense)} note={totalIncome > 0 ? `${pct(expenseRate)} dari pemasukan` : 'Total pengeluaran aktual bulan ini'} tone={expenseRate > 80 ? 'red' : 'neutral'} />
-        <MetricCard label="Saving" value={fmt(totalSaving)} note={totalIncome > 0 ? `Saving rate ${pct(savingRate)}` : 'Alokasi tabungan bulan ini'} tone="blue" />
-        <MetricCard label="Left to Spend" value={`${rawSisa < 0 ? '-' : ''}${fmt(rawSisa)}`} note={rawSisa >= 0 ? 'Sisa dana yang masih tersedia' : 'Defisit dibanding arus kas bulan ini'} tone={rawSisa >= 0 ? 'green' : 'red'} />
-      </div>
+      <SummaryPanel
+        totalIncome={totalIncome}
+        plannedIncome={plannedIncome}
+        totalExpense={totalExpense}
+        plannedExpense={plannedExpense}
+        totalSaving={totalSaving}
+        plannedSaving={plannedSaving}
+        rawSisa={rawSisa}
+        plannedBalance={plannedBalance}
+      />
 
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>
@@ -392,6 +583,22 @@ export default function DashboardPage() {
 
           .fink-dashboard-page .dash-actions {
             grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+      <style>{`
+        @media (max-width: 760px) {
+          .dash-summary-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .dash-summary-grid > div {
+            padding: 12px !important;
+          }
+          .dash-summary-grid > div:nth-child(2n) {
+            border-right: none !important;
+          }
+          .dash-summary-grid > div:nth-child(-n+2) {
+            border-bottom: 1px solid #e7ebf0 !important;
           }
         }
       `}</style>
