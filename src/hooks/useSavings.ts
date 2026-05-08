@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type {
   SavingsGoal,
   GoalCalcResult,
@@ -73,204 +74,124 @@ export function calcGoal(g: SavingsGoal): GoalCalcResult {
   };
 }
 
-const STORAGE_KEY = "fink_savings_goals";
+const LEGACY_STORAGE_KEY = "fink_savings_goals";
+
+function storageKey(userId: string) {
+  return `fink_savings_goals:${userId}`;
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
-function loadGoals(): SavingsGoal[] {
-  if (typeof window === "undefined") return [];
+function parseGoals(raw: string | null): SavingsGoal[] {
+  if (!raw) return [];
   try {
-    const r = localStorage.getItem(STORAGE_KEY);
-    return r ? JSON.parse(r) : [];
+    const goals = JSON.parse(raw);
+    if (!Array.isArray(goals)) return [];
+    return goals.map((goal) => ({ ...goal, history: goal.history || [] }));
   } catch {
     return [];
   }
 }
-function saveGoals(goals: SavingsGoal[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+
+function loadGoalsForUser(userId: string): SavingsGoal[] {
+  if (typeof window === "undefined") return [];
+
+  const key = storageKey(userId);
+  const existing = parseGoals(localStorage.getItem(key));
+
+  if (existing.length > 0) return existing;
+
+  // Migrasi satu kali dari key lama yang sebelumnya global.
+  // Ini mencegah data akun lama tetap terbaca oleh akun lain di browser yang sama.
+  const legacy = parseGoals(localStorage.getItem(LEGACY_STORAGE_KEY));
+  if (legacy.length > 0) {
+    localStorage.setItem(key, JSON.stringify(legacy));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return legacy;
+  }
+
+  return [];
 }
 
-function makeDemoGoals(): SavingsGoal[] {
-  const now = new Date();
-  const iso = (y: number, m: number) =>
-    new Date(y, m, 1).toISOString().split("T")[0];
-  return [
-    {
-      id: uid(),
-      name: "Dana Darurat Keluarga",
-      type: "darurat",
-      status: "active",
-      target: 30000000,
-      current: 18500000,
-      monthly: 1500000,
-      deadline: iso(now.getFullYear(), now.getMonth() + 8),
-      useInvest: false,
-      returnRate: 0,
-      expense: 5000000,
-      coverageTarget: 6,
-      history: [
-        {
-          id: uid(),
-          type: "topup",
-          amount: 10000000,
-          note: "Setoran awal",
-          date: new Date(
-            now.getFullYear(),
-            now.getMonth() - 3,
-            1,
-          ).toISOString(),
-        },
-        {
-          id: uid(),
-          type: "topup",
-          amount: 5000000,
-          note: "Bonus tahunan",
-          date: new Date(
-            now.getFullYear(),
-            now.getMonth() - 2,
-            5,
-          ).toISOString(),
-        },
-        {
-          id: uid(),
-          type: "topup",
-          amount: 3500000,
-          note: "Tabungan rutin",
-          date: new Date(
-            now.getFullYear(),
-            now.getMonth() - 1,
-            1,
-          ).toISOString(),
-        },
-      ],
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    },
-    {
-      id: uid(),
-      name: "Pendidikan S1 Anak",
-      type: "pendidikan",
-      status: "active",
-      target: 180000000,
-      current: 45000000,
-      monthly: 2500000,
-      deadline: iso(now.getFullYear() + 10, 0),
-      useInvest: true,
-      returnRate: 10,
-      eduCurrent: 100000000,
-      eduInflasi: 8,
-      history: [
-        {
-          id: uid(),
-          type: "topup",
-          amount: 20000000,
-          note: "Setoran awal",
-          date: new Date(now.getFullYear() - 1, 0, 1).toISOString(),
-        },
-        {
-          id: uid(),
-          type: "topup",
-          amount: 25000000,
-          note: "THR",
-          date: new Date(now.getFullYear(), 3, 1).toISOString(),
-        },
-      ],
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    },
-    {
-      id: uid(),
-      name: "Dana Pensiun",
-      type: "pensiun",
-      status: "active",
-      target: 3000000000,
-      current: 120000000,
-      monthly: 5000000,
-      deadline: iso(now.getFullYear() + 20, 0),
-      useInvest: true,
-      returnRate: 12,
-      pensionExp: 15000000,
-      pensionInflasi: 5,
-      history: [
-        {
-          id: uid(),
-          type: "topup",
-          amount: 120000000,
-          note: "Setoran awal",
-          date: new Date(now.getFullYear() - 1, 0, 1).toISOString(),
-        },
-      ],
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    },
-    {
-      id: uid(),
-      name: "Renovasi Rumah",
-      type: "biasa",
-      status: "pending",
-      target: 80000000,
-      current: 5000000,
-      monthly: 3000000,
-      deadline: iso(now.getFullYear() + 2, 0),
-      useInvest: false,
-      returnRate: 0,
-      history: [],
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    },
-    {
-      id: uid(),
-      name: "Tabungan Umroh",
-      type: "biasa",
-      status: "complete",
-      target: 25000000,
-      current: 25000000,
-      monthly: 0,
-      deadline: "",
-      useInvest: false,
-      returnRate: 0,
-      history: [],
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-    },
-  ];
+function saveGoalsForUser(userId: string, goals: SavingsGoal[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(storageKey(userId), JSON.stringify(goals));
 }
 
 export function useSavings() {
+  const [userId, setUserId] = useState<string | null>(null);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    let g = loadGoals();
-    // migrate old goals without history
-    g = g.map((goal) => ({ ...goal, history: goal.history || [] }));
-    if (g.length === 0) {
-      g = makeDemoGoals();
-      saveGoals(g);
+    let mounted = true;
+    const supabase = createClient();
+
+    async function init() {
+      setLoaded(false);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!mounted) return;
+
+      if (!user) {
+        setUserId(null);
+        setGoals([]);
+        setLoaded(true);
+        return;
+      }
+
+      const uidUser = user.id;
+      setUserId(uidUser);
+      setGoals(loadGoalsForUser(uidUser));
+      setLoaded(true);
     }
-    setGoals(g);
-    setLoaded(true);
+
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+      setUserId(nextUserId);
+      setGoals(nextUserId ? loadGoalsForUser(nextUserId) : []);
+      setLoaded(true);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const persist = useCallback((next: SavingsGoal[]) => {
-    setGoals(next);
-    saveGoals(next);
-  }, []);
+  const persist = useCallback(
+    (next: SavingsGoal[]) => {
+      if (!userId) return;
+      setGoals(next);
+      saveGoalsForUser(userId, next);
+    },
+    [userId],
+  );
 
   const addGoal = useCallback(
     (data: Omit<SavingsGoal, "id" | "createdAt" | "updatedAt" | "history">) => {
+      if (!userId) return;
       const now = new Date().toISOString();
       persist([
         ...goals,
         { ...data, id: uid(), history: [], createdAt: now, updatedAt: now },
       ]);
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const updateGoal = useCallback(
     (id: string, data: Partial<SavingsGoal>) => {
+      if (!userId) return;
       persist(
         goals.map((g) =>
           g.id === id
@@ -279,18 +200,20 @@ export function useSavings() {
         ),
       );
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const deleteGoal = useCallback(
     (id: string) => {
+      if (!userId) return;
       persist(goals.filter((g) => g.id !== id));
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const topupGoal = useCallback(
     (id: string, amount: number, note = "Tambah dana") => {
+      if (!userId) return;
       persist(
         goals.map((g) => {
           if (g.id !== id) return g;
@@ -307,17 +230,18 @@ export function useSavings() {
             ...g,
             current: newCurrent,
             status,
-            history: [tx, ...g.history],
+            history: [tx, ...(g.history || [])],
             updatedAt: new Date().toISOString(),
           };
         }),
       );
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const withdrawGoal = useCallback(
     (id: string, amount: number, note = "Penarikan dana") => {
+      if (!userId) return;
       persist(
         goals.map((g) => {
           if (g.id !== id) return g;
@@ -337,17 +261,18 @@ export function useSavings() {
             ...g,
             current: newCurrent,
             status,
-            history: [tx, ...g.history],
+            history: [tx, ...(g.history || [])],
             updatedAt: new Date().toISOString(),
           };
         }),
       );
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const reconcileGoal = useCallback(
     (id: string, actual: number, note = "Reconcile saldo tabungan") => {
+      if (!userId) return;
       persist(
         goals.map((g) => {
           if (g.id !== id) return g;
@@ -373,17 +298,18 @@ export function useSavings() {
             ...g,
             current: safeActual,
             status,
-            history: [tx, ...g.history],
+            history: [tx, ...(g.history || [])],
             updatedAt: new Date().toISOString(),
           };
         }),
       );
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const changeStatus = useCallback(
     (id: string, status: SavingsGoal["status"]) => {
+      if (!userId) return;
       persist(
         goals.map((g) =>
           g.id === id
@@ -392,7 +318,7 @@ export function useSavings() {
         ),
       );
     },
-    [goals, persist],
+    [goals, persist, userId],
   );
 
   const summary = (() => {
