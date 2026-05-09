@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
@@ -171,7 +171,17 @@ function getInsight(totalIncome: number, totalExpense: number, totalSaving: numb
 }
 
 export default function DashboardPage() {
-  const { curMonth, curYear } = useMonthContext()
+  
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 760)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+const { curMonth, curYear } = useMonthContext()
   const { tx, loading, computedBudget, computedIncome, computedSaving, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
 
