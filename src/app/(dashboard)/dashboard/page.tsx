@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
+import StatStrip from '@/components/bulanan/StatStrip'
 import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
@@ -157,195 +158,6 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
 }
 
 
-function SummaryPanel({
-  totalIncome,
-  plannedIncome,
-  totalExpense,
-  plannedExpense,
-  totalSaving,
-  plannedSaving,
-  rawSisa,
-  plannedBalance,
-}: {
-  totalIncome: number
-  plannedIncome: number
-  totalExpense: number
-  plannedExpense: number
-  totalSaving: number
-  plannedSaving: number
-  rawSisa: number
-  plannedBalance: number
-}) {
-  const today = new Date().getDate()
-  const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-  const remainingDays = Math.max(1, lastDay - today + 1)
-  const balanceStatus = dailyBalanceStatus(rawSisa, remainingDays, totalExpense, Math.max(1, today))
-
-  const items = [
-    {
-      label: 'INCOME',
-      value: totalIncome,
-      sub: `${plannedIncome > 0 ? Math.round((totalIncome / plannedIncome) * 100) : 0}% · planned ${fmt(plannedIncome)}`,
-      color: '#3f7f4a',
-      accent: '#51a45b',
-      bg: '#f6fff8',
-      progress: plannedIncome > 0 ? (totalIncome / plannedIncome) * 100 : 0,
-      type: 'normal' as const,
-    },
-    {
-      label: 'EXPENSES',
-      value: totalExpense,
-      sub: `${plannedExpense > 0 ? Math.round((totalExpense / plannedExpense) * 100) : 0}% · planned ${fmt(plannedExpense)}`,
-      color: '#a5302d',
-      accent: '#c83a36',
-      bg: '#fffafa',
-      progress: plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0,
-      type: 'normal' as const,
-    },
-    {
-      label: 'SAVINGS',
-      value: totalSaving,
-      sub: `planned ${fmt(plannedSaving)}`,
-      color: '#2b55d9',
-      accent: '#4b63ff',
-      bg: '#f7fbff',
-      progress: plannedSaving > 0 ? (totalSaving / plannedSaving) * 100 : 0,
-      type: 'normal' as const,
-    },
-    {
-      label: 'BALANCE',
-      value: rawSisa,
-      sub: `Sisa budget ${fmtShort(plannedBalance)}`,
-      color: '#98631b',
-      accent: '#ba7a20',
-      bg: '#fffdf7',
-      progress: 0,
-      type: 'balance' as const,
-    },
-  ]
-
-  return (
-    <section className="dash-summary-panel" style={{
-      background: '#fff',
-      border: '1px solid #e3e7ee',
-      borderRadius: '16px',
-      boxShadow: '0 2px 10px rgba(15,23,42,.05)',
-      marginBottom: '14px',
-      overflow: 'hidden',
-    }}>
-      <div className="dash-summary-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-      }}>
-        {items.map((item, idx) => (
-          <div key={item.label} style={{
-            padding: '12px 20px',
-            background: item.bg,
-            borderTop: `3px solid ${item.accent}`,
-            borderRight: idx < items.length - 1 ? '1px solid #e7ebf0' : 'none',
-            minWidth: 0,
-          }}>
-            <div style={{
-              fontSize:'11.5px',
-              fontWeight:800,
-              color:'#9ca3af',
-              textTransform:'uppercase',
-              letterSpacing:'.7px',
-              marginBottom:'5px',
-              whiteSpace:'nowrap',
-            }}>
-              {item.label}
-            </div>
-
-            <div style={{
-              fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
-              fontSize:'21px',
-              fontWeight:800,
-              color:item.color,
-              letterSpacing:'-.8px',
-              whiteSpace:'nowrap',
-              overflow:'hidden',
-              textOverflow:'ellipsis',
-              lineHeight:1.18,
-            }}>
-              {item.value < 0 ? '-' : ''}{fmt(item.value)}
-            </div>
-
-            {item.type === 'balance' ? (
-              <div style={{
-                marginTop:'5px',
-                display:'grid',
-                gap:'2px',
-                minWidth:0,
-              }}>
-                <div style={{
-                  display:'flex',
-                  alignItems:'center',
-                  gap:'6px',
-                  minWidth:0,
-                  color:balanceStatus.color,
-                  fontWeight:800,
-                  fontSize:'11px',
-                  whiteSpace:'nowrap',
-                  overflow:'hidden',
-                  textOverflow:'ellipsis',
-                }}>
-                  <span style={{
-                    width:9,
-                    height:9,
-                    borderRadius:999,
-                    background:balanceStatus.color,
-                    boxShadow:`0 0 0 3px ${balanceStatus.bg}`,
-                    flexShrink:0,
-                  }} />
-                  <span>≈ {fmtShort(balanceStatus.daily)}/hari</span>
-                </div>
-                <div style={{
-                  fontSize:'10.5px',
-                  color:'#9ca3af',
-                  fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
-                  whiteSpace:'nowrap',
-                  overflow:'hidden',
-                  textOverflow:'ellipsis',
-                }}>
-                  {item.sub}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div style={{
-                  height:'3.5px',
-                  background:'#e5e7eb',
-                  borderRadius:'999px',
-                  margin:'9px 0 6px',
-                  overflow:'hidden',
-                }}>
-                  <div style={{
-                    width:`${Math.min(Math.max(item.progress, 0), 100)}%`,
-                    height:'100%',
-                    background:item.accent,
-                    borderRadius:'999px',
-                  }} />
-                </div>
-                <div style={{
-                  fontSize:'11.5px',
-                  color:'#9ca3af',
-                  fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
-                  whiteSpace:'nowrap',
-                  overflow:'hidden',
-                  textOverflow:'ellipsis',
-                }}>
-                  {item.sub}
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function getInsight(totalIncome: number, totalExpense: number, totalSaving: number, rawSisa: number) {
   if (totalIncome <= 0) return 'Mulai isi pemasukan bulan ini agar FiNK dapat membaca kondisi keuangan Anda dengan lebih akurat.'
   const expenseRate = totalExpense / totalIncome
@@ -371,8 +183,6 @@ export default function DashboardPage() {
   const totalExpense = sumBudget(budget)
   const plannedExpense = sumBudgetPlan(budget)
   const totalSaving = sumSaving(saving)
-  const plannedSaving = saving.reduce((s, r) => s + (r.plan || 0), 0)
-  const plannedBalance = plannedIncome - plannedExpense - plannedSaving
   const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
   const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
   const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
@@ -414,15 +224,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Main metrics */}
-      <SummaryPanel
-        totalIncome={totalIncome}
-        plannedIncome={plannedIncome}
-        totalExpense={totalExpense}
-        plannedExpense={plannedExpense}
-        totalSaving={totalSaving}
-        plannedSaving={plannedSaving}
+      <StatStrip
+        income={income}
+        saving={saving}
+        budget={budget}
+        tx={tx}
         rawSisa={rawSisa}
-        plannedBalance={plannedBalance}
       />
 
       {/* Insight */}
