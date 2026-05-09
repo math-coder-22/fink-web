@@ -233,7 +233,7 @@ export default function DashboardPage() {
         rawSisa={rawSisa}
       />
 
-      <CashFlowTrendChart tx={tx} />
+      <CashFlowTrendChart tx={tx} income={income} saving={saving} />
 
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>

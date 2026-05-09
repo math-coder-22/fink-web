@@ -1,9 +1,11 @@
 'use client'
 
-import type { Transaction } from '@/types/database'
+import type { IncomeCategory, SavingRow, Transaction } from '@/types/database'
 
 type Props = {
   tx: Transaction[]
+  income?: IncomeCategory[]
+  saving?: SavingRow[]
   curDay?: number
   daysInMonth?: number
 }
@@ -35,39 +37,62 @@ function fmtShort(n: number) {
   return `Rp ${abs.toLocaleString('id-ID')}`
 }
 
-function buildPoints(tx: Transaction[], daysInMonth: number): Point[] {
-  const byDay = Array.from({ length: daysInMonth + 1 }, () => ({
+function sumIncome(income?: IncomeCategory[]) {
+  return (income || []).reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
+}
+
+function sumSaving(saving?: SavingRow[]) {
+  return (saving || []).reduce((s, r) => s + (r.actual || 0), 0)
+}
+
+function buildPoints(
+  tx: Transaction[],
+  axisDays: number,
+  visibleUntilDay: number,
+  fallbackIncome: number,
+  fallbackSaving: number,
+): Point[] {
+  const byDay = Array.from({ length: axisDays + 1 }, () => ({
     income: 0,
     expense: 0,
     saving: 0,
   }))
 
   for (const t of tx) {
-    const day = Math.min(daysInMonth, Math.max(1, Number(t.date || 1)))
+    const day = Math.min(axisDays, Math.max(1, Number(t.date || 1)))
     const amount = Number(t.amt || 0)
     if (t.type === 'inn') byDay[day].income += amount
     if (t.type === 'out') byDay[day].expense += amount
     if (t.type === 'save') byDay[day].saving += amount
   }
 
+  const incomeFromTx = tx.filter(t => t.type === 'inn').reduce((s, t) => s + Number(t.amt || 0), 0)
+  const savingFromTx = tx.filter(t => t.type === 'save').reduce((s, t) => s + Number(t.amt || 0), 0)
+
+  // Jika income/saving berasal dari monthly actual, tetapi tidak ada transaksi,
+  // tetap tampilkan di chart agar garis tidak hilang.
+  if (incomeFromTx <= 0 && fallbackIncome > 0) {
+    byDay[1].income += fallbackIncome
+  }
+  if (savingFromTx <= 0 && fallbackSaving > 0) {
+    byDay[Math.min(visibleUntilDay, axisDays)].saving += fallbackSaving
+  }
+
   const points: Point[] = []
   let income = 0
   let cashOut = 0
 
-  for (let day = 1; day <= daysInMonth; day++) {
+  for (let day = 1; day <= visibleUntilDay; day++) {
     income += byDay[day].income
 
-    let segmentType: Point['segmentType'] = 'neutral'
     if (byDay[day].expense > 0) {
       cashOut += byDay[day].expense
-      segmentType = 'expense'
-      points.push({ day, income, cashOut, segmentType })
+      points.push({ day, income, cashOut, segmentType: 'expense' })
     }
 
     if (byDay[day].saving > 0) {
       cashOut += byDay[day].saving
-      segmentType = 'saving'
-      points.push({ day, income, cashOut, segmentType })
+      points.push({ day, income, cashOut, segmentType: 'saving' })
     }
 
     if (byDay[day].income > 0 && byDay[day].expense === 0 && byDay[day].saving === 0) {
@@ -75,8 +100,12 @@ function buildPoints(tx: Transaction[], daysInMonth: number): Point[] {
     }
 
     if (byDay[day].income === 0 && byDay[day].expense === 0 && byDay[day].saving === 0) {
-      points.push({ day, income, cashOut, segmentType })
+      points.push({ day, income, cashOut, segmentType: 'neutral' })
     }
+  }
+
+  if (points.length === 0) {
+    points.push({ day: 1, income: 0, cashOut: 0, segmentType: 'neutral' })
   }
 
   return points
@@ -90,7 +119,7 @@ function pathFrom(points: { x: number; y: number }[]) {
 function makeScale(maxValue: number, width: number, height: number, pad: { l: number; r: number; t: number; b: number }) {
   const plotW = width - pad.l - pad.r
   const plotH = height - pad.t - pad.b
-  const yMax = Math.max(maxValue, 1)
+  const yMax = Math.max(maxValue * 1.18, 1)
   return {
     x: (day: number, daysInMonth: number) => pad.l + ((day - 1) / Math.max(1, daysInMonth - 1)) * plotW,
     y: (value: number) => pad.t + (1 - value / yMax) * plotH,
@@ -103,20 +132,26 @@ function gridValues(maxValue: number) {
   return [0, top * 0.5, top]
 }
 
-export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
-  const today = curDay || new Date().getDate()
+export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) {
+  const today = Math.max(1, curDay || new Date().getDate())
   const totalDays = daysInMonth || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-  const points = buildPoints(tx, totalDays)
+  const visibleUntilDay = Math.min(today, totalDays)
+
+  const fallbackIncome = sumIncome(income)
+  const fallbackSaving = sumSaving(saving)
+  const points = buildPoints(tx, totalDays, visibleUntilDay, fallbackIncome, fallbackSaving)
 
   const totalIncome = points[points.length - 1]?.income || 0
   const totalCashOut = points[points.length - 1]?.cashOut || 0
-  const totalSaving = tx.filter(t => t.type === 'save').reduce((s, t) => s + Number(t.amt || 0), 0)
+  const totalSaving = points.length > 0
+    ? (tx.filter(t => t.type === 'save').reduce((s, t) => s + Number(t.amt || 0), 0) || fallbackSaving)
+    : 0
   const totalExpense = tx.filter(t => t.type === 'out').reduce((s, t) => s + Number(t.amt || 0), 0)
   const savingShare = totalCashOut > 0 ? Math.round((totalSaving / totalCashOut) * 100) : 0
 
-  const width = 720
-  const height = 230
-  const pad = { l: 38, r: 20, t: 18, b: 30 }
+  const width = 760
+  const height = 250
+  const pad = { l: 64, r: 28, t: 20, b: 32 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -136,6 +171,8 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
 
   const yTicks = gridValues(scale.yMax)
   const xTicks = [1, Math.max(1, Math.round(totalDays / 3)), Math.max(1, Math.round((totalDays * 2) / 3)), totalDays]
+
+  const lastPoint = points[points.length - 1]
 
   return (
     <section style={{
@@ -160,7 +197,7 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
             Tren Cash Flow Harian
           </div>
           <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
-            Cash in vs cash out kumulatif bulan ini
+            Cash in vs cash out kumulatif sampai hari ini
           </div>
         </div>
 
@@ -187,7 +224,7 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
           <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Tren cash flow harian" style={{ width:'100%', height:'auto', display:'block' }}>
             <defs>
               <filter id="fink-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.12" />
+                <feDropShadow dx="0" dy="2" stdDeviation="2.2" floodOpacity="0.16" />
               </filter>
             </defs>
 
@@ -196,7 +233,7 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
               return (
                 <g key={`y-${idx}`}>
                   <line x1={pad.l} x2={width - pad.r} y1={y} y2={y} stroke={GRID} strokeWidth="1" />
-                  <text x={pad.l - 8} y={y + 4} textAnchor="end" fontSize="10" fill={TEXT}>{fmtShort(tick)}</text>
+                  <text x={pad.l - 10} y={y + 4} textAnchor="end" fontSize="10" fill={TEXT}>{fmtShort(tick)}</text>
                 </g>
               )
             })}
@@ -211,24 +248,26 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
             })}
 
             <line
-              x1={scale.x(today, totalDays)}
-              x2={scale.x(today, totalDays)}
+              x1={scale.x(visibleUntilDay, totalDays)}
+              x2={scale.x(visibleUntilDay, totalDays)}
               y1={pad.t}
               y2={height - pad.b}
               stroke="#d1d5db"
-              strokeWidth="1"
+              strokeWidth="1.4"
               strokeDasharray="4 4"
             />
 
-            <path
-              d={incomePath}
-              fill="none"
-              stroke={GREEN}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter="url(#fink-soft-shadow)"
-            />
+            {totalIncome > 0 && (
+              <path
+                d={incomePath}
+                fill="none"
+                stroke={GREEN}
+                strokeWidth="4.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#fink-soft-shadow)"
+              />
+            )}
 
             {segments.map((s) => (
               <path
@@ -236,17 +275,35 @@ export default function CashFlowTrendChart({ tx, curDay, daysInMonth }: Props) {
                 d={s.d}
                 fill="none"
                 stroke={s.color}
-                strokeWidth="3"
+                strokeWidth="4.25"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 filter="url(#fink-soft-shadow)"
               />
             ))}
 
-            {points.length > 0 && (
+            {lastPoint && (
               <>
-                <circle cx={scale.x(points[points.length - 1].day, totalDays)} cy={scale.y(totalIncome)} r="3.5" fill={GREEN} />
-                <circle cx={scale.x(points[points.length - 1].day, totalDays)} cy={scale.y(totalCashOut)} r="3.5" fill={totalSaving > 0 ? BLUE : RED} />
+                {totalIncome > 0 && (
+                  <circle
+                    cx={scale.x(lastPoint.day, totalDays)}
+                    cy={scale.y(totalIncome)}
+                    r="4.4"
+                    fill={GREEN}
+                    stroke="#fff"
+                    strokeWidth="2"
+                  />
+                )}
+                {totalCashOut > 0 && (
+                  <circle
+                    cx={scale.x(lastPoint.day, totalDays)}
+                    cy={scale.y(totalCashOut)}
+                    r="4.4"
+                    fill={lastPoint.segmentType === 'saving' ? BLUE : RED}
+                    stroke="#fff"
+                    strokeWidth="2"
+                  />
+                )}
               </>
             )}
           </svg>
