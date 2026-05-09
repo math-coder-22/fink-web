@@ -8,7 +8,6 @@ import { useSavings } from '@/hooks/useSavings'
 import StatStrip from '@/components/bulanan/StatStrip'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
 import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
-import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
