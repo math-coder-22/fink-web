@@ -184,7 +184,7 @@ function SummaryPanel({
       progress: plannedSaving > 0 ? (totalSaving / plannedSaving) * 100 : 0,
     },
     {
-      label: 'LEFT TO SPEND',
+      label: 'BALANCE',
       value: rawSisa,
       sub: `vs planned ${fmt(plannedBalance)}`,
       color: '#98631b',
@@ -229,7 +229,7 @@ function SummaryPanel({
               textOverflow:'ellipsis',
               lineHeight:1.18,
             }}>
-              {rawSisa < 0 && item.label === 'LEFT TO SPEND' ? '-' : ''}{fmt(item.value)}
+              {rawSisa < 0 && item.label === 'BALANCE' ? '-' : ''}{fmt(item.value)}
             </div>
             <div style={{ height:'3.5px', background:'#e5e7eb', borderRadius:'999px', margin:'9px 0 6px', overflow:'hidden' }}>
               <div style={{
