@@ -10,6 +10,27 @@ import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/t
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
 
+const fmtShort = (n: number) => {
+  const abs = Math.abs(Math.round(n || 0))
+  if (abs >= 1_000_000) {
+    const v = abs / 1_000_000
+    return `Rp ${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1).replace('.', ',')}jt`
+  }
+  if (abs >= 1_000) return `Rp ${Math.round(abs / 1_000).toLocaleString('id-ID')}rb`
+  return `Rp ${abs.toLocaleString('id-ID')}`
+}
+
+function dailyBalanceStatus(leftToSpend: number, remainingDays: number, totalExpense: number, currentDay: number) {
+  const safeDaily = remainingDays > 0 ? leftToSpend / remainingDays : leftToSpend
+  const avgDailySpend = currentDay > 0 ? totalExpense / currentDay : 0
+  const ratio = avgDailySpend > 0 ? safeDaily / avgDailySpend : safeDaily > 0 ? 1 : 0
+
+  if (leftToSpend <= 0) return { color:'#b91c1c', bg:'#fee2e2', daily:safeDaily }
+  if (ratio >= 1) return { color:'#15803d', bg:'#dcfce7', daily:safeDaily }
+  if (ratio >= 0.6) return { color:'#b7791f', bg:'#fef3c7', daily:safeDaily }
+  return { color:'#b91c1c', bg:'#fee2e2', daily:safeDaily }
+}
+
 function sumIncome(income: IncomeCategory[]) {
   return income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
 }
@@ -40,7 +61,7 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
             grid-template-columns: 1fr 1fr !important;
           }
           .dash-summary-grid > div {
-            padding: 12px !important;
+            padding: 9px 11px !important;
           }
           .dash-summary-grid > div:nth-child(2n) {
             border-right: none !important;
@@ -68,7 +89,7 @@ function CardHead({ title, subtitle, right }: { title: string; subtitle?: string
             grid-template-columns: 1fr 1fr !important;
           }
           .dash-summary-grid > div {
-            padding: 12px !important;
+            padding: 9px 11px !important;
           }
           .dash-summary-grid > div:nth-child(2n) {
             border-right: none !important;
@@ -97,7 +118,7 @@ function MetricCard({ label, value, note, tone = 'neutral' }: { label: string; v
             grid-template-columns: 1fr 1fr !important;
           }
           .dash-summary-grid > div {
-            padding: 12px !important;
+            padding: 9px 11px !important;
           }
           .dash-summary-grid > div:nth-child(2n) {
             border-right: none !important;
@@ -121,7 +142,7 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
             grid-template-columns: 1fr 1fr !important;
           }
           .dash-summary-grid > div {
-            padding: 12px !important;
+            padding: 9px 11px !important;
           }
           .dash-summary-grid > div:nth-child(2n) {
             border-right: none !important;
@@ -155,6 +176,11 @@ function SummaryPanel({
   rawSisa: number
   plannedBalance: number
 }) {
+  const today = new Date().getDate()
+  const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+  const remainingDays = Math.max(1, lastDay - today + 1)
+  const balanceStatus = dailyBalanceStatus(rawSisa, remainingDays, totalExpense, Math.max(1, today))
+
   const items = [
     {
       label: 'INCOME',
@@ -164,6 +190,7 @@ function SummaryPanel({
       accent: '#51a45b',
       bg: '#f6fff8',
       progress: plannedIncome > 0 ? (totalIncome / plannedIncome) * 100 : 0,
+      type: 'normal' as const,
     },
     {
       label: 'EXPENSES',
@@ -173,6 +200,7 @@ function SummaryPanel({
       accent: '#c83a36',
       bg: '#fffafa',
       progress: plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0,
+      type: 'normal' as const,
     },
     {
       label: 'SAVINGS',
@@ -182,15 +210,17 @@ function SummaryPanel({
       accent: '#4b63ff',
       bg: '#f7fbff',
       progress: plannedSaving > 0 ? (totalSaving / plannedSaving) * 100 : 0,
+      type: 'normal' as const,
     },
     {
       label: 'BALANCE',
       value: rawSisa,
-      sub: `vs planned ${fmt(plannedBalance)}`,
+      sub: `Sisa budget ${fmtShort(plannedBalance)}`,
       color: '#98631b',
       accent: '#ba7a20',
       bg: '#fffdf7',
-      progress: plannedBalance > 0 ? (rawSisa / plannedBalance) * 100 : 0,
+      progress: 0,
+      type: 'balance' as const,
     },
   ]
 
@@ -209,15 +239,24 @@ function SummaryPanel({
       }}>
         {items.map((item, idx) => (
           <div key={item.label} style={{
-            padding: '14px 20px',
+            padding: '12px 20px',
             background: item.bg,
             borderTop: `3px solid ${item.accent}`,
             borderRight: idx < items.length - 1 ? '1px solid #e7ebf0' : 'none',
             minWidth: 0,
           }}>
-            <div style={{ fontSize:'11.5px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'6px', whiteSpace:'nowrap' }}>
+            <div style={{
+              fontSize:'11.5px',
+              fontWeight:800,
+              color:'#9ca3af',
+              textTransform:'uppercase',
+              letterSpacing:'.7px',
+              marginBottom:'5px',
+              whiteSpace:'nowrap',
+            }}>
               {item.label}
             </div>
+
             <div style={{
               fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
               fontSize:'21px',
@@ -229,26 +268,77 @@ function SummaryPanel({
               textOverflow:'ellipsis',
               lineHeight:1.18,
             }}>
-              {rawSisa < 0 && item.label === 'BALANCE' ? '-' : ''}{fmt(item.value)}
+              {item.value < 0 ? '-' : ''}{fmt(item.value)}
             </div>
-            <div style={{ height:'3.5px', background:'#e5e7eb', borderRadius:'999px', margin:'9px 0 6px', overflow:'hidden' }}>
+
+            {item.type === 'balance' ? (
               <div style={{
-                width:`${Math.min(Math.max(item.progress, 0), 100)}%`,
-                height:'100%',
-                background:item.accent,
-                borderRadius:'999px',
-              }} />
-            </div>
-            <div style={{
-              fontSize:'11.5px',
-              color:'#9ca3af',
-              fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
-              whiteSpace:'nowrap',
-              overflow:'hidden',
-              textOverflow:'ellipsis',
-            }}>
-              {item.sub}
-            </div>
+                marginTop:'5px',
+                display:'grid',
+                gap:'2px',
+                minWidth:0,
+              }}>
+                <div style={{
+                  display:'flex',
+                  alignItems:'center',
+                  gap:'6px',
+                  minWidth:0,
+                  color:balanceStatus.color,
+                  fontWeight:800,
+                  fontSize:'11px',
+                  whiteSpace:'nowrap',
+                  overflow:'hidden',
+                  textOverflow:'ellipsis',
+                }}>
+                  <span style={{
+                    width:9,
+                    height:9,
+                    borderRadius:999,
+                    background:balanceStatus.color,
+                    boxShadow:`0 0 0 3px ${balanceStatus.bg}`,
+                    flexShrink:0,
+                  }} />
+                  <span>≈ {fmtShort(balanceStatus.daily)}/hari</span>
+                </div>
+                <div style={{
+                  fontSize:'10.5px',
+                  color:'#9ca3af',
+                  fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+                  whiteSpace:'nowrap',
+                  overflow:'hidden',
+                  textOverflow:'ellipsis',
+                }}>
+                  {item.sub}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{
+                  height:'3.5px',
+                  background:'#e5e7eb',
+                  borderRadius:'999px',
+                  margin:'9px 0 6px',
+                  overflow:'hidden',
+                }}>
+                  <div style={{
+                    width:`${Math.min(Math.max(item.progress, 0), 100)}%`,
+                    height:'100%',
+                    background:item.accent,
+                    borderRadius:'999px',
+                  }} />
+                </div>
+                <div style={{
+                  fontSize:'11.5px',
+                  color:'#9ca3af',
+                  fontFamily:'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
+                  whiteSpace:'nowrap',
+                  overflow:'hidden',
+                  textOverflow:'ellipsis',
+                }}>
+                  {item.sub}
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -592,7 +682,7 @@ export default function DashboardPage() {
             grid-template-columns: 1fr 1fr !important;
           }
           .dash-summary-grid > div {
-            padding: 12px !important;
+            padding: 9px 11px !important;
           }
           .dash-summary-grid > div:nth-child(2n) {
             border-right: none !important;
