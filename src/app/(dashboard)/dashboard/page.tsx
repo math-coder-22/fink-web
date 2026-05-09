@@ -231,6 +231,7 @@ export default function DashboardPage() {
         budget={budget}
         tx={tx}
         rawSisa={rawSisa}
+        isMobile={isMobile}
       />
 
       <CashFlowTrendChart tx={tx} income={income} saving={saving} />
