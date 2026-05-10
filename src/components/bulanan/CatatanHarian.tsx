@@ -41,6 +41,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   const [syncToGoal, setSyncToGoal] = useState(true)
   const [selectedGoalId, setSelectedGoalId] = useState('')
   const [goalNote, setGoalNote] = useState('')
+  const [actionMenuId, setActionMenuId] = useState<string|null>(null)
 
   // Category options grouped by category
   const catGroups = (() => {
@@ -78,6 +79,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   }
 
   function openEdit(t: Transaction) {
+    setActionMenuId(null)
     setEditId(t.id)
     setEditData({ ...t })
     const opts = (() => {
@@ -96,6 +98,15 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   }
 
   const debtCount = tx.filter(t => t.debt && !t.settled).length
+
+  async function confirmDeleteTx(t: Transaction) {
+    const label = t.note || t.cat || 'transaksi ini'
+    const ok = confirm(`Hapus catatan "${label}"?\n\nTindakan ini tidak bisa dibatalkan.`)
+    if (!ok) return
+    await onDelete(t.id)
+    window.dispatchEvent(new Event('hutang-refresh'))
+    setActionMenuId(null)
+  }
 
   // Base styles — konsisten Inter font
   const baseFont: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px' }
@@ -322,8 +333,100 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
                 </div>
               </div>
               <div style={{ fontSize: '12.5px', fontWeight: 700, fontFamily: 'JetBrains Mono,monospace', color: tc, textAlign: 'right', minWidth: '78px' }}>{sg} {fmt(t.amt)}</div>
-              <button onClick={() => openEdit(t)} style={{ width: '18px', height: '18px', border: 'none', background: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✏️</button>
-              <button onClick={async () => { await onDelete(t.id); window.dispatchEvent(new Event('hutang-refresh')) }} style={{ width: '16px', height: '16px', border: 'none', background: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActionMenuId(actionMenuId === t.id ? null : t.id)
+                  }}
+                  aria-label="Menu transaksi"
+                  style={{
+                    width:'28px',
+                    height:'28px',
+                    border:'1px solid #e3e7ee',
+                    background:'#fff',
+                    color:'#6b7280',
+                    fontSize:'17px',
+                    cursor:'pointer',
+                    borderRadius:'8px',
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'center',
+                    lineHeight:1,
+                    boxShadow:'0 1px 2px rgba(15,23,42,.04)'
+                  }}
+                >
+                  ⋮
+                </button>
+
+                {actionMenuId === t.id && (
+                  <>
+                    <div
+                      onClick={() => setActionMenuId(null)}
+                      style={{ position:'fixed', inset:0, zIndex:60 }}
+                    />
+                    <div
+                      style={{
+                        position:'absolute',
+                        right:0,
+                        top:'34px',
+                        width:'138px',
+                        background:'#fff',
+                        border:'1px solid #e3e7ee',
+                        borderRadius:'10px',
+                        boxShadow:'0 14px 35px rgba(15,23,42,.18)',
+                        padding:'6px',
+                        zIndex:61
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActionMenuId(null)
+                          openEdit(t)
+                        }}
+                        style={{
+                          width:'100%',
+                          border:'none',
+                          background:'transparent',
+                          padding:'8px 10px',
+                          borderRadius:'7px',
+                          textAlign:'left',
+                          fontSize:'12px',
+                          fontWeight:700,
+                          color:'#374151',
+                          cursor:'pointer'
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          confirmDeleteTx(t)
+                        }}
+                        style={{
+                          width:'100%',
+                          border:'none',
+                          background:'transparent',
+                          padding:'8px 10px',
+                          borderRadius:'7px',
+                          textAlign:'left',
+                          fontSize:'12px',
+                          fontWeight:700,
+                          color:'#991b1b',
+                          cursor:'pointer'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )
         })}

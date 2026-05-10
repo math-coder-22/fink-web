@@ -38,6 +38,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const [rekonOpen,    setRekonOpen]    = useState(false)
   const [refleksiOpen, setRefleksiOpen] = useState(false)
   const [txDetailLabel, setTxDetailLabel] = useState<string|null>(null)
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
     setIsMobile(mq.matches)

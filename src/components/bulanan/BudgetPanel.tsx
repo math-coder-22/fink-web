@@ -142,9 +142,33 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
                             onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                             onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                             onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:pNum(e.target.value)})}))} />
-                          <div style={{ fontSize:'11.5px', fontWeight:600, fontFamily:'JetBrains Mono,monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', width:'100%', textAlign:'right', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          <button
+                            type="button"
+                            onClick={e=>{
+                              e.stopPropagation()
+                              if (onItemClick && (item.actual||0)>0) onItemClick(item.label)
+                            }}
+                            title={(item.actual||0)>0?'Klik untuk lihat transaksi':undefined}
+                            style={{
+                              border:'none',
+                              background:'transparent',
+                              fontSize:'11.5px',
+                              fontWeight:600,
+                              fontFamily:'JetBrains Mono,monospace',
+                              color:(item.actual||0)>0?'#b91c1c':'#9ca3af',
+                              width:'100%',
+                              textAlign:'right',
+                              overflow:'hidden',
+                              textOverflow:'ellipsis',
+                              whiteSpace:'nowrap',
+                              cursor:(item.actual||0)>0?'pointer':'default',
+                              borderRadius:'4px',
+                              padding:'1px 3px',
+                              WebkitTapHighlightColor:'transparent'
+                            }}
+                          >
                             {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
-                          </div>
+                          </button>
                         </div>
                       </>
                     ) : (

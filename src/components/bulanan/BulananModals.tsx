@@ -13,8 +13,8 @@ export function TxDetailModal({ label, tx, onClose }: {
   const total    = filtered.reduce((s,t) => s + t.amt, 0)
   return (
     <div onClick={e=>{ if(e.target===e.currentTarget) onClose() }}
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:700, display:'flex', alignItems:'flex-start', justifyContent:'flex-end', padding:'60px 24px 24px' }}>
-      <div style={{ background:'#fff', borderRadius:'12px', width:'320px', maxHeight:'70vh', display:'flex', flexDirection:'column', boxShadow:'0 16px 48px rgba(0,0,0,.18)', animation:'slideIn .2s ease' }}>
+      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:700, display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'max(18px, env(safe-area-inset-top)) 14px 18px' }}>
+      <div style={{ background:'#fff', borderRadius:'14px', width:'min(420px, calc(100vw - 28px))', maxHeight:'min(72vh, 520px)', display:'flex', flexDirection:'column', boxShadow:'0 16px 48px rgba(0,0,0,.18)', animation:'slideIn .2s ease', overflow:'hidden' }}>
         {/* Header */}
         <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div>
@@ -135,7 +135,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
           )}
         </div>
 
-        <div style={{ padding:'12px 20px', borderTop:'1px solid #e3e7ee', display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+        <div style={{ padding:'12px 20px', borderTop:'1px solid #e3e7ee', display:'flex', gap:'8px', justifyContent:'center' }}>
           <button onClick={onClose} style={{ padding:'7px 16px', border:'1px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'13px', fontWeight:600, cursor:'pointer', color:'#4b5563' }}>
             {done ? 'Close' : 'Cancel'}
           </button>

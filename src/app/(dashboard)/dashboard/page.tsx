@@ -1,37 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import StatStrip from '@/components/bulanan/StatStrip'
+import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
 import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
-
-const CashFlowTrendChart = dynamic(
-  () => import('@/components/dashboard/CashFlowTrendChart'),
-  {
-    ssr: false,
-    loading: () => (
-      <div style={{
-        height: 220,
-        borderRadius: 16,
-        border: '1px solid #e5e7eb',
-        background: '#fff',
-        marginBottom: 14,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#9ca3af',
-        fontSize: 13,
-      }}>
-        Memuat grafik...
-      </div>
-    )
-  }
-)
-
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
@@ -199,22 +175,10 @@ export default function DashboardPage() {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    let frame = 0
-
-    const checkMobile = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        setIsMobile(window.innerWidth <= 760)
-      })
-    }
-
+    const checkMobile = () => setIsMobile(window.innerWidth <= 760)
     checkMobile()
-    window.addEventListener('resize', checkMobile, { passive: true })
-
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', checkMobile)
-    }
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
 const { curMonth, curYear } = useMonthContext()

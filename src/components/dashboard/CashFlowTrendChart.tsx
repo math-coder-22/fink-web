@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { IncomeCategory, SavingRow, Transaction } from '@/types/database'
 
 type Props = {
@@ -130,7 +130,7 @@ function gridValues(maxValue: number) {
   return [0, top * 0.5, top]
 }
 
-function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) {
+export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) {
   const [hoverDay, setHoverDay] = useState<number | null>(null)
 
   const today = Math.max(1, curDay || new Date().getDate())
@@ -141,7 +141,7 @@ function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) 
   const fallbackSaving = sumSaving(saving)
 
   const dayData = makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay)
-  const points = useMemo(() => buildPoints(dayData, visibleUntilDay), [dayData, visibleUntilDay])
+  const points = buildPoints(dayData, visibleUntilDay)
 
   const totalIncome = points[points.length - 1]?.income || 0
   const totalCashOut = points[points.length - 1]?.cashOut || 0
@@ -347,6 +347,3 @@ function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) 
     </section>
   )
 }
-
-
-export default memo(CashFlowTrendChart)
