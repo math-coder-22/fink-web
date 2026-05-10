@@ -228,7 +228,8 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
             aria-label="Tren cash flow harian"
             onMouseMove={handleMove}
             onMouseLeave={() => setHoverDay(null)}
-            style={{ width:'100%', height:'auto', display:'block', cursor:'crosshair' }}
+            className="fink-cashflow-svg"
+            style={{ width:'100%', height:'210px', display:'block', cursor:'crosshair' }}
           >
             {yTicks.map((tick, idx) => {
               const y = scale.y(tick)
@@ -314,28 +315,28 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
                 )}
 
                 {(() => {
-                  const tooltipW = 154
-                  const tooltipH = 78
+                  const tooltipW = 118
+                  const tooltipH = 58
                   const rawX = scale.x(hoveredPoint.day, totalDays) + 10
                   const rawY = Math.min(scale.y(Math.max(hoveredPoint.income, hoveredPoint.cashOut)) + 10, height - pad.b - tooltipH)
                   const x = Math.min(rawX, width - tooltipW - 8)
                   const y = Math.max(8, rawY)
                   return (
                     <g>
-                      <rect x={x} y={y} width={tooltipW} height={tooltipH} rx="10" fill="#111827" opacity="0.94" />
-                      <text x={x + 12} y={y + 20} fontSize="11" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
+                      <rect x={x} y={y} width={tooltipW} height={tooltipH} rx="8" fill="#111827" opacity="0.92" />
+                      <text x={x + 12} y={y + 15} fontSize="9.5" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
 
-                      <circle cx={x + 13} cy={y + 38} r="4" fill={GREEN} />
-                      <text x={x + 24} y={y + 42} fontSize="10.5" fill="#e5e7eb">Income</text>
-                      <text x={x + tooltipW - 12} y={y + 42} fontSize="10.5" fill="#fff" textAnchor="end">{fmt(hoveredPoint.income)}</text>
+                      <circle cx={x + 11} cy={y + 29} r="3.2" fill={GREEN} />
+                      <text x={x + 19} y={y + 32} fontSize="8.5" fill="#e5e7eb">In</text>
+                      <text x={x + tooltipW - 10} y={y + 32} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
 
-                      <circle cx={x + 13} cy={y + 55} r="4" fill={RED} />
-                      <text x={x + 24} y={y + 59} fontSize="10.5" fill="#e5e7eb">Expense</text>
-                      <text x={x + tooltipW - 12} y={y + 59} fontSize="10.5" fill="#fff" textAnchor="end">{fmt(hoveredPoint.expense)}</text>
+                      <circle cx={x + 11} cy={y + 42} r="3.2" fill={RED} />
+                      <text x={x + 19} y={y + 45} fontSize="8.5" fill="#e5e7eb">Exp</text>
+                      <text x={x + tooltipW - 10} y={y + 45} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
 
-                      <circle cx={x + 13} cy={y + 72} r="4" fill={BLUE} />
-                      <text x={x + 24} y={y + 76} fontSize="10.5" fill="#e5e7eb">Saving</text>
-                      <text x={x + tooltipW - 12} y={y + 76} fontSize="10.5" fill="#fff" textAnchor="end">{fmt(hoveredPoint.saving)}</text>
+                      <circle cx={x + 11} cy={y + 55} r="3.2" fill={BLUE} />
+                      <text x={x + 19} y={y + 58} fontSize="8.5" fill="#e5e7eb">Sav</text>
+                      <text x={x + tooltipW - 10} y={y + 58} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
                     </g>
                   )
                 })()}
@@ -344,6 +345,13 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
           </svg>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .fink-cashflow-svg {
+            height: 175px !important;
+          }
+        }
+      `}</style>
     </section>
   )
 }
