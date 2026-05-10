@@ -36,6 +36,7 @@ export default function TabunganPage() {
     withdrawGoal,
     reconcileGoal,
     changeStatus,
+    error,
   } = useSavings();
   const [tab, setTab] = useState<TabKey>("active");
   const [editGoal, setEditGoal] = useState<SavingsGoal | null>(null);
@@ -91,6 +92,13 @@ export default function TabunganPage() {
           </AppButton>
         }
       />
+
+      {error && (
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
+          Smart Saving error: {error}<br />
+          Pastikan SQL <b>savings_goals_schema.sql</b> sudah dijalankan di Supabase.
+        </div>
+      )}
 
       <SummaryCard summary={summary} />
 

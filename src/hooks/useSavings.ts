@@ -80,8 +80,21 @@ function storageKey(userId: string) {
   return `fink_savings_goals:${userId}`;
 }
 
+function migratedKey(userId: string) {
+  return `fink_savings_migrated:${userId}`;
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function normalizeGoal(goal: SavingsGoal): SavingsGoal {
+  return {
+    ...goal,
+    history: goal.history || [],
+    createdAt: goal.createdAt || new Date().toISOString(),
+    updatedAt: goal.updatedAt || new Date().toISOString(),
+  };
 }
 
 function parseGoals(raw: string | null): SavingsGoal[] {
@@ -89,41 +102,102 @@ function parseGoals(raw: string | null): SavingsGoal[] {
   try {
     const goals = JSON.parse(raw);
     if (!Array.isArray(goals)) return [];
-    return goals.map((goal) => ({ ...goal, history: goal.history || [] }));
+    return goals.map((goal) => normalizeGoal({ ...goal, history: goal.history || [] }));
   } catch {
     return [];
   }
 }
 
-function loadGoalsForUser(userId: string): SavingsGoal[] {
+function loadLegacyGoalsForUser(userId: string): SavingsGoal[] {
   if (typeof window === "undefined") return [];
 
-  const key = storageKey(userId);
-  const existing = parseGoals(localStorage.getItem(key));
+  const perUser = parseGoals(localStorage.getItem(storageKey(userId)));
+  if (perUser.length > 0) return perUser;
 
-  if (existing.length > 0) return existing;
-
-  // Migrasi satu kali dari key lama yang sebelumnya global.
-  // Ini mencegah data akun lama tetap terbaca oleh akun lain di browser yang sama.
   const legacy = parseGoals(localStorage.getItem(LEGACY_STORAGE_KEY));
-  if (legacy.length > 0) {
-    localStorage.setItem(key, JSON.stringify(legacy));
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
-    return legacy;
-  }
-
-  return [];
+  return legacy;
 }
 
-function saveGoalsForUser(userId: string, goals: SavingsGoal[]) {
+function markMigrated(userId: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(storageKey(userId), JSON.stringify(goals));
+  localStorage.setItem(migratedKey(userId), "1");
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
+
+function hasMigrated(userId: string) {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(migratedKey(userId)) === "1";
+}
+
+async function fetchGoalsFromServer(): Promise<SavingsGoal[]> {
+  const res = await fetch("/api/savings", { cache: "no-store" });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Gagal memuat Smart Saving");
+  return (json.goals || []).map(normalizeGoal);
+}
+
+async function saveGoalToServer(goal: SavingsGoal) {
+  const res = await fetch("/api/savings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goal }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Gagal menyimpan Smart Saving");
+  return normalizeGoal(json.goal || goal);
+}
+
+async function saveGoalsToServer(goals: SavingsGoal[]) {
+  const res = await fetch("/api/savings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goals }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Gagal menyimpan Smart Saving");
+  return (json.goals || goals).map(normalizeGoal);
+}
+
+async function deleteGoalFromServer(id: string) {
+  const res = await fetch(`/api/savings?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Gagal menghapus Smart Saving");
 }
 
 export function useSavings() {
   const [userId, setUserId] = useState<string | null>(null);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadForCurrentUser = useCallback(async (uidUser: string) => {
+    setLoaded(false);
+    setError(null);
+
+    try {
+      let remoteGoals = await fetchGoalsFromServer();
+
+      // Migrasi satu kali dari localStorage lama ke Supabase.
+      // Setelah itu Supabase menjadi single source of truth.
+      if (remoteGoals.length === 0 && !hasMigrated(uidUser)) {
+        const legacyGoals = loadLegacyGoalsForUser(uidUser);
+        if (legacyGoals.length > 0) {
+          await saveGoalsToServer(legacyGoals);
+          remoteGoals = await fetchGoalsFromServer();
+        }
+        markMigrated(uidUser);
+      }
+
+      setGoals(remoteGoals);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal memuat Smart Saving");
+      setGoals([]);
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -145,10 +219,8 @@ export function useSavings() {
         return;
       }
 
-      const uidUser = user.id;
-      setUserId(uidUser);
-      setGoals(loadGoalsForUser(uidUser));
-      setLoaded(true);
+      setUserId(user.id);
+      await loadForCurrentUser(user.id);
     }
 
     init();
@@ -158,177 +230,191 @@ export function useSavings() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUserId = session?.user?.id ?? null;
       setUserId(nextUserId);
-      setGoals(nextUserId ? loadGoalsForUser(nextUserId) : []);
-      setLoaded(true);
+
+      if (!nextUserId) {
+        setGoals([]);
+        setLoaded(true);
+        return;
+      }
+
+      loadForCurrentUser(nextUserId);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadForCurrentUser]);
 
-  const persist = useCallback(
-    (next: SavingsGoal[]) => {
+  const persistAll = useCallback(
+    async (next: SavingsGoal[]) => {
       if (!userId) return;
-      setGoals(next);
-      saveGoalsForUser(userId, next);
+      const normalized = next.map(normalizeGoal);
+      setGoals(normalized);
+      try {
+        await saveGoalsToServer(normalized);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Gagal menyimpan Smart Saving");
+      }
     },
     [userId],
   );
 
   const addGoal = useCallback(
-    (data: Omit<SavingsGoal, "id" | "createdAt" | "updatedAt" | "history">) => {
+    async (data: Omit<SavingsGoal, "id" | "createdAt" | "updatedAt" | "history">) => {
       if (!userId) return;
       const now = new Date().toISOString();
-      persist([
-        ...goals,
-        { ...data, id: uid(), history: [], createdAt: now, updatedAt: now },
-      ]);
+      const goal: SavingsGoal = normalizeGoal({
+        ...data,
+        id: uid(),
+        history: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      setGoals((prev) => [goal, ...prev]);
+
+      try {
+        await saveGoalToServer(goal);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Gagal menambah Smart Saving");
+      }
     },
-    [goals, persist, userId],
+    [userId],
   );
 
   const updateGoal = useCallback(
-    (id: string, data: Partial<SavingsGoal>) => {
+    async (id: string, data: Partial<SavingsGoal>) => {
       if (!userId) return;
-      persist(
-        goals.map((g) =>
-          g.id === id
-            ? { ...g, ...data, updatedAt: new Date().toISOString() }
-            : g,
-        ),
+      const updatedAt = new Date().toISOString();
+      const next = goals.map((g) =>
+        g.id === id ? normalizeGoal({ ...g, ...data, updatedAt }) : g,
       );
+      await persistAll(next);
     },
-    [goals, persist, userId],
+    [goals, persistAll, userId],
   );
 
   const deleteGoal = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!userId) return;
-      persist(goals.filter((g) => g.id !== id));
+      const previous = goals;
+      setGoals(goals.filter((g) => g.id !== id));
+      try {
+        await deleteGoalFromServer(id);
+      } catch (e) {
+        setGoals(previous);
+        setError(e instanceof Error ? e.message : "Gagal menghapus Smart Saving");
+      }
     },
-    [goals, persist, userId],
+    [goals, userId],
   );
 
   const topupGoal = useCallback(
-    (id: string, amount: number, note = "Tambah dana") => {
+    async (id: string, amount: number, note = "Tambah dana") => {
       if (!userId) return;
-      persist(
-        goals.map((g) => {
-          if (g.id !== id) return g;
-          const newCurrent = g.current + amount;
-          const tx: GoalTransaction = {
-            id: uid(),
-            type: "topup",
-            amount,
-            note,
-            date: new Date().toISOString(),
-          };
-          const status = newCurrent >= g.target ? "complete" : g.status;
-          return {
-            ...g,
-            current: newCurrent,
-            status,
-            history: [tx, ...(g.history || [])],
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      );
+      const next = goals.map((g) => {
+        if (g.id !== id) return g;
+        const newCurrent = g.current + amount;
+        const tx: GoalTransaction = {
+          id: uid(),
+          type: "topup",
+          amount,
+          note,
+          date: new Date().toISOString(),
+        };
+        const status = newCurrent >= g.target ? "complete" : g.status;
+        return normalizeGoal({
+          ...g,
+          current: newCurrent,
+          status,
+          history: [tx, ...(g.history || [])],
+          updatedAt: new Date().toISOString(),
+        });
+      });
+      await persistAll(next);
     },
-    [goals, persist, userId],
+    [goals, persistAll, userId],
   );
 
   const withdrawGoal = useCallback(
-    (id: string, amount: number, note = "Penarikan dana") => {
+    async (id: string, amount: number, note = "Penarikan dana") => {
       if (!userId) return;
-      persist(
-        goals.map((g) => {
-          if (g.id !== id) return g;
-          const newCurrent = Math.max(0, g.current - amount);
-          const tx: GoalTransaction = {
-            id: uid(),
-            type: "withdraw",
-            amount,
-            note,
-            date: new Date().toISOString(),
-          };
-          const status =
-            newCurrent < g.target && g.status === "complete"
-              ? "active"
-              : g.status;
-          return {
-            ...g,
-            current: newCurrent,
-            status,
-            history: [tx, ...(g.history || [])],
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      );
+      const next = goals.map((g) => {
+        if (g.id !== id) return g;
+        const newCurrent = Math.max(0, g.current - amount);
+        const tx: GoalTransaction = {
+          id: uid(),
+          type: "withdraw",
+          amount,
+          note,
+          date: new Date().toISOString(),
+        };
+        const status =
+          newCurrent < g.target && g.status === "complete" ? "active" : g.status;
+        return normalizeGoal({
+          ...g,
+          current: newCurrent,
+          status,
+          history: [tx, ...(g.history || [])],
+          updatedAt: new Date().toISOString(),
+        });
+      });
+      await persistAll(next);
     },
-    [goals, persist, userId],
+    [goals, persistAll, userId],
   );
 
   const reconcileGoal = useCallback(
-    (id: string, actual: number, note = "Reconcile saldo tabungan") => {
+    async (id: string, actual: number, note = "Reconcile saldo tabungan") => {
       if (!userId) return;
-      persist(
-        goals.map((g) => {
-          if (g.id !== id) return g;
-          const safeActual = Math.max(0, actual);
-          const diff = safeActual - g.current;
-          if (diff === 0) return g;
-          const tx: GoalTransaction = {
-            id: uid(),
-            type: diff > 0 ? "topup" : "withdraw",
-            amount: Math.abs(diff),
-            note:
-              note ||
-              `Reconcile saldo ke ${safeActual.toLocaleString("id-ID")}`,
-            date: new Date().toISOString(),
-          };
-          const status =
-            safeActual >= g.target
-              ? "complete"
-              : g.status === "complete"
-                ? "active"
-                : g.status;
-          return {
-            ...g,
-            current: safeActual,
-            status,
-            history: [tx, ...(g.history || [])],
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      );
+      const next = goals.map((g) => {
+        if (g.id !== id) return g;
+        const safeActual = Math.max(0, actual);
+        const diff = safeActual - g.current;
+        if (diff === 0) return g;
+        const tx: GoalTransaction = {
+          id: uid(),
+          type: diff > 0 ? "topup" : "withdraw",
+          amount: Math.abs(diff),
+          note: note || `Reconcile saldo ke ${safeActual.toLocaleString("id-ID")}`,
+          date: new Date().toISOString(),
+        };
+        const status =
+          safeActual >= g.target
+            ? "complete"
+            : g.status === "complete"
+              ? "active"
+              : g.status;
+        return normalizeGoal({
+          ...g,
+          current: safeActual,
+          status,
+          history: [tx, ...(g.history || [])],
+          updatedAt: new Date().toISOString(),
+        });
+      });
+      await persistAll(next);
     },
-    [goals, persist, userId],
+    [goals, persistAll, userId],
   );
 
   const changeStatus = useCallback(
-    (id: string, status: SavingsGoal["status"]) => {
+    async (id: string, status: SavingsGoal["status"]) => {
       if (!userId) return;
-      persist(
-        goals.map((g) =>
-          g.id === id
-            ? { ...g, status, updatedAt: new Date().toISOString() }
-            : g,
-        ),
+      const next = goals.map((g) =>
+        g.id === id ? normalizeGoal({ ...g, status, updatedAt: new Date().toISOString() }) : g,
       );
+      await persistAll(next);
     },
-    [goals, persist, userId],
+    [goals, persistAll, userId],
   );
 
   const summary = (() => {
     const active = goals.filter((g) => g.status === "active");
     const totalTarget = active.reduce((s, g) => s + g.target, 0);
     const totalCollected = active.reduce((s, g) => s + g.current, 0);
-    const totalMonthly = active.reduce(
-      (s, g) => s + calcGoal(g).monthlyNeeded,
-      0,
-    );
+    const totalMonthly = active.reduce((s, g) => s + calcGoal(g).monthlyNeeded, 0);
     const pct = totalTarget > 0 ? (totalCollected / totalTarget) * 100 : 0;
     return {
       totalTarget,
@@ -342,6 +428,7 @@ export function useSavings() {
   return {
     goals,
     loaded,
+    error,
     summary,
     addGoal,
     updateGoal,
