@@ -3,6 +3,12 @@
 import { useState } from 'react'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID')
+const onlyDigits = (v: string) => v.replace(/\D/g, '')
+const fmtInput = (v: string) => {
+  const digits = onlyDigits(v)
+  return digits ? Number(digits).toLocaleString('id-ID') : ''
+}
+const parseInputAmount = (v: string) => Number(onlyDigits(v)) || 0
 
 export function TxDetailModal({ label, tx, onClose }: {
   label: string
@@ -57,7 +63,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
   const [loading,   setLoading]   = useState(false)
   const [done,      setDone]      = useState<string|null>(null)
 
-  const aktual  = parseFloat(aktualStr.replace(/\./g,'').replace(',','.')) || 0
+  const aktual  = parseInputAmount(aktualStr)
   const selisih = aktual - sisaApp
   const type    = selisih >= 0 ? 'inn' : 'out'
 
@@ -96,7 +102,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
               <label style={{ display:'block', fontSize:'11px', fontWeight:700, color:'#4b5563', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:'6px' }}>
                 Actual cash on hand (Rp)
               </label>
-              <input type="number" value={aktualStr} onChange={e=>setAktualStr(e.target.value)}
+              <input type="text" inputMode="numeric" value={aktualStr} onChange={e=>setAktualStr(fmtInput(e.target.value))}
                 placeholder="Enter actual balance..."
                 autoFocus
                 style={{ width:'100%', padding:'10px 12px', fontSize:'15px', fontWeight:600, fontFamily:'JetBrains Mono,monospace', border:'2px solid #e3e7ee', borderRadius:'8px', outline:'none', background:'#f7f8fa' }}

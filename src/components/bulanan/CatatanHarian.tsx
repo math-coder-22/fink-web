@@ -16,6 +16,12 @@ interface Props {
 }
 
 const fmtAmt = (n: number) => n ? Math.round(n).toLocaleString('id-ID') : ''
+const onlyDigits = (v: string) => v.replace(/\D/g, '')
+const fmtInput = (v: string) => {
+  const digits = onlyDigits(v)
+  return digits ? Number(digits).toLocaleString('id-ID') : ''
+}
+const parseInputAmount = (v: string) => Number(onlyDigits(v)) || 0
 
 export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpdate, onDelete }: Props) {
   const today = (() => {
@@ -56,7 +62,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   async function commitAddTransaction(goalId?: string | null) {
     setLoading(true)
     const day = date.split('-')[2].padStart(2, '0')
-    const amount = pNum(amt)
+    const amount = parseInputAmount(amt)
     await onAdd({ date:day, type, cat, note: note || cat || type, amt: amount, debt: isDebt, settled: false })
     if (type === 'save' && goalId) {
       const goal = activeGoals.find(g => g.id === goalId)
@@ -131,7 +137,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   function applyCalculatorResult() {
     const result = calcResult ?? safeCalculateExpression(calcExpr)
     if (result === null) return
-    setAmt(String(result))
+    setAmt(fmtInput(String(result)))
     setCalcOpen(false)
   }
 
@@ -178,17 +184,18 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
           </select>
           <div style={{ display:'flex', gap:'6px', alignItems:'stretch', position:'relative' }}>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               style={{ ...inp, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500, paddingRight:'10px' }}
               placeholder="Amount (Rp)"
               value={amt}
-              onChange={e => setAmt(e.target.value)}
+              onChange={e => setAmt(fmtInput(e.target.value))}
             />
             <button
               type="button"
               onClick={() => {
-                setCalcExpr(amt ? String(amt) : '')
-                setCalcResult(amt ? safeCalculateExpression(String(amt)) : null)
+                setCalcExpr(amt ? String(parseInputAmount(amt)) : '')
+                setCalcResult(amt ? safeCalculateExpression(String(parseInputAmount(amt))) : null)
                 setCalcOpen(true)
               }}
               title="Buka kalkulator"
@@ -240,7 +247,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
             <div style={{ padding:'18px 20px', borderBottom:'1px solid #e3e7ee', display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'flex-start' }}>
               <div>
                 <div style={{ fontSize:'16px', fontWeight:800, color:'#111827' }}>Hubungkan ke Smart Saving?</div>
-                <div style={{ fontSize:'12.5px', color:'#6b7280', marginTop:'4px' }}>Transaksi saving sebesar <b>{fmt(pNum(amt))}</b> bisa langsung menambah saldo tujuan tabungan.</div>
+                <div style={{ fontSize:'12.5px', color:'#6b7280', marginTop:'4px' }}>Transaksi saving sebesar <b>{fmt(parseInputAmount(amt))}</b> bisa langsung menambah saldo tujuan tabungan.</div>
               </div>
               <button onClick={()=>!loading && setSavingModalOpen(false)} style={{ border:'none', background:'#f7f8fa', borderRadius:'8px', width:'30px', height:'30px', cursor:'pointer', color:'#6b7280', fontSize:'18px' }}>×</button>
             </div>
@@ -420,8 +427,8 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
                 </div>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
-                  <input type="number" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'JetBrains Mono,monospace' }}
-                    value={editData.amt || ''} onChange={e => setEditData(p => ({ ...p, amt: pNum(e.target.value) }))} />
+                  <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'JetBrains Mono,monospace' }}
+                    value={editData.amt ? Number(editData.amt).toLocaleString('id-ID') : ''} onChange={e => setEditData(p => ({ ...p, amt: parseInputAmount(e.target.value) }))} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
