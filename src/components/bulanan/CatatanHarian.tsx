@@ -108,8 +108,22 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
   const debtCount = tx.filter(t => t.debt && !t.settled).length
 
+  function formatCalcExpression(expr: string) {
+    const raw = expr.replace(/\./g, '')
+    const tokens = raw.match(/\d+|[+\-*/×÷().]/g) || []
+    return tokens.map(token => {
+      if (/^\d+$/.test(token)) return Number(token).toLocaleString('id-ID')
+      return token
+    }).join('')
+  }
+
+  function normalizeCalcExpression(expr: string) {
+    return expr.replace(/\./g, '')
+  }
+
   function safeCalculateExpression(expr: string) {
     const cleaned = expr
+      .replace(/\./g, '')
       .replace(/×/g, '*')
       .replace(/÷/g, '/')
       .replace(/,/g, '.')
@@ -129,9 +143,11 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   }
 
   function handleCalcInput(value: string) {
-    const next = value === 'C' ? '' : value === '⌫' ? calcExpr.slice(0, -1) : calcExpr + value
-    setCalcExpr(next)
-    setCalcResult(safeCalculateExpression(next))
+    const rawExpr = normalizeCalcExpression(calcExpr)
+    const nextRaw = value === 'C' ? '' : value === '⌫' ? rawExpr.slice(0, -1) : rawExpr + value
+    const formatted = formatCalcExpression(nextRaw)
+    setCalcExpr(formatted)
+    setCalcResult(safeCalculateExpression(formatted))
   }
 
   function applyCalculatorResult() {
@@ -194,7 +210,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
             <button
               type="button"
               onClick={() => {
-                setCalcExpr(amt ? String(parseInputAmount(amt)) : '')
+                setCalcExpr(amt ? fmtInput(String(parseInputAmount(amt))) : '')
                 setCalcResult(amt ? safeCalculateExpression(String(parseInputAmount(amt))) : null)
                 setCalcOpen(true)
               }}
@@ -308,8 +324,9 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
                 autoFocus
                 value={calcExpr}
                 onChange={e => {
-                  setCalcExpr(e.target.value)
-                  setCalcResult(safeCalculateExpression(e.target.value))
+                  const formatted = formatCalcExpression(e.target.value)
+                  setCalcExpr(formatted)
+                  setCalcResult(safeCalculateExpression(formatted))
                 }}
                 placeholder="Contoh: 12000+35000"
                 style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'JetBrains Mono, monospace', fontSize:'15px', fontWeight:700, color:'#111827' }}
