@@ -42,6 +42,9 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
   const [selectedGoalId, setSelectedGoalId] = useState('')
   const [goalNote, setGoalNote] = useState('')
   const [actionMenuId, setActionMenuId] = useState<string|null>(null)
+  const [calcOpen, setCalcOpen] = useState(false)
+  const [calcExpr, setCalcExpr] = useState('')
+  const [calcResult, setCalcResult] = useState<number|null>(null)
 
   // Category options grouped by category
   const catGroups = (() => {
@@ -99,6 +102,39 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
   const debtCount = tx.filter(t => t.debt && !t.settled).length
 
+  function safeCalculateExpression(expr: string) {
+    const cleaned = expr
+      .replace(/×/g, '*')
+      .replace(/÷/g, '/')
+      .replace(/,/g, '.')
+      .replace(/\s/g, '')
+
+    if (!cleaned || !/^[0-9+\-*/().]+$/.test(cleaned)) return null
+
+    try {
+      // Kalkulator sederhana: hanya angka dan operator dasar.
+      // eslint-disable-next-line no-new-func
+      const value = Function(`"use strict"; return (${cleaned})`)()
+      if (typeof value !== 'number' || !Number.isFinite(value)) return null
+      return Math.max(0, Math.round(value))
+    } catch {
+      return null
+    }
+  }
+
+  function handleCalcInput(value: string) {
+    const next = value === 'C' ? '' : value === '⌫' ? calcExpr.slice(0, -1) : calcExpr + value
+    setCalcExpr(next)
+    setCalcResult(safeCalculateExpression(next))
+  }
+
+  function applyCalculatorResult() {
+    const result = calcResult ?? safeCalculateExpression(calcExpr)
+    if (result === null) return
+    setAmt(String(result))
+    setCalcOpen(false)
+  }
+
   async function confirmDeleteTx(t: Transaction) {
     const label = t.note || t.cat || 'transaksi ini'
     const ok = confirm(`Hapus catatan "${label}"?\n\nTindakan ini tidak bisa dibatalkan.`)
@@ -140,13 +176,37 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               </optgroup>
             ))}
           </select>
-          <input
-            type="number"
-            style={{ ...inp, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500 }}
-            placeholder="Amount (Rp)"
-            value={amt}
-            onChange={e => setAmt(e.target.value)}
-          />
+          <div style={{ display:'flex', gap:'6px', alignItems:'stretch', position:'relative' }}>
+            <input
+              type="number"
+              style={{ ...inp, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500, paddingRight:'10px' }}
+              placeholder="Amount (Rp)"
+              value={amt}
+              onChange={e => setAmt(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setCalcExpr(amt ? String(amt) : '')
+                setCalcResult(amt ? safeCalculateExpression(String(amt)) : null)
+                setCalcOpen(true)
+              }}
+              title="Buka kalkulator"
+              style={{
+                width:'40px',
+                border:'1.5px solid #e3e7ee',
+                borderRadius:'6px',
+                background:'#fff',
+                color:'#1a5c42',
+                fontSize:'16px',
+                fontWeight:800,
+                cursor:'pointer',
+                flexShrink:0
+              }}
+            >
+              🧮
+            </button>
+          </div>
         </div>
 
         {/* Row 3: Description + Debt checkbox */}
@@ -214,6 +274,73 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
                   disabled={loading || (syncToGoal && !selectedGoalId)}
                   style={{ padding:'10px', borderRadius:'10px', border:'none', background:(loading || (syncToGoal && !selectedGoalId))?'#9ca3af':'#1a5c42', color:'#fff', fontWeight:800, cursor:(loading || (syncToGoal && !selectedGoalId))?'not-allowed':'pointer' }}>
                   {loading ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {calcOpen && (
+        <div
+          onClick={e => { if (e.currentTarget === e.target) setCalcOpen(false) }}
+          style={{ position:'fixed', inset:0, background:'rgba(17,24,39,.42)', zIndex:950, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}
+        >
+          <div style={{ width:'100%', maxWidth:'340px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
+            <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
+              <div>
+                <div style={{ fontSize:'15px', fontWeight:800, color:'#111827' }}>🧮 Kalkulator Pengeluaran</div>
+                <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>Hitung lalu masukkan ke Amount</div>
+              </div>
+              <button type="button" onClick={()=>setCalcOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f3f4f6', borderRadius:'8px', fontSize:'18px', color:'#4b5563', cursor:'pointer' }}>×</button>
+            </div>
+
+            <div style={{ padding:'14px 16px' }}>
+              <input
+                autoFocus
+                value={calcExpr}
+                onChange={e => {
+                  setCalcExpr(e.target.value)
+                  setCalcResult(safeCalculateExpression(e.target.value))
+                }}
+                placeholder="Contoh: 12000+35000"
+                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'JetBrains Mono, monospace', fontSize:'15px', fontWeight:700, color:'#111827' }}
+              />
+
+              <div style={{ marginTop:'8px', padding:'10px 12px', borderRadius:'10px', background:'#f0fdf4', border:'1px solid #bbf7d0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
+                <span style={{ fontSize:'11px', fontWeight:800, color:'#15803d', textTransform:'uppercase', letterSpacing:'.5px' }}>Hasil</span>
+                <span style={{ fontFamily:'JetBrains Mono, monospace', fontSize:'16px', fontWeight:900, color:'#1a5c42' }}>
+                  {calcResult === null ? '-' : fmt(calcResult)}
+                </span>
+              </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'8px', marginTop:'12px' }}>
+                {['7','8','9','÷','4','5','6','×','1','2','3','-','0','000','.','+'].map(k => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={()=>handleCalcInput(k)}
+                    style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:['+','-','×','÷'].includes(k)?'#f0fdf4':'#fff', color:['+','-','×','÷'].includes(k)?'#1a5c42':'#111827', fontSize:'14px', fontWeight:800, cursor:'pointer' }}
+                  >
+                    {k}
+                  </button>
+                ))}
+                <button type="button" onClick={()=>handleCalcInput('C')} style={{ padding:'11px 0', border:'1px solid #fecaca', borderRadius:'10px', background:'#fef2f2', color:'#991b1b', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>C</button>
+                <button type="button" onClick={()=>handleCalcInput('⌫')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>⌫</button>
+                <button type="button" onClick={()=>handleCalcInput('(')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>(</button>
+                <button type="button" onClick={()=>handleCalcInput(')')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>)</button>
+              </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop:'14px' }}>
+                <button type="button" onClick={()=>setCalcOpen(false)} style={{ padding:'10px', borderRadius:'10px', border:'1px solid #e3e7ee', background:'#fff', color:'#4b5563', fontWeight:800, cursor:'pointer' }}>Batal</button>
+                <button
+                  type="button"
+                  onClick={applyCalculatorResult}
+                  disabled={calcResult === null}
+                  style={{ padding:'10px', borderRadius:'10px', border:'none', background:calcResult===null?'#9ca3af':'#1a5c42', color:'#fff', fontWeight:900, cursor:calcResult===null?'not-allowed':'pointer' }}
+                >
+                  Pakai Hasil
                 </button>
               </div>
             </div>

@@ -225,12 +225,6 @@ const { curMonth, curYear } = useMonthContext()
         </div>
         <div className="dash-actions" style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading data...</span>}
-          <Link href="/bulanan" className="dash-action-link" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', border:'1.5px solid #e3e7ee', color:'#4b5563', fontSize:'12px', fontWeight:700 }}>
-            📝 Buka Monthly
-          </Link>
-          <Link href="/tabungan" className="dash-action-link" style={{ textDecoration:'none', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:'6px', padding:'7px 12px', borderRadius:'7px', background:'#1a5c42', color:'#fff', fontSize:'12px', fontWeight:700 }}>
-            🏦 Smart Saving
-          </Link>
         </div>
       </div>
 
