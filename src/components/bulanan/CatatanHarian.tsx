@@ -321,15 +321,16 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
             <div style={{ padding:'14px 16px' }}>
               <input
-                autoFocus
+                readOnly
+                inputMode="none"
                 value={calcExpr}
                 onChange={e => {
                   const formatted = formatCalcExpression(e.target.value)
                   setCalcExpr(formatted)
                   setCalcResult(safeCalculateExpression(formatted))
                 }}
-                placeholder="Contoh: 12000+35000"
-                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'JetBrains Mono, monospace', fontSize:'15px', fontWeight:700, color:'#111827' }}
+                placeholder="Contoh: 12.000+35.000"
+                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'JetBrains Mono, monospace', fontSize:'15px', fontWeight:700, color:'#111827', cursor:'default', caretColor:'transparent' }}
               />
 
               <div style={{ marginTop:'8px', padding:'10px 12px', borderRadius:'10px', background:'#f0fdf4', border:'1px solid #bbf7d0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
