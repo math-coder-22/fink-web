@@ -35,6 +35,7 @@ export interface SavingsGoal {
 }
 
 export interface GoalCalcResult {
+  targetNow:      number
   sisa:           number
   progress:       number
   months:         number

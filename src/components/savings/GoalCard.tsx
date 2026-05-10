@@ -432,7 +432,7 @@ export default function GoalCard({
           </div>
           <div className="savings-goal-stat">
             <div className="savings-label">Target</div>
-            <div className="savings-value small">{fmt(goal.target)}</div>
+            <div className="savings-value small">{fmt(calc.targetNow)}</div>
           </div>
           <div className="savings-goal-stat">
             <div className="savings-label">Sisa</div>

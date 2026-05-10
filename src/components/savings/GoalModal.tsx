@@ -70,12 +70,12 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
     // Auto-hitung target pendidikan dari inflasi
     if (form.type === 'pendidikan' && form.eduCurrent && form.deadline) {
-      const years = Math.max(1, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
+      const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       finalForm.target = futureValue(form.eduCurrent, form.eduInflasi || 8, years)
     }
     // Auto-hitung target pensiun: 25x annual expense
     if (form.type === 'pensiun' && form.pensionExp && form.deadline) {
-      const years = Math.max(1, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
+      const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       const futureAnnual = futureValue(form.pensionExp * 12, form.pensionInflasi || 5, years)
       finalForm.target = 25 * futureAnnual
     }

@@ -17,10 +17,12 @@ export function monthsBetween(from: Date, to: Date): number {
 }
 
 export function pmt(annualRate: number, nper: number, pv: number): number {
+  // Backward-compatible helper:
+  // monthly payment needed to accumulate a future value from zero.
   if (nper <= 0) return pv;
   if (!annualRate || annualRate === 0) return pv / nper;
   const r = annualRate / 100 / 12;
-  return (pv * r * Math.pow(1 + r, nper)) / (Math.pow(1 + r, nper) - 1);
+  return (pv * r) / (Math.pow(1 + r, nper) - 1);
 }
 
 export function futureValue(
@@ -32,16 +34,68 @@ export function futureValue(
   return currentVal * Math.pow(1 + inflationRate / 100, years);
 }
 
+function yearsUntil(deadline: string): number {
+  if (!deadline) return 0;
+  return Math.max(
+    0,
+    (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 365),
+  );
+}
+
+function effectiveTarget(g: SavingsGoal): number {
+  if (g.type === "darurat" && g.expense && g.coverageTarget) {
+    return Math.max(0, g.expense * g.coverageTarget);
+  }
+
+  if (g.type === "pendidikan" && g.eduCurrent && g.deadline) {
+    return futureValue(g.eduCurrent, g.eduInflasi || 8, yearsUntil(g.deadline));
+  }
+
+  if (g.type === "pensiun" && g.pensionExp && g.deadline) {
+    const futureAnnualExpense = futureValue(
+      g.pensionExp * 12,
+      g.pensionInflasi || 5,
+      yearsUntil(g.deadline),
+    );
+    return 25 * futureAnnualExpense;
+  }
+
+  return Math.max(0, g.target || 0);
+}
+
+function monthlyForFutureTarget(
+  annualRate: number,
+  nper: number,
+  targetFutureValue: number,
+  currentBalance: number,
+): number {
+  if (nper <= 0) return Math.max(0, targetFutureValue - currentBalance);
+
+  if (!annualRate || annualRate === 0) {
+    return Math.max(0, targetFutureValue - currentBalance) / nper;
+  }
+
+  const r = annualRate / 100 / 12;
+  const futureValueOfCurrent = currentBalance * Math.pow(1 + r, nper);
+  const gap = Math.max(0, targetFutureValue - futureValueOfCurrent);
+
+  if (gap <= 0) return 0;
+  return (gap * r) / (Math.pow(1 + r, nper) - 1);
+}
+
 export function calcGoal(g: SavingsGoal): GoalCalcResult {
   const now = new Date();
   const deadline = g.deadline ? new Date(g.deadline) : null;
   const months = deadline ? monthsBetween(now, deadline) : 60;
-  const sisa = Math.max(0, g.target - g.current);
-  const progress = g.target > 0 ? Math.min(1, g.current / g.target) : 0;
+  const targetNow = effectiveTarget(g);
+  const sisa = Math.max(0, targetNow - g.current);
+  const progress = targetNow > 0 ? Math.min(1, g.current / targetNow) : 0;
 
   let monthlyNeeded = 0;
   if (sisa > 0 && months > 0) {
-    monthlyNeeded = pmt(g.useInvest ? g.returnRate || 8 : 0, months, sisa);
+    monthlyNeeded = g.useInvest
+      ? monthlyForFutureTarget(g.returnRate || 8, months, targetNow, g.current)
+      : sisa / months;
   }
 
   let trackStatus: GoalCalcResult["trackStatus"] = "ontrack";
@@ -63,6 +117,7 @@ export function calcGoal(g: SavingsGoal): GoalCalcResult {
   }
 
   return {
+    targetNow,
     sisa,
     progress,
     months,
@@ -412,7 +467,7 @@ export function useSavings() {
 
   const summary = (() => {
     const active = goals.filter((g) => g.status === "active");
-    const totalTarget = active.reduce((s, g) => s + g.target, 0);
+    const totalTarget = active.reduce((s, g) => s + calcGoal(g).targetNow, 0);
     const totalCollected = active.reduce((s, g) => s + g.current, 0);
     const totalMonthly = active.reduce((s, g) => s + calcGoal(g).monthlyNeeded, 0);
     const pct = totalTarget > 0 ? (totalCollected / totalTarget) * 100 : 0;
