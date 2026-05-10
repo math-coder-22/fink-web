@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { IncomeCategory, SavingRow, Transaction } from '@/types/database'
 
 type Props = {
@@ -27,16 +27,12 @@ type Point = {
 }
 
 const GREEN = '#3f7f4a'
-const RED = '#c83a36'
+const RED = '#b9473f'
 const BLUE = '#4b63ff'
 const GRID = '#edf1f5'
-const TEXT = '#7b8494'
+const TEXT = '#6b7280'
 
-function fmt(n: number) {
-  return 'Rp ' + Math.round(Math.abs(n || 0)).toLocaleString('id-ID')
-}
-
-function fmtShort(n: number) {
+const fmtShort = (n: number) => {
   const abs = Math.abs(Math.round(n || 0))
   if (abs >= 1_000_000) {
     const v = abs / 1_000_000
@@ -102,7 +98,6 @@ function buildPoints(byDay: DayData[], visibleUntilDay: number): Point[] {
   }
 
   if (points.length === 0) points.push({ day: 1, income: 0, cashOut: 0, expense: 0, saving: 0, segmentType: 'expense' })
-
   return points
 }
 
@@ -120,14 +115,11 @@ function makeScale(maxValue: number, width: number, height: number, pad: { l: nu
     x: (day: number, totalDays: number) => pad.l + ((day - 1) / Math.max(1, totalDays - 1)) * plotW,
     y: (value: number) => pad.t + (1 - value / yMax) * plotH,
     yMax,
-    plotW,
-    plotH,
   }
 }
 
-function gridValues(maxValue: number) {
-  const top = Math.max(maxValue, 1)
-  return [0, top * 0.5, top]
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n))
 }
 
 export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) {
@@ -140,32 +132,37 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
   const fallbackIncome = sumIncome(income)
   const fallbackSaving = sumSaving(saving)
 
-  const dayData = makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay)
-  const points = buildPoints(dayData, visibleUntilDay)
+  const dayData = useMemo(
+    () => makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay),
+    [totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay],
+  )
+
+  const points = useMemo(() => buildPoints(dayData, visibleUntilDay), [dayData, visibleUntilDay])
 
   const totalIncome = points[points.length - 1]?.income || 0
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
-  const width = 760
-  const height = 205
-  const pad = { l: 62, r: 24, t: 16, b: 30 }
+  const width = 980
+  const height = 260
+  const pad = { l: 70, r: 28, t: 24, b: 42 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
+
+  const yTicks = [0, scale.yMax * 0.5, scale.yMax]
+  const xTicks = [1, Math.max(1, Math.round(totalDays / 3)), Math.max(1, Math.round((totalDays * 2) / 3)), totalDays]
 
   const incomePath = makePath(points.map(p => ({
     x: scale.x(p.day, totalDays),
     y: scale.y(p.income),
   })))
 
-  const cashOutSegments: { d: string; color: string; key: string }[] = []
+  const cashOutSegments = []
   for (let i = 1; i < points.length; i++) {
     const prev = points[i - 1]
     const curr = points[i]
-    const color = curr.segmentType === 'saving' ? BLUE : RED
-
     cashOutSegments.push({
       key: `${i}-${curr.day}-${curr.segmentType}`,
-      color,
+      color: curr.segmentType === 'saving' ? BLUE : RED,
       d: makePath([
         { x: scale.x(prev.day, totalDays), y: scale.y(prev.cashOut) },
         { x: scale.x(curr.day, totalDays), y: scale.y(curr.cashOut) },
@@ -173,8 +170,6 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
     })
   }
 
-  const yTicks = gridValues(scale.yMax)
-  const xTicks = [1, Math.max(1, Math.round(totalDays / 3)), Math.max(1, Math.round((totalDays * 2) / 3)), totalDays]
   const lastPoint = points[points.length - 1]
   const hoveredPoint = points.find(p => p.day === hoverDay) || null
 
@@ -183,11 +178,11 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
     const px = ((e.clientX - rect.left) / rect.width) * width
     const ratio = (px - pad.l) / Math.max(1, width - pad.l - pad.r)
     const day = Math.round(ratio * (totalDays - 1) + 1)
-    setHoverDay(Math.min(visibleUntilDay, Math.max(1, day)))
+    setHoverDay(clamp(day, 1, visibleUntilDay))
   }
 
   return (
-    <section style={{
+    <section className="fink-cashflow-card" style={{
       background: '#fff',
       border: '1px solid #e3e7ee',
       borderRadius: 16,
@@ -195,8 +190,8 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
       overflow: 'hidden',
       marginBottom: 14,
     }}>
-      <div style={{
-        padding: '12px 16px 9px',
+      <div className="fink-cashflow-head" style={{
+        padding: '14px 16px 10px',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
@@ -205,150 +200,161 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
         borderBottom: '1px solid #eef2f7',
       }}>
         <div>
-          <div style={{ fontSize: 13.5, fontWeight: 900, color: '#111827' }}>
+          <div style={{ fontSize: 14.5, fontWeight: 900, color: '#111827' }}>
             Tren Cash Flow Harian
           </div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
             Cash in vs cash out kumulatif sampai hari ini
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', fontSize: 10.5, fontWeight: 800 }}>
-          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: GREEN }}><i style={{ width:7, height:7, borderRadius:99, background:GREEN, display:'inline-block' }} />Income</span>
-          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: RED }}><i style={{ width:7, height:7, borderRadius:99, background:RED, display:'inline-block' }} />Expense</span>
-          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: BLUE }}><i style={{ width:7, height:7, borderRadius:99, background:BLUE, display:'inline-block' }} />Saving</span>
+        <div className="fink-cashflow-legend" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11.5, fontWeight: 800 }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: GREEN }}><i style={{ width:8, height:8, borderRadius:99, background:GREEN, display:'inline-block' }} />Income</span>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: RED }}><i style={{ width:8, height:8, borderRadius:99, background:RED, display:'inline-block' }} />Expense</span>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: BLUE }}><i style={{ width:8, height:8, borderRadius:99, background:BLUE, display:'inline-block' }} />Saving</span>
         </div>
       </div>
 
-      <div style={{ padding: '10px 14px 10px' }}>
-        <div style={{ width: '100%', overflow: 'hidden' }}>
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            role="img"
-            aria-label="Tren cash flow harian"
-            onMouseMove={handleMove}
-            onMouseLeave={() => setHoverDay(null)}
-            className="fink-cashflow-svg"
-            style={{ width:'100%', height:'210px', display:'block', cursor:'crosshair' }}
-          >
-            {yTicks.map((tick, idx) => {
-              const y = scale.y(tick)
-              return (
-                <g key={`y-${idx}`}>
-                  <line x1={pad.l} x2={width - pad.r} y1={y} y2={y} stroke={GRID} strokeWidth="1" />
-                  <text x={pad.l - 10} y={y + 3.5} textAnchor="end" fontSize="9.5" fill={TEXT}>{fmtShort(tick)}</text>
-                </g>
-              )
-            })}
+      <div className="fink-cashflow-body" style={{ padding: '10px 16px 12px' }}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label="Tren cash flow harian"
+          onMouseMove={handleMove}
+          onMouseLeave={() => setHoverDay(null)}
+          className="fink-cashflow-svg"
+          style={{ width:'100%', height:'260px', display:'block', cursor:'crosshair' }}
+        >
+          {yTicks.map((tick, idx) => {
+            const y = scale.y(tick)
+            return (
+              <g key={`y-${idx}`}>
+                <line x1={pad.l} x2={width - pad.r} y1={y} y2={y} stroke={GRID} strokeWidth="1" />
+                <text x={pad.l - 12} y={y + 4} textAnchor="end" fontSize="12" fill={TEXT}>{fmtShort(tick)}</text>
+              </g>
+            )
+          })}
 
-            {xTicks.map((day) => {
-              const x = scale.x(day, totalDays)
-              return (
-                <g key={`x-${day}`}>
-                  <text x={x} y={height - 8} textAnchor="middle" fontSize="9.5" fill={TEXT}>{day}</text>
-                </g>
-              )
-            })}
+          {xTicks.map((day) => {
+            const x = scale.x(day, totalDays)
+            return (
+              <g key={`x-${day}`}>
+                <text x={x} y={height - 12} textAnchor="middle" fontSize="12" fill={TEXT}>{day}</text>
+              </g>
+            )
+          })}
 
-            <line
-              x1={scale.x(visibleUntilDay, totalDays)}
-              x2={scale.x(visibleUntilDay, totalDays)}
-              y1={pad.t}
-              y2={height - pad.b}
-              stroke="#d1d5db"
-              strokeWidth="1.1"
-              strokeDasharray="4 4"
+          <line
+            x1={scale.x(visibleUntilDay, totalDays)}
+            x2={scale.x(visibleUntilDay, totalDays)}
+            y1={pad.t}
+            y2={height - pad.b}
+            stroke="#c7cdd6"
+            strokeWidth="1.2"
+            strokeDasharray="4 4"
+          />
+
+          {totalIncome > 0 && (
+            <path
+              d={incomePath}
+              fill="none"
+              stroke={GREEN}
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
             />
+          )}
 
-            {totalIncome > 0 && (
-              <path
-                d={incomePath}
-                fill="none"
-                stroke={GREEN}
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
+          {cashOutSegments.map((segment) => (
+            <path
+              key={segment.key}
+              d={segment.d}
+              fill="none"
+              stroke={segment.color}
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
 
-            {cashOutSegments.map((segment) => (
-              <path
-                key={segment.key}
-                d={segment.d}
-                fill="none"
-                stroke={segment.color}
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
+          {lastPoint && (
+            <>
+              {totalIncome > 0 && (
+                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
+              )}
+              {totalCashOut > 0 && (
+                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalCashOut)} r="4" fill={lastPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="2" />
+              )}
+            </>
+          )}
 
-            {lastPoint && (
-              <>
-                {totalIncome > 0 && (
-                  <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalIncome)} r="3.4" fill={GREEN} stroke="#fff" strokeWidth="1.7" />
-                )}
-                {totalCashOut > 0 && (
-                  <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalCashOut)} r="3.4" fill={lastPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="1.7" />
-                )}
-              </>
-            )}
+          {hoveredPoint && (() => {
+            const tooltipW = 176
+            const tooltipH = 88
+            const cursorX = scale.x(hoveredPoint.day, totalDays)
+            const topValue = Math.max(hoveredPoint.income, hoveredPoint.cashOut)
+            const rawX = cursorX + 12
+            const rawY = scale.y(topValue) + 12
+            const x = clamp(rawX, pad.l + 4, width - tooltipW - 8)
+            const y = clamp(rawY, pad.t + 4, height - pad.b - tooltipH - 4)
 
-            {hoveredPoint && (
+            return (
               <>
                 <line
-                  x1={scale.x(hoveredPoint.day, totalDays)}
-                  x2={scale.x(hoveredPoint.day, totalDays)}
+                  x1={cursorX}
+                  x2={cursorX}
                   y1={pad.t}
                   y2={height - pad.b}
                   stroke="#9ca3af"
                   strokeWidth="1"
                   strokeDasharray="3 3"
                 />
+
                 {hoveredPoint.income > 0 && (
-                  <circle cx={scale.x(hoveredPoint.day, totalDays)} cy={scale.y(hoveredPoint.income)} r="3.2" fill={GREEN} stroke="#fff" strokeWidth="1.6" />
+                  <circle cx={cursorX} cy={scale.y(hoveredPoint.income)} r="3.8" fill={GREEN} stroke="#fff" strokeWidth="1.8" />
                 )}
                 {hoveredPoint.cashOut > 0 && (
-                  <circle cx={scale.x(hoveredPoint.day, totalDays)} cy={scale.y(hoveredPoint.cashOut)} r="3.2" fill={hoveredPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="1.6" />
+                  <circle cx={cursorX} cy={scale.y(hoveredPoint.cashOut)} r="3.8" fill={hoveredPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="1.8" />
                 )}
 
-                {(() => {
-                  const tooltipW = 118
-                  const tooltipH = 58
-                  const rawX = scale.x(hoveredPoint.day, totalDays) + 10
-                  const rawY = Math.min(scale.y(Math.max(hoveredPoint.income, hoveredPoint.cashOut)) + 10, height - pad.b - tooltipH)
-                  const x = Math.min(rawX, width - tooltipW - 8)
-                  const y = Math.max(8, rawY)
-                  return (
-                    <g>
-                      <rect x={x} y={y} width={tooltipW} height={tooltipH} rx="8" fill="#111827" opacity="0.92" />
-                      <text x={x + 12} y={y + 15} fontSize="9.5" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
+                <g>
+                  <rect x={x} y={y} width={tooltipW} height={tooltipH} rx="10" fill="#111827" opacity="0.94" />
+                  <text x={x + 13} y={y + 21} fontSize="12" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
 
-                      <circle cx={x + 11} cy={y + 29} r="3.2" fill={GREEN} />
-                      <text x={x + 19} y={y + 32} fontSize="8.5" fill="#e5e7eb">In</text>
-                      <text x={x + tooltipW - 10} y={y + 32} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
+                  <circle cx={x + 14} cy={y + 40} r="4" fill={GREEN} />
+                  <text x={x + 27} y={y + 44} fontSize="11" fill="#e5e7eb">Income</text>
+                  <text x={x + tooltipW - 13} y={y + 44} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
 
-                      <circle cx={x + 11} cy={y + 42} r="3.2" fill={RED} />
-                      <text x={x + 19} y={y + 45} fontSize="8.5" fill="#e5e7eb">Exp</text>
-                      <text x={x + tooltipW - 10} y={y + 45} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
+                  <circle cx={x + 14} cy={y + 59} r="4" fill={RED} />
+                  <text x={x + 27} y={y + 63} fontSize="11" fill="#e5e7eb">Expense</text>
+                  <text x={x + tooltipW - 13} y={y + 63} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
 
-                      <circle cx={x + 11} cy={y + 55} r="3.2" fill={BLUE} />
-                      <text x={x + 19} y={y + 58} fontSize="8.5" fill="#e5e7eb">Sav</text>
-                      <text x={x + tooltipW - 10} y={y + 58} fontSize="8.5" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
-                    </g>
-                  )
-                })()}
+                  <circle cx={x + 14} cy={y + 78} r="4" fill={BLUE} />
+                  <text x={x + 27} y={y + 82} fontSize="11" fill="#e5e7eb">Saving</text>
+                  <text x={x + tooltipW - 13} y={y + 82} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
+                </g>
               </>
-            )}
-          </svg>
-        </div>
+            )
+          })()}
+        </svg>
       </div>
+
       <style>{`
         @media (max-width: 640px) {
+          .fink-cashflow-head {
+            padding: 12px 14px 9px !important;
+          }
+          .fink-cashflow-body {
+            padding: 8px 8px 10px !important;
+          }
           .fink-cashflow-svg {
-            height: 175px !important;
+            height: 190px !important;
+          }
+          .fink-cashflow-legend {
+            font-size: 10.5px !important;
+            gap: 8px !important;
           }
         }
       `}</style>
