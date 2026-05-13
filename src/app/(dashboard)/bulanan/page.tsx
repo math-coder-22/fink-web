@@ -158,20 +158,22 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       </div>
       <div style={{ padding:'14px 16px' }}>
         {activePanel==='budget' ? (
-          <BudgetPanel
-            budget={budget} saving={savingComputed}
-            onBudgetChange={b=>updatePlan(prev=>({...prev,budget:b}))}
-            onSavingChange={s=>updatePlan(prev=>({...prev,saving:s}))}
-            onRename={renameTxCat}
-            onItemClick={setTxDetailLabel}
-            isMobile={isMobile}
-          />
-          <DebtPanel
-            debt={debtComputed}
-            onDebtChange={d=>updatePlan(prev=>({...prev,debt:d}))}
-            onRename={renameTxCat}
-            isMobile={isMobile}
-          />
+          <>
+            <BudgetPanel
+              budget={budget} saving={savingComputed}
+              onBudgetChange={b=>updatePlan(prev=>({...prev,budget:b}))}
+              onSavingChange={s=>updatePlan(prev=>({...prev,saving:s}))}
+              onRename={renameTxCat}
+              onItemClick={setTxDetailLabel}
+              isMobile={isMobile}
+            />
+            <DebtPanel
+              debt={debtComputed}
+              onDebtChange={d=>updatePlan(prev=>({...prev,debt:d}))}
+              onRename={renameTxCat}
+              isMobile={isMobile}
+            />
+          </>
         ) : (
           <IncomePanel
             income={incomeComputed}
