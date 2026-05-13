@@ -122,7 +122,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           {tx.length} record{tx.length !== 1 ? 's' : ''}
         </span>
       </div>
-      <CatatanHarian tx={tx} budget={budget} income={plan.income} saving={savingComputed}
+      <CatatanHarian tx={tx} budget={budget} income={plan.income} saving={savingComputed} debt={debtComputed} debt={debtComputed}
         onAdd={addTx} onUpdate={updateTx} onDelete={deleteTx} />
     </div>
   )

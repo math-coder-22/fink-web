@@ -23,7 +23,7 @@ const fmtInput = (v: string) => {
 }
 const parseInputAmount = (v: string) => Number(onlyDigits(v)) || 0
 
-export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpdate, onDelete }: Props) {
+export default function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate, onDelete }: Props) {
   const today = (() => {
     const d = new Date()
     const y = d.getFullYear()
@@ -54,7 +54,13 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
 
   // Category options grouped by category
   const catGroups = (() => {
-    if (type === 'out')  return budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+    if (type === 'out') {
+      const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+      const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
+      return debtItems.length
+        ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
+        : budgetGroups
+    }
     if (type === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
     return [{ group: 'Savings', items: saving.map(r => r.label) }]
   })()
