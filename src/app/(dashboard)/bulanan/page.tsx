@@ -9,6 +9,7 @@ import IncomePanel   from '@/components/bulanan/IncomePanel'
 import CatatanHarian from '@/components/bulanan/CatatanHarian'
 import { RekonModal, TxDetailModal } from '@/components/bulanan/BulananModals'
 import type { MonthKey } from '@/types/database'
+import DebtPanel from '@/components/bulanan/DebtPanel'
 
 type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
