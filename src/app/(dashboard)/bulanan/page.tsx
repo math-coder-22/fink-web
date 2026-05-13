@@ -50,7 +50,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const budget         = computedBudget()
   const incomeComputed = computedIncome()
   const savingComputed = computedSaving()
-  const debtComputed   = computedDebt()
+  const debtComputed   = typeof computedDebt === 'function' ? computedDebt() : []
   const sisaApp        = rawSisa
 
   async function handleRekon(aktual: number, selisih: number, type: 'out'|'inn') {

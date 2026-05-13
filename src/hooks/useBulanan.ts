@@ -40,6 +40,16 @@ function emptyMonth(): MonthPlan {
   }
 }
 
+function normalizeMonthPlan(plan: Partial<MonthPlan> | null | undefined): MonthPlan {
+  const base = emptyMonth()
+  return {
+    income: Array.isArray(plan?.income) ? plan!.income : base.income,
+    saving: Array.isArray(plan?.saving) ? plan!.saving : base.saving,
+    debt: Array.isArray((plan as any)?.debt) ? (plan as any).debt : base.debt,
+    budget: Array.isArray(plan?.budget) ? plan!.budget : base.budget,
+  }
+}
+
 // Migrate flat IncomeRow[] to IncomeCategory[] (backward compat)
 function migrateIncome(raw: unknown): IncomeCategory[] {
   if (!Array.isArray(raw) || raw.length === 0) return emptyMonth().income
@@ -92,13 +102,13 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       ])
       const [pj, tj] = await Promise.all([planRes.json(), txRes.json()])
       if (pj.data) {
-        const loaded: MonthPlan = {
+        const loaded = normalizeMonthPlan({
           income: migrateIncome(pj.data.income),
-          saving: pj.data.saving || emptyMonth().saving,
-          debt: pj.data.debt || emptyMonth().debt,
-          budget: pj.data.budget || emptyMonth().budget,
-        }
-        setPlan(ensureRekonItems(loaded))
+          saving: pj.data.saving,
+          debt: pj.data.debt,
+          budget: pj.data.budget,
+        })
+        setPlan(ensureRekonItems(normalizeMonthPlan(loaded)))
       } else {
         setPlan(emptyMonth())
       }
@@ -126,7 +136,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
 
   const updatePlan = useCallback((updater: (prev: MonthPlan) => MonthPlan) => {
     setPlan(prev => {
-      const next = updater(prev)
+      const next = normalizeMonthPlan(updater(normalizeMonthPlan(prev)))
       savePlan(next)
       return next
     })
@@ -170,7 +180,8 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
 
   // Debt Payment actual dari tx.out per label debt
   const computedDebt = useCallback((): DebtRow[] => {
-    return plan.debt.map(row => ({
+    const debtRows = Array.isArray(plan.debt) ? plan.debt : emptyMonth().debt
+    return debtRows.map(row => ({
       ...row,
       actual: tx
         .filter(t => t.type === 'out' && t.cat === row.label && !(t.debt && !t.settled))

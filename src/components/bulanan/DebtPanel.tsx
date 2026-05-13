@@ -13,7 +13,7 @@ const fmtNum = (n: number) => Math.round(n || 0).toLocaleString('id-ID')
 const pNum = (v: string) => Number(String(v).replace(/\D/g,'')) || 0
 
 export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Props) {
-  const rows = debt.length ? debt : [{ label:'Debt Payment', plan:0, actual:0 }]
+  const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt Payment', plan:0, actual:0 }]
   const totalPlan = rows.reduce((s, r) => s + (r.plan || 0), 0)
   const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0)
 
