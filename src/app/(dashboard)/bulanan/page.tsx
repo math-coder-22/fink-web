@@ -26,7 +26,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const {
     plan, updatePlan, tx, loading, saving,
     addTx, updateTx, deleteTx,
-    computedBudget, computedIncome, computedSaving, computedDebt,
+    computedBudget, computedIncome, computedSaving, computedDebt, computedDebt,
     renameTxCat,
     copyBudgetToNext,
     rawSisa,
