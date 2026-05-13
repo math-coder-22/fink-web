@@ -30,6 +30,7 @@ export const useMonthContext = () => useContext(MonthContext)
 
 const BASE_NAV_ITEMS = [
   { href:'/dashboard', label:'Dashboard',    icon:'▦' },
+  { href:'/financial-doctor', label:'Financial Doctor', icon:'🩺' },
   { href:'/bulanan',   label:'Monthly',      icon:'◷' },
   { href:'/tabungan',  label:'Smart Saving', icon:'◇' },
   { href:'/settings',  label:'Settings',     icon:'⚙' },
