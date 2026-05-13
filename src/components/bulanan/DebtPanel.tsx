@@ -3,7 +3,7 @@
 import type { DebtRow } from '@/types/database'
 
 type Props = {
-  debt: DebtRow[]
+  debt?: DebtRow[]
   onDebtChange: (rows: DebtRow[]) => void
   onRename?: (oldLabel: string, newLabel: string) => void
   isMobile?: boolean
@@ -14,8 +14,6 @@ const pNum = (v: string) => Number(String(v).replace(/\D/g,'')) || 0
 
 export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Props) {
   const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt Payment', plan:0, actual:0 }]
-  const totalPlan = rows.reduce((s, r) => s + (r.plan || 0), 0)
-  const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0)
 
   const inp: React.CSSProperties = {
     border:'none',
@@ -57,16 +55,12 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
           justifyContent:'space-between',
           gap:10,
           padding:'10px 12px',
-          background:'#fffbeb',
-          borderBottom:'1px solid #fde68a',
+          background:'#f7f8fa',
+          borderBottom:'1px solid #e3e7ee',
         }}>
-          <div>
-            <div style={{ fontSize:13, fontWeight:900, color:'#92400e' }}>🏦 Debt Payment</div>
-            <div style={{ fontSize:10.5, color:'#b45309', marginTop:2 }}>Cicilan/hutang finansial, bukan transaksi unpaid</div>
-          </div>
-          <div style={{ textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontWeight:800, fontSize:11.5, color:'#92400e' }}>
-            <div>Plan Rp {fmtNum(totalPlan)}</div>
-            <div>Actual Rp {fmtNum(totalActual)}</div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:14 }}>🏦</span>
+            <div style={{ fontSize:13, fontWeight:900, color:'#111827' }}>Debt Payment</div>
           </div>
         </div>
 
@@ -95,13 +89,11 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
                 type="text"
                 inputMode="numeric"
                 style={{ ...inp, textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:700, color:'#4b5563', width:'100%' }}
-                defaultValue={row.plan ? fmtNum(row.plan) : ''}
+                value={row.plan ? fmtNum(row.plan) : ''}
                 placeholder="0"
-                onFocus={e => { e.currentTarget.value = row.plan ? String(row.plan) : ''; e.currentTarget.select() }}
-                onBlur={e => {
-                  const v = pNum(e.currentTarget.value)
+                onChange={e => {
+                  const v = pNum(e.target.value)
                   updateRow(i, { plan:v })
-                  e.currentTarget.value = v ? fmtNum(v) : ''
                 }}
               />
               <div style={{ textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:900, color:(row.actual||0)>0?'#92400e':'#9ca3af' }}>
@@ -127,7 +119,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
               width:'100%',
               border:'1px dashed #d6d3d1',
               background:'#fff',
-              color:'#92400e',
+              color:'#4b5563',
               borderRadius:9,
               padding:'8px',
               fontSize:12,

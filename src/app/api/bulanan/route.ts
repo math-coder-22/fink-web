@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { month, year, income, saving, budget } = body
+  const { month, year, income, saving, debt, budget } = body
 
   if (!month || !year) return NextResponse.json({ error: 'month & year required' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('monthly_plans')
     .upsert(
-      { user_id: user.id, month, year: parseInt(year), income, saving, budget },
+      { user_id: user.id, month, year: parseInt(year), income, saving, debt, budget },
       { onConflict: 'user_id,month,year' }
     )
     .select()
