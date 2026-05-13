@@ -13,6 +13,7 @@ const toneMap = {
 } as const
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
+const MONTH_INDEX: Record<string, number> = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 }
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -63,13 +64,17 @@ export default function FinancialDoctorPage() {
 
   const result = useMemo(() => {
     const now = new Date()
-    const daysInMonth = new Date(curYear, now.getMonth() + 1, 0).getDate()
+    const daysInMonth = new Date(curYear, (MONTH_INDEX[curMonth] ?? now.getMonth()) + 1, 0).getDate()
+
+    const budget = computedBudget()
+    const income = computedIncome()
+    const saving = computedSaving()
 
     return analyzeFinancialDoctor({
       tx,
-      budget: computedBudget,
-      income: computedIncome,
-      saving: computedSaving,
+      budget,
+      income,
+      saving,
       currentDay: now.getDate(),
       daysInMonth,
     })

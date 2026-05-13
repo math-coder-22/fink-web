@@ -51,6 +51,7 @@ export type FinancialDoctorResult = {
 }
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
+const safeArray = <T,>(v: T[] | unknown): T[] => Array.isArray(v) ? v : []
 const pct = (n: number) => `${Math.round((n || 0) * 100)}%`
 
 function txDay(t: Transaction) {
@@ -154,15 +155,16 @@ export function analyzeFinancialDoctor(input: {
   currentDay?: number
   daysInMonth?: number
 }): FinancialDoctorResult {
-  const { tx, saving } = input
+  const safeTx = safeArray<Transaction>(input.tx)
+  const safeSaving = safeArray<SavingRow>(input.saving)
   const now = new Date()
   const elapsedDays = Math.max(1, input.currentDay || now.getDate())
   const daysInMonth = Math.max(28, input.daysInMonth || new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate())
 
-  const totalIncome = sumByType(tx, 'inn')
-  const totalExpense = sumByType(tx, 'out')
-  const totalSaving = sumByType(tx, 'save')
-  const debtPayment = sumDebt(tx)
+  const totalIncome = sumByType(safeTx, 'inn')
+  const totalExpense = sumByType(safeTx, 'out')
+  const totalSaving = sumByType(safeTx, 'save')
+  const debtPayment = sumDebt(safeTx)
   const cashflow = totalIncome - totalExpense - totalSaving
   const savingRate = totalIncome > 0 ? totalSaving / totalIncome : 0
   const debtRatio = totalIncome > 0 ? debtPayment / totalIncome : 0
@@ -175,8 +177,8 @@ export function analyzeFinancialDoctor(input: {
     scoreCashflow(cashflow, totalIncome) +
     scoreSaving(savingRate) +
     scoreDebt(debtRatio) +
-    scoreEmergency(saving, totalExpense) +
-    scoreConsistency(tx, elapsedDays)
+    scoreEmergency(safeSaving, totalExpense) +
+    scoreConsistency(safeTx, elapsedDays)
 
   const statusTone =
     score >= 80 ? 'good' :
@@ -274,7 +276,7 @@ export function analyzeFinancialDoctor(input: {
     })
   }
 
-  const topCategories = categoryTotals(tx, 'out').slice(0, 3)
+  const topCategories = categoryTotals(safeTx, 'out').slice(0, 3)
   if (topCategories.length > 0 && totalExpense > 0) {
     const top = topCategories[0]
     const share = top.amount / totalExpense
@@ -332,10 +334,10 @@ export function analyzeFinancialDoctor(input: {
 
   const habits: HabitSignal[] = []
 
-  const firstHalf = tx
+  const firstHalf = safeTx
     .filter(t => txDay(t) <= Math.ceil(daysInMonth / 2) && t.type === 'out')
     .reduce((s, t) => s + Number(t.amt || 0), 0)
-  const secondHalf = tx
+  const secondHalf = safeTx
     .filter(t => txDay(t) > Math.ceil(daysInMonth / 2) && t.type === 'out')
     .reduce((s, t) => s + Number(t.amt || 0), 0)
 
@@ -347,7 +349,7 @@ export function analyzeFinancialDoctor(input: {
     })
   }
 
-  const smallTx = tx.filter(t => t.type === 'out' && Number(t.amt || 0) > 0 && Number(t.amt || 0) <= 50000)
+  const smallTx = safeTx.filter(t => t.type === 'out' && Number(t.amt || 0) > 0 && Number(t.amt || 0) <= 50000)
   if (smallTx.length >= 20) {
     habits.push({
       tone: 'warning',
@@ -356,7 +358,7 @@ export function analyzeFinancialDoctor(input: {
     })
   }
 
-  const weekendExpense = tx
+  const weekendExpense = safeTx
     .filter(t => t.type === 'out')
     .filter(t => {
       // Approximation: use transaction day in current month.
