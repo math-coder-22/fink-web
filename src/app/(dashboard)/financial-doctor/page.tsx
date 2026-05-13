@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
-import type { Transaction, SavingRow } from '@/types/database'
+import type { Transaction, SavingRow, DebtRow } from '@/types/database'
 
 type Tone = 'good' | 'warning' | 'danger' | 'neutral'
 
@@ -37,9 +37,13 @@ function sumTx(tx: Transaction[], type: Transaction['type']) {
 }
 
 function sumDebt(tx: Transaction[]) {
-  return tx
-    .filter(t => t.type === 'out' && !!t.debt)
-    .reduce((s, t) => s + Number(t.amt || 0), 0)
+  // debt flag now means Unpaid/transaction pending, not financial debt.
+  // Kept only for backward compatibility; Financial Doctor uses Debt Payment rows.
+  return 0
+}
+
+function sumDebtRows(rows: DebtRow[]) {
+  return rows.reduce((s, r) => s + Number(r.actual || 0), 0)
 }
 
 function uniqueDays(tx: Transaction[]) {
@@ -140,7 +144,7 @@ function MetricCard({ label, value, tone, note }: { label:string; value:string; 
 
 export default function FinancialDoctorPage() {
   const { curMonth, curYear } = useMonthContext()
-  const { tx, loading, computedSaving } = useBulanan({ curMonth, curYear })
+  const { tx, loading, computedSaving, computedDebt } = useBulanan({ curMonth, curYear })
 
   const data = useMemo(() => {
     const allTx = safeTx(tx)
@@ -150,16 +154,22 @@ export default function FinancialDoctorPage() {
     const elapsedDays = Math.max(1, Math.min(daysInMonth, now.getDate()))
 
     let savingRows: SavingRow[] = []
+    let debtRows: DebtRow[] = []
     try {
       savingRows = typeof computedSaving === 'function' ? computedSaving() : []
     } catch {
       savingRows = []
     }
+    try {
+      debtRows = typeof computedDebt === 'function' ? computedDebt() : []
+    } catch {
+      debtRows = []
+    }
 
     const income = sumTx(allTx, 'inn')
     const expense = sumTx(allTx, 'out')
     const saving = sumTx(allTx, 'save')
-    const debt = sumDebt(allTx)
+    const debt = sumDebtRows(debtRows)
     const cashflow = income - expense - saving
     const savingRate = income > 0 ? saving / income : 0
     const debtRatio = income > 0 ? debt / income : 0
@@ -239,7 +249,7 @@ export default function FinancialDoctorPage() {
       income, expense, saving, cashflow, savingRate, debtRatio, dailyBurn, dailyLimit,
       diagnosis, treatments, habits,
     }
-  }, [tx, computedSaving, curMonth, curYear])
+  }, [tx, computedSaving, computedDebt, curMonth, curYear])
 
   if (loading) {
     return (

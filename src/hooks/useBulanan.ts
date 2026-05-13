@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { IncomeCategory, SavingRow, BudgetCategory, Transaction, MonthKey } from '@/types/database'
+import type { IncomeCategory, SavingRow, DebtRow, BudgetCategory, Transaction, MonthKey } from '@/types/database'
 
 export const MONTH_NAMES: Record<string, string> = {
   jan:'Januari', feb:'Februari', mar:'Maret',    apr:'April',
@@ -13,6 +13,7 @@ export const MONTHS_ORDER: MonthKey[] = ['jan','feb','mar','apr','may','jun','ju
 export interface MonthPlan {
   income: IncomeCategory[]
   saving: SavingRow[]
+  debt: DebtRow[]
   budget: BudgetCategory[]
 }
 
@@ -28,6 +29,7 @@ function emptyMonth(): MonthPlan {
       },
     ],
     saving: [{ label: 'Dana Darurat', plan: 0, actual: 0 }],
+    debt: [{ label: 'Debt Payment', plan: 0, actual: 0 }],
     budget: [
       { label: 'Giving',  items: [{ label: 'Zakat / Infaq / Sedekah', plan: 0, actual: 0 }] },
       { label: 'Billing', items: [{ label: 'Tagihan Rutin',           plan: 0, actual: 0 }] },
@@ -93,6 +95,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
         const loaded: MonthPlan = {
           income: migrateIncome(pj.data.income),
           saving: pj.data.saving || emptyMonth().saving,
+          debt: pj.data.debt || emptyMonth().debt,
           budget: pj.data.budget || emptyMonth().budget,
         }
         setPlan(ensureRekonItems(loaded))
@@ -165,6 +168,16 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     }))
   }, [plan.saving, tx])
 
+  // Debt Payment actual dari tx.out per label debt
+  const computedDebt = useCallback((): DebtRow[] => {
+    return plan.debt.map(row => ({
+      ...row,
+      actual: tx
+        .filter(t => t.type === 'out' && t.cat === row.label && !(t.debt && !t.settled))
+        .reduce((s, t) => s + t.amt, 0),
+    }))
+  }, [plan.debt, tx])
+
   // Rename cat di semua tx jika label budget/income/saving berubah
   const renameTxCat = useCallback(async (oldLabel: string, newLabel: string) => {
     if (!oldLabel || oldLabel === newLabel) return
@@ -220,6 +233,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
         month: nextM, year: nextY,
         income: plan.income.map(c => ({ ...c, items: c.items.map(i => ({ ...i, actual: 0 })) })),
         saving: plan.saving,
+        debt: plan.debt.map(d => ({ ...d, actual: 0 })),
         budget: plan.budget.map(c => ({ ...c, items: c.items.map(i => ({ ...i, actual: 0 })) })),
       }),
     })
@@ -229,7 +243,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   return {
     plan, updatePlan, loading, saving,
     tx, setTx, addTx, updateTx, deleteTx,
-    computedBudget, computedIncome, computedSaving,
+    computedBudget, computedIncome, computedSaving, computedDebt,
     renameTxCat,
     copyBudgetToNext,
     rawSisa: tx.reduce((s, t) => {

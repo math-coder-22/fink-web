@@ -1,10 +1,11 @@
 'use client'
 
-import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
+import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 type Props = {
   income: IncomeCategory[]
   saving: SavingRow[]
+  debt?: DebtRow[]
   budget: BudgetCategory[]
   tx?: Transaction[]
   isMobile?: boolean

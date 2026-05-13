@@ -232,7 +232,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
           </div>
         </div>
 
-        {/* Row 3: Description + Debt checkbox */}
+        {/* Row 3: Description + Unpaid checkbox */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center' }}>
           <input
             style={{ ...inp }}
@@ -243,7 +243,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
           />
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 500, color: '#4b5563', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0 4px' }}>
             <input type="checkbox" checked={isDebt} onChange={e => setIsDebt(e.target.checked)} style={{ accentColor: '#92400e', width: '15px', height: '15px', flexShrink: 0 }} />
-            Unpaid debt
+            Unpaid
           </label>
         </div>
 
@@ -378,7 +378,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
         <div style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.7px' }}>Transaction History</div>
         {debtCount > 0 && (
           <span style={{ fontSize: '10px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '20px' }}>
-            ⚠ {debtCount} unpaid debt{debtCount > 1 ? 's' : ''}
+            ⚠ {debtCount} unpaid{debtCount > 1 ? 's' : ''}
           </span>
         )}
       </div>
@@ -452,7 +452,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
               <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#4b5563', cursor: 'pointer' }}>
                   <input type="checkbox" checked={!!editData.debt} onChange={e => setEditData(p => ({ ...p, debt: e.target.checked, settled: e.target.checked ? p.settled : false }))} style={{ accentColor: '#92400e' }} />
-                  Unpaid debt
+                  Unpaid
                 </label>
                 {editData.debt && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#4b5563', cursor: 'pointer' }}>
@@ -480,7 +480,7 @@ export default function CatatanHarian({ tx, budget, income, saving, onAdd, onUpd
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {t.cat && <span style={{ fontSize: '9.5px', fontWeight: 600, background: bc, color: tc, padding: '2px 7px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '.3px' }}>{t.cat}</span>}
-                  {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}>⚠ Debt</span>}
+                  {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}>⚠ Unpaid</span>}
                   {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}>✓ Settled</span>}
                 </div>
               </div>

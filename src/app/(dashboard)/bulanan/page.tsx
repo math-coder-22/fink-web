@@ -26,7 +26,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const {
     plan, updatePlan, tx, loading, saving,
     addTx, updateTx, deleteTx,
-    computedBudget, computedIncome, computedSaving,
+    computedBudget, computedIncome, computedSaving, computedDebt,
     renameTxCat,
     copyBudgetToNext,
     rawSisa,
@@ -50,6 +50,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const budget         = computedBudget()
   const incomeComputed = computedIncome()
   const savingComputed = computedSaving()
+  const debtComputed   = computedDebt()
   const sisaApp        = rawSisa
 
   async function handleRekon(aktual: number, selisih: number, type: 'out'|'inn') {
@@ -163,6 +164,12 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
             onSavingChange={s=>updatePlan(prev=>({...prev,saving:s}))}
             onRename={renameTxCat}
             onItemClick={setTxDetailLabel}
+            isMobile={isMobile}
+          />
+          <DebtPanel
+            debt={debtComputed}
+            onDebtChange={d=>updatePlan(prev=>({...prev,debt:d}))}
+            onRename={renameTxCat}
             isMobile={isMobile}
           />
         ) : (
@@ -352,7 +359,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       })()}
 
       {/* STAT STRIP */}
-      <StatStrip income={incomeComputed} saving={savingComputed} budget={budget} isMobile={isMobile} rawSisa={sisaApp} />
+      <StatStrip income={incomeComputed} saving={savingComputed} debt={debtComputed} budget={budget} isMobile={isMobile} rawSisa={sisaApp} />
 
       {/* MOBILE: 3-tab */}
       {isMobile ? (

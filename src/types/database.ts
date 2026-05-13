@@ -100,6 +100,12 @@ export interface SavingRow {
   actual: number
 }
 
+export interface DebtRow {
+  label: string
+  plan: number
+  actual: number
+}
+
 export interface BudgetItem {
   label: string
   plan: number

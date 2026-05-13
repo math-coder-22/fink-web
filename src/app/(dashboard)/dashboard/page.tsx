@@ -182,12 +182,13 @@ export default function DashboardPage() {
   }, [])
 
 const { curMonth, curYear } = useMonthContext()
-  const { tx, loading, computedBudget, computedIncome, computedSaving, rawSisa } = useBulanan({ curMonth, curYear })
+  const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
 
   const budget = computedBudget()
   const income = computedIncome()
   const saving = computedSaving()
+  const debt = typeof computedDebt === 'function' ? computedDebt() : []
 
   const totalIncome = sumIncome(income)
   const plannedIncome = sumIncomePlan(income)
@@ -232,6 +233,7 @@ const { curMonth, curYear } = useMonthContext()
       <StatStrip
         income={income}
         saving={saving}
+        debt={debt}
         budget={budget}
         tx={tx}
         rawSisa={rawSisa}
