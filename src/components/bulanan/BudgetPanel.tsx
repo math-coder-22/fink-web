@@ -104,8 +104,16 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
                   <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
-              <button style={{ ...delBtn, opacity: hovRow===hk?1:0 }} onMouseDown={e=>e.stopPropagation()}
-                onClick={()=>onBudgetChange(budget.filter((_,ci2)=>ci2!==ci))}>×</button>
+              <button
+                style={{ ...delBtn, opacity: hovRow===hk?1:0 }}
+                title="Hapus kategori budget"
+                onMouseDown={e=>e.stopPropagation()}
+                onClick={()=>{
+                  const ok = confirm(`Hapus kategori budget "${cat.label}" beserta semua item di dalamnya?`)
+                  if (!ok) return
+                  onBudgetChange(budget.filter((_,ci2)=>ci2!==ci))
+                }}
+              >×</button>
             </div>
 
             {/* Progress bar */}
@@ -195,8 +203,16 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
                         </div>
                       </>
                     )}
-                    <button style={{ ...delBtn, opacity: hovRow===ik?1:0 }} onMouseDown={e=>e.stopPropagation()}
-                      onClick={()=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))}>×</button>
+                    <button
+                      style={{ ...delBtn, opacity: hovRow===ik?1:0 }}
+                      title="Hapus item budget"
+                      onMouseDown={e=>e.stopPropagation()}
+                      onClick={()=>{
+                        const ok = confirm(`Hapus item budget "${item.label}"?`)
+                        if (!ok) return
+                        onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
+                      }}
+                    >×</button>
                   </div>
                 )
               })}

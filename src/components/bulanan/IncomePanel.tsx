@@ -91,8 +91,16 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                   <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
-              <button style={{ ...delBtn, opacity: hovRow===hk?1:0 }} onMouseDown={e=>e.stopPropagation()}
-                onClick={()=>onIncomeChange(income.filter((_,ci2)=>ci2!==ci))}>×</button>
+              <button
+                style={{ ...delBtn, opacity: hovRow===hk?1:0 }}
+                title="Hapus kategori income"
+                onMouseDown={e=>e.stopPropagation()}
+                onClick={()=>{
+                  const ok = confirm(`Hapus kategori income "${cat.label}" beserta semua item di dalamnya?`)
+                  if (!ok) return
+                  onIncomeChange(income.filter((_,ci2)=>ci2!==ci))
+                }}
+              >×</button>
             </div>
 
             {/* Progress bar */}
@@ -153,8 +161,16 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                         </div>
                       </>
                     )}
-                    <button style={{ ...delBtn, opacity: hovRow===ik?1:0 }} onMouseDown={e=>e.stopPropagation()}
-                      onClick={()=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))}>×</button>
+                    <button
+                      style={{ ...delBtn, opacity: hovRow===ik?1:0 }}
+                      title="Hapus item income"
+                      onMouseDown={e=>e.stopPropagation()}
+                      onClick={()=>{
+                        const ok = confirm(`Hapus item income "${item.label}"?`)
+                        if (!ok) return
+                        onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
+                      }}
+                    >×</button>
                   </div>
                 )
               })}
