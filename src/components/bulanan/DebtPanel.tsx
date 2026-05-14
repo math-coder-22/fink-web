@@ -37,20 +37,52 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
 
   const rowGrid = isMobile ? '1fr 104px 92px 22px' : '1fr 132px 112px 22px'
 
+  const labelStyle: React.CSSProperties = {
+    border:'none',
+    background:'transparent',
+    outline:'none',
+    color:'#111827',
+    fontFamily:'Inter, system-ui, sans-serif',
+    fontSize:'13px',
+    fontWeight:500,
+    minWidth:0,
+  }
+
+  const moneyInputStyle: React.CSSProperties = {
+    border:'none',
+    background:'transparent',
+    outline:'none',
+    textAlign:'right',
+    fontFamily:'JetBrains Mono, monospace',
+    fontSize:'12.5px',
+    fontWeight:700,
+    color:'#4b5563',
+    width:'100%',
+  }
+
+  const moneyActualStyle = (active: boolean): React.CSSProperties => ({
+    textAlign:'right',
+    fontFamily:'JetBrains Mono, monospace',
+    fontSize:'12.5px',
+    fontWeight:700,
+    color: active ? '#8a5f2b' : '#9ca3af',
+  })
+
   return (
     <div style={{ marginTop:18, paddingTop:14, borderTop:'1px solid #e3e7ee' }}>
       <div style={{
         fontSize:'10px',
-        fontWeight:900,
+        fontWeight:700,
         color:'#9ca3af',
         textTransform:'uppercase',
         letterSpacing:'.7px',
-        margin:'0 0 8px'
+        margin:'0 0 8px',
+        fontFamily:'Inter, system-ui, sans-serif',
       }}>
         Debt Payment
       </div>
 
-      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
         {rows.map((row, i) => (
           <div key={`${row.label}-${i}`} style={{
             display:'grid',
@@ -61,9 +93,10 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
             borderRadius:9,
             padding:'8px 16px',
             background:'#f7f8fa',
+            minHeight:'44px',
           }}>
             <input
-              style={{ border:'none', background:'transparent', outline:'none', color:'#111827', fontFamily:'Inter, system-ui, sans-serif', fontSize:12.5, fontWeight:700, minWidth:0 }}
+              style={labelStyle}
               value={row.label}
               onFocus={e => { e.currentTarget.dataset.oldLabel = row.label }}
               onChange={e => updateRow(i, { label:e.target.value })}
@@ -76,19 +109,27 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
             <input
               type="text"
               inputMode="numeric"
-              style={{ border:'none', background:'transparent', outline:'none', textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:800, color:'#4b5563', width:'100%' }}
+              style={moneyInputStyle}
               value={row.plan ? fmtNum(row.plan) : ''}
               placeholder="0"
               onChange={e => updateRow(i, { plan:pNum(e.target.value) })}
             />
-            <div style={{ textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:900, color:(row.actual||0)>0?'#92400e':'#9ca3af' }}>
+            <div style={moneyActualStyle((row.actual || 0) > 0)}>
               {row.actual ? fmtNum(row.actual) : '-'}
             </div>
             <button
               type="button"
               onClick={() => removeDebt(i)}
               title="Hapus debt item"
-              style={{ border:'none', background:'transparent', color:'#9ca3af', fontSize:18, cursor:'pointer', lineHeight:1 }}
+              style={{
+                border:'none',
+                background:'transparent',
+                color:'#9ca3af',
+                fontSize:18,
+                cursor:'pointer',
+                lineHeight:1,
+                fontFamily:'Inter, system-ui, sans-serif',
+              }}
             >
               ×
             </button>
@@ -101,16 +142,17 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
         onClick={addDebt}
         style={{
           width:'100%',
-          marginTop:10,
+          marginTop:8,
           border:'1px dashed #cbd5e1',
           background:'#fff',
           color:'#9ca3af',
           borderRadius:9,
-          padding:'8px 16px',
-          fontSize:12,
-          fontWeight:800,
+          padding:'9px 16px',
+          fontSize:'12px',
+          fontWeight:600,
           cursor:'pointer',
-          textAlign:'left'
+          textAlign:'left',
+          fontFamily:'Inter, system-ui, sans-serif',
         }}
       >
         + add debt item
@@ -126,10 +168,35 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
         borderRadius:9,
         padding:'9px 16px',
         background:'#f7f8fa',
+        minHeight:'44px',
       }}>
-        <div style={{ fontSize:12.5, fontWeight:900, color:'#4b5563', paddingLeft: isMobile ? 0 : 26 }}>Total Debt</div>
-        <div style={{ textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:800, color:'#9ca3af' }}>Rp {fmtNum(totalPlan)}</div>
-        <div style={{ textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:900, color:'#92400e' }}>Rp {fmtNum(totalActual)}</div>
+        <div style={{
+          fontSize:'13px',
+          fontWeight:700,
+          color:'#4b5563',
+          paddingLeft: isMobile ? 0 : 26,
+          fontFamily:'Inter, system-ui, sans-serif',
+        }}>
+          Total Debt
+        </div>
+        <div style={{
+          textAlign:'right',
+          fontFamily:'JetBrains Mono, monospace',
+          fontSize:'12.5px',
+          fontWeight:700,
+          color:'#9ca3af',
+        }}>
+          Rp {fmtNum(totalPlan)}
+        </div>
+        <div style={{
+          textAlign:'right',
+          fontFamily:'JetBrains Mono, monospace',
+          fontSize:'12.5px',
+          fontWeight:700,
+          color:'#8a5f2b',
+        }}>
+          Rp {fmtNum(totalActual)}
+        </div>
         <div />
       </div>
     </div>
