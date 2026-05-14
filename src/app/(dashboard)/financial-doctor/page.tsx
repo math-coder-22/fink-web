@@ -193,59 +193,58 @@ export default function FinancialDoctorPage() {
     if (!observationReady) {
       diagnosis.push({
         tone:'neutral',
-        title:'Data awal sedang dibaca',
-        detail:`FiNK sudah membaca ${observationDays} hari transaksi. Arahan akan makin personal setelah 20–30 hari pencatatan.`,
+        title:'Data observasi belum penuh',
+        detail:`FiNK sudah membaca ${observationDays} hari transaksi. Rekomendasi akan lebih akurat setelah 20–30 hari pencatatan.`,
       })
     }
 
     if (income <= 0) {
-      diagnosis.push({ tone:'warning', title:'Income belum tercatat', detail:'Tambahkan pemasukan agar FiNK bisa menyusun arahan bulanan yang lebih realistis.' })
+      diagnosis.push({ tone:'warning', title:'Income belum tercatat', detail:'Catat pemasukan agar rasio keuangan dapat dihitung dengan benar.' })
     }
 
     if (cashflow < 0) {
-      diagnosis.push({ tone:'danger', title:'Cashflow perlu dijaga', detail:`Bulan ini minus ${fmt(cashflow)}. Fokuskan pengeluaran pada kebutuhan utama dulu.` })
+      diagnosis.push({ tone:'danger', title:'Cashflow negatif', detail:`Bulan ini minus ${fmt(cashflow)}. Prioritaskan menahan pengeluaran fleksibel.` })
     } else if (income > 0) {
-      diagnosis.push({ tone:'good', title:'Cashflow masih aman', detail:`Masih ada ruang ${fmt(cashflow)} yang bisa diarahkan untuk kebutuhan, saving, atau buffer.` })
+      diagnosis.push({ tone:'good', title:'Cashflow positif', detail:`Masih ada ruang ${fmt(cashflow)} sampai akhir bulan.` })
     }
 
     if (savingRate < .05 && income > 0) {
-      diagnosis.push({ tone:'warning', title:'Saving perlu dinaikkan bertahap', detail:`Saving rate baru ${pct(savingRate)}. Target awal yang realistis adalah 5–10% dari income.` })
+      diagnosis.push({ tone:'warning', title:'Saving rate rendah', detail:`Saving rate baru ${pct(savingRate)}. Target awal realistis adalah 5–10%.` })
     } else if (savingRate >= .15) {
-      diagnosis.push({ tone:'good', title:'Saving sudah berjalan baik', detail:`Saving rate ${pct(savingRate)} sudah cukup baik untuk dipertahankan.` })
+      diagnosis.push({ tone:'good', title:'Saving rate sehat', detail:`Saving rate ${pct(savingRate)} sudah cukup baik.` })
     }
 
     if (debtRatio > .35) {
-      diagnosis.push({ tone:'danger', title:'Ruang cicilan mulai ketat', detail:`Rasio utang/cicilan ${pct(debtRatio)}. Tahan cicilan baru agar arus kas tetap lega.` })
+      diagnosis.push({ tone:'danger', title:'Debt ratio tinggi', detail:`Rasio utang/cicilan ${pct(debtRatio)}. Hindari cicilan baru.` })
     }
 
     if (topCats[0] && expense > 0 && topCats[0].amount / expense >= .3) {
-      diagnosis.push({ tone:'warning', title:`${topCats[0].label} dominan`, detail:`Kategori ini mengambil ${pct(topCats[0].amount / expense)} dari total expense. Ini bisa menjadi area evaluasi pertama.` })
+      diagnosis.push({ tone:'warning', title:`${topCats[0].label} dominan`, detail:`Kategori ini mengambil ${pct(topCats[0].amount / expense)} dari total expense.` })
     }
 
     if (diagnosis.length === 0) {
-      diagnosis.push({ tone:'good', title:'Kondisi umum stabil', detail:'Belum ada risiko besar dari data bulan ini. Fokusnya adalah menjaga ritme yang sudah baik.' })
+      diagnosis.push({ tone:'good', title:'Kondisi umum stabil', detail:'Belum ada sinyal risiko besar dari data bulan ini.' })
     }
 
     const treatments: { priority:'high'|'medium'|'low'; title:string; detail:string }[] = []
 
-    if (cashflow < 0) treatments.push({ priority:'high', title:'Aktifkan mode hemat sementara', detail:'Tunda belanja non-prioritas sampai cashflow kembali positif.' })
-    if (dailyLimit > 0) treatments.push({ priority:'medium', title:'Pakai batas harian aman', detail:`Gunakan batas sekitar ${fmt(dailyLimit)}/hari sampai akhir bulan agar tetap terkendali.` })
-    if (savingRate < .1 && income > 0) treatments.push({ priority:'medium', title:'Naikkan saving bertahap', detail:`Mulai dari ${fmt(income*.05)}–${fmt(income*.1)} per bulan sebagai target ringan.` })
-    if (debtRatio > .25) treatments.push({ priority: debtRatio>.35?'high':'medium', title:'Jaga rasio cicilan', detail:'Utamakan cicilan berjalan dan hindari komitmen baru bulan ini.' })
-    if (topCats[0]) treatments.push({ priority:'low', title:`Rapikan kategori ${topCats[0].label}`, detail:`Coba turunkan 10–15%. Estimasi ruang yang bisa dibuka: ${fmt(topCats[0].amount*.1)}–${fmt(topCats[0].amount*.15)}.` })
-    if (treatments.length === 0) treatments.push({ priority:'low', title:'Pertahankan ritme bulan ini', detail:'Fokus menjaga konsistensi pencatatan dan saving rutin.' })
+    if (cashflow < 0) treatments.push({ priority:'high', title:'Aktifkan survival budget', detail:'Tunda belanja non-prioritas sampai cashflow kembali positif.' })
+    if (dailyLimit > 0) treatments.push({ priority:'medium', title:'Gunakan batas harian aman', detail:`Gunakan batas sekitar ${fmt(dailyLimit)}/hari sampai akhir bulan.` })
+    if (savingRate < .1 && income > 0) treatments.push({ priority:'medium', title:'Naikkan saving bertahap', detail:`Mulai dari ${fmt(income*.05)}–${fmt(income*.1)} per bulan.` })
+    if (debtRatio > .25) treatments.push({ priority: debtRatio>.35?'high':'medium', title:'Jaga rasio cicilan', detail:'Utamakan pembayaran utang dan hindari cicilan baru.' })
+    if (topCats[0]) treatments.push({ priority:'low', title:`Audit kategori ${topCats[0].label}`, detail:`Coba turunkan 10–15%. Estimasi ruang: ${fmt(topCats[0].amount*.1)}–${fmt(topCats[0].amount*.15)}.` })
+    if (treatments.length === 0) treatments.push({ priority:'low', title:'Pertahankan pola bulan ini', detail:'Fokus menjaga konsistensi pencatatan dan saving rutin.' })
 
     const habits: { tone:Tone; title:string; detail:string }[] = []
     const smallTx = allTx.filter(t => t.type === 'out' && Number(t.amt||0) > 0 && Number(t.amt||0) <= 50000)
-    if (smallTx.length >= 20) habits.push({ tone:'warning', title:'Transaksi kecil cukup sering', detail:`Ada ${smallTx.length} transaksi kecil. Nilai kecil yang sering bisa menjadi area perapihan cashflow.` })
-    if (saving > 0) habits.push({ tone:'good', title:'Saving sudah mulai terbentuk', detail:`Bulan ini sudah ada saving ${fmt(saving)}.` })
-    if (habits.length === 0) habits.push({ tone:'neutral', title:'Belum ada pola kuat', detail:'Lanjutkan pencatatan agar FiNK bisa membaca kebiasaan dan memberi arahan yang lebih tepat.' })
+    if (smallTx.length >= 20) habits.push({ tone:'warning', title:'Transaksi kecil cukup sering', detail:`Ada ${smallTx.length} transaksi kecil. Nilai kecil yang sering bisa menjadi kebocoran cashflow.` })
+    if (saving > 0) habits.push({ tone:'good', title:'Ada alokasi saving', detail:`Bulan ini sudah ada saving ${fmt(saving)}.` })
+    if (habits.length === 0) habits.push({ tone:'neutral', title:'Belum ada pola kuat', detail:'Lanjutkan pencatatan agar FiNK bisa membaca pola kebiasaan.' })
 
     return {
       score, statusTone, statusLabel, observationDays, observationReady,
       income, expense, saving, cashflow, savingRate, debtRatio, dailyBurn, dailyLimit,
       diagnosis, treatments, habits,
-      firstAction: treatments[0] ?? { priority:'low', title:'Lanjutkan pencatatan bulan ini', detail:'FiNK akan menyusun arahan yang lebih personal setelah data transaksi bertambah.' },
     }
   }, [tx, computedSaving, computedDebt, curMonth, curYear])
 
@@ -265,7 +264,7 @@ export default function FinancialDoctorPage() {
             Advisor
           </h1>
           <p style={{ margin:'5px 0 0', color:'#6b7280', fontSize:12.5, lineHeight:1.55 }}>
-            Panduan personal untuk membaca kondisi bulan ini dan menentukan langkah keuangan berikutnya.
+            Panduan dan prioritas keuangan pribadi untuk {MONTH_NAMES[curMonth]} {curYear}.
           </p>
         </div>
         <Badge tone={data.observationReady ? 'good' : 'warning'}>
@@ -273,10 +272,24 @@ export default function FinancialDoctorPage() {
         </Badge>
       </div>
 
+      
+      <Card style={{ marginBottom:14, background:'#f8fafc' }}>
+        <div style={{padding:'16px'}}>
+          <div style={{fontSize:11,fontWeight:900,color:'#64748b',textTransform:'uppercase'}}>Today's Insight</div>
+          <div style={{fontSize:18,fontWeight:900,color:'#111827',marginTop:6}}>
+            {data.cashflow >= 0 ? 'Cashflow masih sehat bulan ini.' : 'Perlu perhatian pada cashflow bulan ini.'}
+          </div>
+          <div style={{fontSize:12.5,color:'#6b7280',marginTop:6,lineHeight:1.6}}>
+            {data.cashflow >= 0 ? `Masih ada ruang ${fmt(data.cashflow)} yang bisa diarahkan untuk target berikutnya.` : `Pengeluaran saat ini melebihi ritme aman. Fokus utama adalah menstabilkan arus kas.`}
+          </div>
+        </div>
+      </Card>
+
+
       {!data.observationReady && (
         <Card style={{ marginBottom:14, borderColor:'#fde68a', background:'#fffbeb' }}>
           <div style={{ padding:14, color:'#92400e', fontSize:12.5, lineHeight:1.55 }}>
-            <b>Mode Observasi:</b> FiNK sudah memberi arahan awal. Hasilnya akan makin personal setelah pencatatan 20–30 hari.
+            <b>Mode Observasi:</b> rekomendasi awal sudah muncul, tetapi akan lebih akurat setelah pencatatan 20–30 hari.
           </div>
         </Card>
       )}
@@ -284,7 +297,7 @@ export default function FinancialDoctorPage() {
       <div className="doctor-top-grid" style={{ display:'grid', gridTemplateColumns:'minmax(230px,.8fr) minmax(0,1.2fr)', gap:14, marginBottom:14 }}>
         <Card>
           <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:12 }}>
-            <div style={{ fontSize:12, fontWeight:900, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.8px' }}>Financial Readiness</div>
+            <div style={{ fontSize:12, fontWeight:900, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.8px' }}>FiNK Score</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
               <div style={{ fontSize:52, lineHeight:1, fontWeight:950, color:toneMap[data.statusTone].color, fontFamily:'var(--font-mono), monospace', letterSpacing:'-2px' }}>
                 {data.score}
@@ -292,35 +305,23 @@ export default function FinancialDoctorPage() {
               <div style={{ fontSize:16, color:'#9ca3af', fontWeight:800 }}>/100</div>
             </div>
             <Badge tone={data.statusTone}>{data.statusLabel}</Badge>
-            <div style={{ height:8, borderRadius:999, background:'#eef2f7', overflow:'hidden' }}>
-              <div style={{ width:`${data.score}%`, height:'100%', borderRadius:999, background:toneMap[data.statusTone].color }} />
-            </div>
             <div style={{ fontSize:12.5, color:'#6b7280', lineHeight:1.55 }}>
-              Gambaran kesiapan bulan ini berdasarkan cashflow, saving, cicilan, dana darurat, dan konsistensi pencatatan.
+              Skor dihitung dari cashflow, saving rate, debt ratio, emergency fund, dan konsistensi pencatatan.
             </div>
           </div>
         </Card>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          <Card style={{ borderColor:'#d8efe5', background:'linear-gradient(135deg,#f7fffb 0%,#ffffff 70%)' }}>
-            <div style={{ padding:15 }}>
-              <div style={{ fontSize:10.5, color:'#1a5c42', textTransform:'uppercase', letterSpacing:'.7px', fontWeight:950 }}>Saran utama FiNK</div>
-              <div style={{ marginTop:7, fontSize:15, fontWeight:950, color:'#111827', lineHeight:1.35 }}>{data.firstAction.title}</div>
-              <div style={{ marginTop:7, fontSize:12.5, color:'#4b5563', lineHeight:1.55 }}>{data.firstAction.detail}</div>
-            </div>
-          </Card>
-          <div className="doctor-metric-grid" style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:10 }}>
-            <MetricCard label="Cashflow" value={fmt(data.cashflow)} tone={data.cashflow >= 0 ? 'good' : 'danger'} note={data.cashflow >= 0 ? 'Ruang bulan ini masih positif.' : 'Perlu dikendalikan bulan ini.'} />
-            <MetricCard label="Saving Rate" value={pct(data.savingRate)} tone={data.savingRate >= .15 ? 'good' : data.savingRate >= .05 ? 'warning' : 'danger'} note="Porsi dana yang diarahkan ke tujuan." />
-            <MetricCard label="Debt Ratio" value={pct(data.debtRatio)} tone={data.debtRatio <= .25 ? 'good' : data.debtRatio <= .35 ? 'warning' : 'danger'} note="Porsi komitmen bulanan terhadap income." />
-            <MetricCard label="Daily Burn" value={fmt(data.dailyBurn) + '/hari'} tone="neutral" note="Ritme pengeluaran harian saat ini." />
-          </div>
+        <div className="doctor-metric-grid" style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:10 }}>
+          <MetricCard label="Cashflow" value={fmt(data.cashflow)} tone={data.cashflow >= 0 ? 'good' : 'danger'} note={data.cashflow >= 0 ? 'Saldo bulan ini masih positif.' : 'Pengeluaran melebihi pemasukan.'} />
+          <MetricCard label="Saving Rate" value={pct(data.savingRate)} tone={data.savingRate >= .15 ? 'good' : data.savingRate >= .05 ? 'warning' : 'danger'} note="Porsi saving terhadap income." />
+          <MetricCard label="Debt Ratio" value={pct(data.debtRatio)} tone={data.debtRatio <= .25 ? 'good' : data.debtRatio <= .35 ? 'warning' : 'danger'} note="Porsi cicilan/utang bulanan terhadap income." />
+          <MetricCard label="Daily Burn" value={fmt(data.dailyBurn) + '/hari'} tone="neutral" note="Rata-rata pengeluaran harian." />
         </div>
       </div>
 
       <div className="doctor-main-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         <Card>
-          <SectionHead title="Situasi Bulan Ini" subtitle="Ringkasan peluang dan risiko yang perlu diperhatikan." />
+          <SectionHead title="Situasi Bulan Ini" subtitle="Ringkasan kondisi keuangan dan hal yang perlu diperhatikan." />
           <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
             {data.diagnosis.map((item, idx) => {
               const t = toneMap[item.tone]
@@ -328,7 +329,7 @@ export default function FinancialDoctorPage() {
                 <div key={idx} style={{ border:`1px solid ${t.border}`, background:t.bg, borderRadius:12, padding:'11px 12px' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
                     <div style={{ fontSize:12.5, fontWeight:900, color:t.color }}>{item.title}</div>
-                    <Badge tone={item.tone}>{item.tone === 'good' ? 'baik' : item.tone === 'warning' ? 'perlu dijaga' : item.tone === 'danger' ? 'prioritas' : 'info'}</Badge>
+                    <Badge tone={item.tone}>{item.tone}</Badge>
                   </div>
                   <div style={{ marginTop:6, fontSize:12, color:'#4b5563', lineHeight:1.5 }}>{item.detail}</div>
                 </div>
@@ -338,7 +339,7 @@ export default function FinancialDoctorPage() {
         </Card>
 
         <Card>
-          <SectionHead title="Langkah Prioritas" subtitle="Urutan tindakan kecil yang bisa dilakukan bulan ini." />
+          <SectionHead title="Langkah Prioritas" subtitle="Prioritas yang disarankan FiNK untuk membantu tujuan keuangan Anda." />
           <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
             {data.treatments.map((item, idx) => {
               const tone: Tone = item.priority === 'high' ? 'danger' : item.priority === 'medium' ? 'warning' : 'neutral'
@@ -348,7 +349,7 @@ export default function FinancialDoctorPage() {
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
                     <div style={{ fontSize:12.5, fontWeight:900, color:'#111827' }}>{idx + 1}. {item.title}</div>
                     <span style={{ color:t.color, background:t.bg, border:`1px solid ${t.border}`, borderRadius:999, padding:'3px 8px', fontSize:10, fontWeight:900, textTransform:'uppercase' }}>
-                      {item.priority === 'high' ? 'utama' : item.priority === 'medium' ? 'penting' : 'ringan'}
+                      {item.priority}
                     </span>
                   </div>
                   <div style={{ marginTop:6, fontSize:12, color:'#4b5563', lineHeight:1.5 }}>{item.detail}</div>
@@ -360,7 +361,7 @@ export default function FinancialDoctorPage() {
       </div>
 
       <Card style={{ marginTop:14 }}>
-        <SectionHead title="Pola Kebiasaan" subtitle="Pembacaan sederhana dari ritme transaksi dan saving." />
+        <SectionHead title="Pola Kebiasaan" subtitle="Kebiasaan keuangan yang terdeteksi dari aktivitas bulan ini." />
         <div style={{ padding:14, display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:10 }}>
           {data.habits.map((h, idx) => {
             const t = toneMap[h.tone]
@@ -375,11 +376,11 @@ export default function FinancialDoctorPage() {
       </Card>
 
       <Card style={{ marginTop:14 }}>
-        <SectionHead title="Rencana Alokasi Berikutnya" subtitle="Angka awal untuk membantu menyusun budget bulan berikutnya." />
+        <SectionHead title="Rekomendasi Alokasi Awal" subtitle="Angka awal untuk membantu menyusun budget bulan berikutnya." />
         <div style={{ padding:14, display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:10 }}>
-          <MetricCard label="Batas Harian Aman" value={fmt(data.dailyLimit) + '/hari'} tone={data.dailyLimit > 0 ? 'good' : 'danger'} note="Batas ringan berdasarkan sisa cashflow." />
+          <MetricCard label="Batas Harian Aman" value={fmt(data.dailyLimit) + '/hari'} tone={data.dailyLimit > 0 ? 'good' : 'danger'} note="Batas perkiraan berdasarkan sisa cashflow." />
           <MetricCard label="Target Saving Awal" value={fmt(data.income * .1)} tone="neutral" note="Target konservatif 10% dari income." />
-          <MetricCard label="Ruang Audit Expense" value={fmt(data.expense * .1)} tone="warning" note="Simulasi ruang hemat 10% dari total expense." />
+          <MetricCard label="Ruang Audit Expense" value={fmt(data.expense * .1)} tone="warning" note="Simulasi penghematan 10% dari total expense." />
         </div>
       </Card>
 
