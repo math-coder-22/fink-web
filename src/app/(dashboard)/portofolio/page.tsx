@@ -27,7 +27,7 @@ export default function PortofolioPage() {
       </AppCard>
 
       <EmptyState icon="📈" title="Portfolio Coming Soon">
-        Halaman portofolio sedang disiapkan dengan gaya visual yang sama seperti Dashboard dan Smart Saving.
+        Halaman portofolio sedang disiapkan dengan gaya visual yang sama seperti Overview dan Goals.
       </EmptyState>
     </div>
   )

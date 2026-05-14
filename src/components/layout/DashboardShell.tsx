@@ -15,6 +15,38 @@ export const MONTH_NAMES: Record<string, string> = {
 }
 export const MONTHS_ORDER: MonthKey[] = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 
+
+type NavIconName = 'overview' | 'journal' | 'advisor' | 'goals' | 'profile' | 'admin'
+
+function NavIcon({ name, size = 17 }: { name: NavIconName; size?: number }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.9,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+
+  switch (name) {
+    case 'overview':
+      return <svg {...common}><rect x="3" y="3" width="7" height="8" rx="1.8"/><rect x="14" y="3" width="7" height="5" rx="1.8"/><rect x="14" y="12" width="7" height="9" rx="1.8"/><rect x="3" y="15" width="7" height="6" rx="1.8"/></svg>
+    case 'journal':
+      return <svg {...common}><path d="M6 4.5h9.2A2.8 2.8 0 0 1 18 7.3v12.2H7.8A2.8 2.8 0 0 1 5 16.7V5.5a1 1 0 0 1 1-1Z"/><path d="M8.5 4.5v15"/><path d="M11 8h4"/><path d="M11 11h3"/></svg>
+    case 'advisor':
+      return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5-4.9 2 2.1-4.9 4.9-2.1Z"/><circle cx="12" cy="12" r="1"/></svg>
+    case 'goals':
+      return <svg {...common}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
+    case 'profile':
+      return <svg {...common}><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+    case 'admin':
+      return <svg {...common}><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="M9.5 12.5 11.2 14 15 10"/></svg>
+  }
+}
+
 export type MonthContextValue = {
   curMonth: MonthKey
   curYear:  number
@@ -28,15 +60,15 @@ export const MonthContext = createContext<MonthContextValue>({
 })
 export const useMonthContext = () => useContext(MonthContext)
 
-const BASE_NAV_ITEMS = [
-  { href:'/dashboard', label:'Dashboard',    icon:'▦' },
-  { href:'/financial-doctor', label:'Financial Doctor', icon:'🩺' },
-  { href:'/bulanan',   label:'Monthly',      icon:'◷' },
-  { href:'/tabungan',  label:'Smart Saving', icon:'◇' },
-  { href:'/settings',  label:'Settings',     icon:'⚙' },
+const BASE_NAV_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
+  { href:'/dashboard', label:'Overview', icon:'overview' },
+  { href:'/bulanan',   label:'Journal',  icon:'journal' },
+  { href:'/financial-doctor', label:'Advisor', icon:'advisor' },
+  { href:'/tabungan',  label:'Goals',    icon:'goals' },
+  { href:'/settings',  label:'Profile',  icon:'profile' },
 ]
 
-const ADMIN_NAV_ITEM = { href:'/admin', label:'Admin', icon:'◆' }
+const ADMIN_NAV_ITEM: { href: string; label: string; icon: NavIconName } = { href:'/admin', label:'Admin', icon:'admin' }
 
 export default function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {
   const router   = useRouter()
@@ -233,13 +265,13 @@ export default function DashboardShell({ user, children }: { user: User; childre
               {navItems.map(item => (
                 <Link key={item.href} href={item.href} onClick={()=>setMobileMenuOpen(false)} style={{
                   display:'flex', alignItems:'center', gap:'10px',
-                  padding:'10px 12px', borderRadius:'8px',
+                  padding:'10px 12px', borderRadius:'10px',
                   background: pathname===item.href?'#e8f5ef':'transparent',
                   color: pathname===item.href?'#1a5c42':'#4b5563',
                   fontWeight: pathname===item.href?600:500,
                   fontSize:'14px', textDecoration:'none',
                 }}>
-                  <span style={{ fontSize:'16px', width:'20px', textAlign:'center' }}>{item.icon}</span>
+                  <span style={{ width:'20px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><NavIcon name={item.icon} size={17} /></span>
                   {item.label}
                 </Link>
               ))}
@@ -267,13 +299,13 @@ export default function DashboardShell({ user, children }: { user: User; childre
               {navItems.map(item => (
                 <Link key={item.href} href={item.href} style={{
                   display:'flex', alignItems:'center', gap:'9px',
-                  padding:'8px 10px', borderRadius:'6px',
+                  padding:'9px 10px', borderRadius:'10px',
                   background: pathname===item.href?'#e8f5ef':'transparent',
                   color: pathname===item.href?'#1a5c42':'#4b5563',
                   fontWeight: pathname===item.href?600:500,
                   fontSize:'13px', textDecoration:'none', whiteSpace:'nowrap',
                 }}>
-                  <span style={{ fontSize:'14px', width:'18px', textAlign:'center', flexShrink:0 }}>{item.icon}</span>
+                  <span style={{ width:'18px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><NavIcon name={item.icon} size={16} /></span>
                   {item.label}
                 </Link>
               ))}

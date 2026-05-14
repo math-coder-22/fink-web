@@ -22,7 +22,7 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader
-        title="Settings"
+        title="Profile"
         subtitle="Manage your account, subscription, and FiNK workspace"
       />
 

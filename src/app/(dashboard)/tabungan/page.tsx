@@ -59,7 +59,7 @@ export default function TabunganPage() {
 
   function openNewGoal() {
     if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
-      alert(upgradeMessage(`Akun Smart Saving Free maksimal ${FREE_PLAN_LIMITS.savingGoals}`));
+      alert(upgradeMessage(`Akun Goals Free maksimal ${FREE_PLAN_LIMITS.savingGoals}`));
       return;
     }
     setShowNew(true);
@@ -77,14 +77,14 @@ export default function TabunganPage() {
           fontSize: "13px",
         }}
       >
-        ⏳ Memuat Smart Saving...
+        ⏳ Memuat Goals...
       </div>
     );
 
   return (
     <div className="savings-page">
       <PageHeader
-        title="Smart Saving"
+        title="Goals"
         subtitle="Perencanaan tabungan goal-based · Rekomendasi otomatis"
         action={
           <AppButton onClick={openNewGoal}>
@@ -95,7 +95,7 @@ export default function TabunganPage() {
 
       {error && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
-          Smart Saving error: {error}<br />
+          Goals error: {error}<br />
           Pastikan SQL <b>savings_goals_schema.sql</b> sudah dijalankan di Supabase.
         </div>
       )}
@@ -105,7 +105,7 @@ export default function TabunganPage() {
 
       {!isPremium && (
         <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#9a3412', fontSize:'12px', fontWeight:600 }}>
-          Paket Free: maksimal {FREE_PLAN_LIMITS.savingGoals} akun Smart Saving. Saat ini: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
+          Paket Free: maksimal {FREE_PLAN_LIMITS.savingGoals} akun Goals. Saat ini: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
         </div>
       )}
 

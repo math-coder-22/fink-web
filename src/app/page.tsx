@@ -119,7 +119,7 @@ export default function LandingPage() {
             maxWidth: '620px',
           }}>
             FiNK membantu Anda mencatat transaksi bulanan, menyusun budget,
-            memantau Smart Saving, dan melihat ringkasan keuangan keluarga secara jelas.
+            memantau Goals, dan melihat ringkasan keuangan keluarga secara jelas.
           </p>
 
           <div style={{
@@ -162,8 +162,8 @@ export default function LandingPage() {
             fontSize: '14px',
             fontWeight: 750,
           }}>
-            <span>✅ Monthly Budget</span>
-            <span>✅ Smart Saving</span>
+            <span>✅ Journal</span>
+            <span>✅ Goals</span>
             <span>✅ Financial Insight</span>
           </div>
         </div>
@@ -208,8 +208,8 @@ export default function LandingPage() {
           gap: '16px',
         }}>
           {[
-            ['📒', 'Monthly Budget', 'Atur rencana pemasukan dan pengeluaran setiap bulan dengan ringkas.'],
-            ['🏦', 'Smart Saving', 'Buat target tabungan seperti dana darurat, pendidikan, dan pensiun.'],
+            ['📒', 'Journal', 'Atur rencana pemasukan dan pengeluaran setiap bulan dengan ringkas.'],
+            ['🏦', 'Goals', 'Buat target tabungan seperti dana darurat, pendidikan, dan pensiun.'],
             ['💡', 'Insight Keluarga', 'Lihat sisa dana, spending rate, dan kondisi keuangan secara cepat.'],
           ].map(([icon, title, desc]) => (
             <div key={title} style={{

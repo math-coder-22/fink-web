@@ -87,8 +87,8 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                 </div>
               ) : (
                 <>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
+                  <span style={{ minWidth:'100px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
+                  <span style={{ minWidth:'100px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
               <button
@@ -151,12 +151,12 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                           value={item.label} onMouseDown={e=>e.stopPropagation()}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                           onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
-                        <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                        <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                           value={item.plan?fmtNum(item.plan):''} placeholder="0"
                           onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                           onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:pNum(e.target.value)})}))} />
-                        <div style={{ minWidth:'86px', fontSize:'12px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af' }}>
+                        <div style={{ minWidth:'100px', fontSize:'12px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af' }}>
                           {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
                         </div>
                       </>

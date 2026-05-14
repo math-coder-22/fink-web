@@ -104,9 +104,9 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const colLabels: React.CSSProperties = { display:'flex', alignItems:'center', padding:'7px 16px', gap:'6px', background:'#f7f8fa', borderBottom:'1px solid #e3e7ee', fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }
 
   const MOBILE_TABS: { key: MobileTab; label: string }[] = [
-    { key:'transactions', label:'📝 Transactions' },
-    { key:'budget',       label:'📊 Budget' },
-    { key:'income',       label:'💰 Income' },
+    { key:'transactions', label:'Transactions' },
+    { key:'budget',       label:'Budget' },
+    { key:'income',       label:'Income' },
   ]
 
   const activePanel = isMobile ? mobileTab : desktopPanel
@@ -115,7 +115,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     <div style={card}>
       <div style={cardHead}>
         <div>
-          <div style={cardTitle}>📝 Daily Transactions</div>
+          <div style={cardTitle}>Daily Transactions</div>
           <div style={cardSub}>Expenses are automatically reflected in budget actuals</div>
         </div>
         <span style={{ fontSize:'9.5px', fontWeight:600, background:'#f7f8fa', color:'#4b5563', border:'1px solid #e3e7ee', padding:'2px 8px', borderRadius:'20px' }}>
@@ -131,14 +131,14 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     <div style={card}>
       <div style={cardHead}>
         <div>
-          <div style={cardTitle}>{activePanel==='budget' ? '📊 Budget' : '💰 Income'}</div>
+          <div style={cardTitle}>{activePanel==='budget' ? 'Budget' : 'Income'}</div>
           <div style={cardSub}>{activePanel==='budget' ? 'Actuals are calculated automatically from daily transactions' : 'Monthly income sources'}</div>
         </div>
         {!isMobile && (
           <div style={{ display:'flex', gap:'2px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'7px', padding:'2px' }}>
             {(['budget','income'] as DesktopPanel[]).map(p => (
               <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'11.5px', fontWeight:600, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#9ca3af', border:'none', padding:'4px 13px', borderRadius:'5px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
-                {p==='budget' ? '📊 Budget' : '💰 Income'}
+                {p==='budget' ? 'Budget' : 'Income'}
               </button>
             ))}
           </div>

@@ -251,7 +251,7 @@ export default function FinancialDoctorPage() {
   if (loading) {
     return (
       <div style={{ minHeight:'45vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#9ca3af', fontSize:13 }}>
-        Memuat Financial Doctor...
+        Memuat Advisor...
       </div>
     )
   }
@@ -261,7 +261,7 @@ export default function FinancialDoctorPage() {
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:14, flexWrap:'wrap', marginBottom:14 }}>
         <div>
           <h1 style={{ fontSize:22, fontWeight:950, color:'#111827', letterSpacing:'-.6px', margin:0 }}>
-            🩺 Financial Doctor
+            Advisor
           </h1>
           <p style={{ margin:'5px 0 0', color:'#6b7280', fontSize:12.5, lineHeight:1.55 }}>
             Check-up, diagnosis, dan treatment plan keuangan untuk {MONTH_NAMES[curMonth]} {curYear}.

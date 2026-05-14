@@ -219,7 +219,7 @@ const { curMonth, curYear } = useMonthContext()
       {/* Header */}
       <div className="dash-header" style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
         <div>
-          <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Dashboard</h1>
+          <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Overview</h1>
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>
             Ringkasan keuangan {MONTH_NAMES[curMonth]} {curYear} · Smart Family Finance
           </p>
@@ -314,7 +314,7 @@ const { curMonth, curYear } = useMonthContext()
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Smart saving */}
           <Card>
-            <CardHead title="🏦 Smart Saving" subtitle="Ringkasan target tabungan aktif" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola →</Link>} />
+            <CardHead title="Goals" subtitle="Ringkasan target tabungan aktif" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola →</Link>} />
             <div style={{ padding:'14px 16px' }}>
               {!goalsLoaded ? (
                 <div style={{ fontSize:'12px', color:'#9ca3af' }}>Loading target tabungan...</div>
