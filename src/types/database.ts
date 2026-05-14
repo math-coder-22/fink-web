@@ -42,6 +42,7 @@ export interface Database {
           year: number
           income: Json        // IncomeRow[]
           saving: Json        // SavingRow[]
+          debt: Json          // DebtRow[]
           budget: Json        // BudgetCategory[]
           created_at: string
           updated_at: string
@@ -133,6 +134,7 @@ export interface Transaction {
 export interface MonthData {
   income: IncomeRow[]
   saving: SavingRow[]
+  debt: DebtRow[]
   budget: BudgetCategory[]
   tx: Transaction[]
 }

@@ -59,7 +59,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     const day = String(now.getDate()).padStart(2,'0')
     await addTx({
       date: day, type,
-      cat:  'Reconciliation',
+      cat:  'Rekonsiliasi',
       note: `Balance reconciliation — actual: ${fmt(aktual)}, difference: ${selisih>0?'+':''}${fmt(selisih)}`,
       amt:  Math.abs(selisih),
       debt: false, settled: false,
@@ -198,7 +198,6 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>{phSub}</p>
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
-          {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
           {/* Reflection → Reconcile → Copy */}

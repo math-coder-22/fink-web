@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const { month, year, date, type, cat, note, amt, debt, settled } = body
+  const parsedAmt = Number.parseInt(String(amt || '0'), 10)
+  if (!month || !year || !date || !type || !cat) return NextResponse.json({ error: 'month, year, date, type, and cat are required' }, { status: 400 })
+  if (!Number.isFinite(parsedAmt) || parsedAmt <= 0) return NextResponse.json({ error: 'amount must be greater than 0' }, { status: 400 })
 
   const { data, error } = await supabase
     .from('transactions')
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       month, year: parseInt(year),
       date, type, cat, note,
-      amt: parseInt(amt),
+      amt: parsedAmt,
       debt: !!debt,
       settled: !!settled,
     })
@@ -63,8 +66,12 @@ export async function PATCH(request: NextRequest) {
   const { id, ...updates } = body
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  if (updates.amt) updates.amt = parseInt(updates.amt)
-  if (updates.year) updates.year = parseInt(updates.year)
+  if (updates.amt !== undefined) {
+    const parsedAmt = Number.parseInt(String(updates.amt || '0'), 10)
+    if (!Number.isFinite(parsedAmt) || parsedAmt <= 0) return NextResponse.json({ error: 'amount must be greater than 0' }, { status: 400 })
+    updates.amt = parsedAmt
+  }
+  if (updates.year !== undefined) updates.year = parseInt(updates.year)
 
   const { data, error } = await supabase
     .from('transactions')

@@ -11,7 +11,7 @@ interface Props {
   income:   IncomeCategory[]
   saving:   SavingRow[]
   debt?:    DebtRow[]
-  onAdd:    (t: Omit<Transaction, 'id'|'month'|'year'>) => Promise<void>
+  onAdd:    (t: Omit<Transaction, 'id'|'month'|'year'>) => Promise<Transaction | void>
   onUpdate: (id: string, updates: Partial<Transaction>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
@@ -73,7 +73,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
     await onAdd({ date:day, type, cat, note: note || cat || type, amt: amount, debt: isDebt, settled: false })
     if (type === 'save' && goalId) {
       const goal = activeGoals.find(g => g.id === goalId)
-      topupGoal(goalId, amount, goalNote || note || `Setoran dari Monthly - ${goal?.name || cat || 'Smart Saving'}`)
+      await topupGoal(goalId, amount, goalNote || note || `Setoran dari Monthly - ${goal?.name || cat || 'Smart Saving'}`)
     }
     setAmt(''); setNote(''); setCat(''); setIsDebt(false); setGoalNote('')
     setLoading(false)

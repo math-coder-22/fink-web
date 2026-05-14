@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.monthly_plans (
   year        INTEGER NOT NULL CHECK (year BETWEEN 2000 AND 2100),
   income      JSONB NOT NULL DEFAULT '[]',
   saving      JSONB NOT NULL DEFAULT '[]',
+  debt        JSONB NOT NULL DEFAULT '[]',
   budget      JSONB NOT NULL DEFAULT '[]',
   created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL,
