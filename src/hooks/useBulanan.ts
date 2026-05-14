@@ -86,6 +86,10 @@ interface UseBulananProps {
   curYear:  number
 }
 
+function debtLabelsFromPlan(plan: MonthPlan) {
+  return new Set((Array.isArray(plan.debt) ? plan.debt : []).map(d => d.label).filter(Boolean))
+}
+
 export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   const [plan,    setPlan]    = useState<MonthPlan>(emptyMonth())
   const [tx,      setTx]      = useState<Transaction[]>([])

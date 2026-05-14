@@ -128,9 +128,9 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                       <>
                         <div style={{ flex:'3', minWidth:0, overflow:'hidden' }}>
                           <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
-                            value={item.label} onMouseDown={e=>e.stopPropagation()}
+                            value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                             onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                            onBlur={e=>{ const old=income[ci].items[ii].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
+                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
                           <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
@@ -150,7 +150,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                         <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
                           value={item.label} onMouseDown={e=>e.stopPropagation()}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                          onBlur={e=>{ const old=income[ci].items[ii].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
+                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                           value={item.plan?fmtNum(item.plan):''} placeholder="0"
                           onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}

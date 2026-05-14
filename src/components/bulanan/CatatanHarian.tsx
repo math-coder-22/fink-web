@@ -3,13 +3,14 @@
 import { useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { useSavings } from '@/hooks/useSavings'
-import type { Transaction, BudgetCategory, IncomeCategory, SavingRow } from '@/types/database'
+import type { Transaction, BudgetCategory, IncomeCategory, SavingRow, DebtRow } from '@/types/database'
 
 interface Props {
   tx:       Transaction[]
   budget:   BudgetCategory[]
   income:   IncomeCategory[]
   saving:   SavingRow[]
+  debt?:    DebtRow[]
   onAdd:    (t: Omit<Transaction, 'id'|'month'|'year'>) => Promise<void>
   onUpdate: (id: string, updates: Partial<Transaction>) => Promise<void>
   onDelete: (id: string) => Promise<void>

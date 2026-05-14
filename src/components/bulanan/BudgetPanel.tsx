@@ -140,9 +140,9 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
                       <>
                         <div style={{ flex:'3', minWidth:0, overflow:'hidden' }}>
                           <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
-                            value={item.label} onMouseDown={e=>e.stopPropagation()}
+                            value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                             onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                            onBlur={e=>{ const old=budget[ci].items[ii].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
+                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
                           <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
@@ -185,7 +185,7 @@ export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingCh
                         <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
                           value={item.label} onMouseDown={e=>e.stopPropagation()}
                           onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                          onBlur={e=>{ const old=budget[ci].items[ii].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
+                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         <input style={mono} defaultValue={item.plan?fmtNum(item.plan):''}
                           key={`plan-${ci}-${ii}-${item.plan}`}
                           placeholder="0" type="text"
