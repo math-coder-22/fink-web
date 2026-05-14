@@ -322,7 +322,7 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
               </div>
               <div
                 style={{
-                  fontFamily: "JetBrains Mono,monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontWeight: 700,
                   fontSize: "13px",
                   color: h.type === "topup" ? "#065f46" : "#b45309",
@@ -452,7 +452,7 @@ export default function GoalCard({
                 style={{
                   color:
                     goal.monthly >= calc.monthlyNeeded ? "#065f46" : "#9ca3af",
-                  fontFamily: "JetBrains Mono,monospace",
+                  fontFamily: "var(--font-mono), monospace",
                 }}
               >
                 Aktual: {fmt(goal.monthly)}

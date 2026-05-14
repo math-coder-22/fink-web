@@ -247,7 +247,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
                     💰 Money You Earned
                   </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:'#15803d', letterSpacing:'-.5px' }}>
+                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#15803d', letterSpacing:'-.5px' }}>
                     {fmt(totalIncome)}
                   </div>
                   <div style={{ fontSize:'11.5px', color:'#4b5563', marginTop:'6px' }}>
@@ -258,7 +258,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                     {incomeComputed.flatMap(c=>c.items).filter(i=>(i.actual||0)>0).map(i=>(
                       <div key={i.label} style={{ display:'flex', justifyContent:'space-between', fontSize:'12px' }}>
                         <span style={{ color:'#6b7280' }}>{i.label}</span>
-                        <span style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:500, color:'#15803d' }}>{fmt(i.actual)}</span>
+                        <span style={{ fontFamily:'var(--font-mono), monospace', fontWeight:500, color:'#15803d' }}>{fmt(i.actual)}</span>
                       </div>
                     ))}
                   </div>
@@ -269,7 +269,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
                     🏦 Money You Saved
                   </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:'#1d4ed8', letterSpacing:'-.5px' }}>
+                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#1d4ed8', letterSpacing:'-.5px' }}>
                     {fmt(totalSavings)}
                   </div>
                   <div style={{ fontSize:'11.5px', color:'#4b5563', marginTop:'6px' }}>
@@ -283,7 +283,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                       {savingComputed.filter(r=>(r.actual||0)>0).map(r=>(
                         <div key={r.label} style={{ display:'flex', justifyContent:'space-between', fontSize:'12px' }}>
                           <span style={{ color:'#6b7280' }}>{r.label}</span>
-                          <span style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:500, color:'#1d4ed8' }}>{fmt(r.actual)}</span>
+                          <span style={{ fontFamily:'var(--font-mono), monospace', fontWeight:500, color:'#1d4ed8' }}>{fmt(r.actual)}</span>
                         </div>
                       ))}
                     </div>
@@ -295,7 +295,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'4px' }}>
                     💸 Money You Spent
                   </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:'#b91c1c', letterSpacing:'-.5px', marginBottom:'12px' }}>
+                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c', letterSpacing:'-.5px', marginBottom:'12px' }}>
                     {fmt(totalExp)}
                   </div>
 
@@ -312,7 +312,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                             <span style={{ fontSize:'12.5px', fontWeight:600, color:'#111827' }}>{cat.label}</span>
                             <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
                               <span style={{ fontSize:'11px', color:'#9ca3af' }}>{catPct}%</span>
-                              <span style={{ fontSize:'12.5px', fontWeight:600, fontFamily:'JetBrains Mono,monospace', color:'#b91c1c' }}>{fmt(catTotal)}</span>
+                              <span style={{ fontSize:'12.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:'#b91c1c' }}>{fmt(catTotal)}</span>
                             </div>
                           </div>
                           {/* Progress bar */}
@@ -323,7 +323,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                           {cat.items.filter(i=>(i.actual||0)>0).map(item=>(
                             <div key={item.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'2px 0 2px 10px', fontSize:'12px' }}>
                               <span style={{ color:'#6b7280' }}>└ {item.label}</span>
-                              <span style={{ fontFamily:'JetBrains Mono,monospace', color:'#4b5563' }}>{fmt(item.actual)}</span>
+                              <span style={{ fontFamily:'var(--font-mono), monospace', color:'#4b5563' }}>{fmt(item.actual)}</span>
                             </div>
                           ))}
                         </div>
@@ -348,7 +348,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                   <span style={{ fontSize:'13px', fontWeight:600, color: rawSisa>=0?'#15803d':'#b91c1c' }}>
                     {rawSisa >= 0 ? '✅ Remaining Balance' : '⚠️ Balance Deficit'}
                   </span>
-                  <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color: rawSisa>=0?'#15803d':'#b91c1c' }}>
+                  <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color: rawSisa>=0?'#15803d':'#b91c1c' }}>
                     {rawSisa < 0 ? '-' : ''}{fmt(rawSisa)}
                   </span>
                 </div>

@@ -115,7 +115,7 @@ export function TopupModal({
               onChange={(e) => setAmt(e.target.value)}
               style={{
                 ...inp,
-                fontFamily: "JetBrains Mono,monospace",
+                fontFamily: "var(--font-mono), monospace",
                 fontSize: "16px",
               }}
             />
@@ -300,7 +300,7 @@ export function WithdrawModal({
                 onChange={(e) => setAmt(e.target.value)}
                 style={{
                   ...inp,
-                  fontFamily: "JetBrains Mono,monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: "16px",
                 }}
               />
@@ -492,7 +492,7 @@ export function ReconcileModal({
               </div>
               <div
                 style={{
-                  fontFamily: "JetBrains Mono,monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontWeight: 800,
                   color: "#1a5c42",
                   marginTop: "4px",
@@ -522,7 +522,7 @@ export function ReconcileModal({
               </div>
               <div
                 style={{
-                  fontFamily: "JetBrains Mono,monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontWeight: 800,
                   color: diff >= 0 ? "#065f46" : "#b45309",
                   marginTop: "4px",
@@ -556,7 +556,7 @@ export function ReconcileModal({
               onChange={(e) => setActual(e.target.value)}
               style={{
                 ...inp,
-                fontFamily: "JetBrains Mono,monospace",
+                fontFamily: "var(--font-mono), monospace",
                 fontSize: "16px",
               }}
             />
@@ -660,7 +660,7 @@ export function SummaryCard({
             <span>Akumulasi semua target</span>
             <span
               style={{
-                fontFamily: "JetBrains Mono,monospace",
+                fontFamily: "var(--font-mono), monospace",
                 fontWeight: 800,
               }}
             >

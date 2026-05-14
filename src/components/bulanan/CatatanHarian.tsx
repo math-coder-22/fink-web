@@ -216,7 +216,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
             <input
               type="text"
               inputMode="numeric"
-              style={{ ...inp, fontFamily: 'JetBrains Mono, monospace', fontWeight: 500, paddingRight:'10px' }}
+              style={{ ...inp, fontFamily: 'var(--font-mono), monospace', fontWeight: 500, paddingRight:'10px' }}
               placeholder="Amount (Rp)"
               value={amt}
               onChange={e => setAmt(fmtInput(e.target.value))}
@@ -344,12 +344,12 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                   setCalcResult(safeCalculateExpression(formatted))
                 }}
                 placeholder="Contoh: 12.000+35.000"
-                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'JetBrains Mono, monospace', fontSize:'15px', fontWeight:700, color:'#111827', cursor:'default', caretColor:'transparent' }}
+                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'var(--font-mono), monospace', fontSize:'15px', fontWeight:700, color:'#111827', cursor:'default', caretColor:'transparent' }}
               />
 
               <div style={{ marginTop:'8px', padding:'10px 12px', borderRadius:'10px', background:'#f0fdf4', border:'1px solid #bbf7d0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
                 <span style={{ fontSize:'11px', fontWeight:800, color:'#15803d', textTransform:'uppercase', letterSpacing:'.5px' }}>Hasil</span>
-                <span style={{ fontFamily:'JetBrains Mono, monospace', fontSize:'16px', fontWeight:900, color:'#1a5c42' }}>
+                <span style={{ fontFamily:'var(--font-mono), monospace', fontSize:'16px', fontWeight:900, color:'#1a5c42' }}>
                   {calcResult === null ? '-' : fmt(calcResult)}
                 </span>
               </div>
@@ -459,7 +459,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                 </div>
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
-                  <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'JetBrains Mono,monospace' }}
+                  <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'var(--font-mono), monospace' }}
                     value={editData.amt ? Number(editData.amt).toLocaleString('id-ID') : ''} onChange={e => setEditData(p => ({ ...p, amt: parseInputAmount(e.target.value) }))} />
                 </div>
               </div>
@@ -489,7 +489,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
               border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
-              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'JetBrains Mono,monospace' }}>{t.date}</div>
+              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace' }}>{t.date}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
@@ -498,7 +498,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                   {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}>✓ Settled</span>}
                 </div>
               </div>
-              <div style={{ fontSize: '12.5px', fontWeight: 700, fontFamily: 'JetBrains Mono,monospace', color: tc, textAlign: 'right', minWidth: '78px' }}>{sg} {fmt(t.amt)}</div>
+              <div style={{ fontSize: '12.5px', fontWeight: 700, fontFamily: 'var(--font-mono), monospace', color: tc, textAlign: 'right', minWidth: '78px' }}>{sg} {fmt(t.amt)}</div>
               <div style={{ position:'relative', flexShrink:0 }}>
                 <button
                   type="button"

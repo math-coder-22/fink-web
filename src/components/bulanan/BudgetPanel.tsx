@@ -67,7 +67,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
 
   // ── Shared styles ──
   const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
-  const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }
+  const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
   const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'8px' }
 
   return (
@@ -96,13 +96,13 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               {isMobile ? (
                 /* Mobile: flex:2 agar proporsional dengan label (flex:1 di input) */
                 <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
-                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'JetBrains Mono,monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
+                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
+                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
                 </div>
               ) : (
                 <>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
+                  <span style={{ minWidth:'100px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
+                  <span style={{ minWidth:'100px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
               <button
@@ -146,7 +146,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                             onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                             value={item.plan?fmtNum(item.plan):''} placeholder="0"
                             onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                             onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -163,7 +163,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                               background:'transparent',
                               fontSize:'11.5px',
                               fontWeight:600,
-                              fontFamily:'JetBrains Mono,monospace',
+                              fontFamily:'var(--font-mono), monospace',
                               color:(item.actual||0)>0?'#b91c1c':'#9ca3af',
                               width:'100%',
                               textAlign:'right',
@@ -196,7 +196,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                           onChange={()=>{}} />
                         <div
                           onClick={e=>{ e.stopPropagation(); if(onItemClick && (item.actual||0)>0) onItemClick(item.label) }}
-                          style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
+                          style={{ minWidth:'100px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
                           title={(item.actual||0)>0?'Klik untuk lihat transaksi':undefined}
                           onMouseEnter={e=>{ if((item.actual||0)>0) e.currentTarget.style.background='#fee2e2' }}
                           onMouseLeave={e=>{ e.currentTarget.style.background='transparent' }}>
@@ -235,13 +235,13 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Expenses</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totExpP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#1a5c42', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totExpA)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>
@@ -259,30 +259,30 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
             style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
             onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
-            <input style={{ ...inp, flex:'3', minWidth:0, fontSize:'13px', fontWeight:500, color:'#111827', cursor:'text' }}
+            <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()}
               onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,label:e.target.value}))}
               onBlur={e=>{ const old=saving[i].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
             {isMobile ? (
               /* Mobile: flex:2 untuk angka */
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                   onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#1d4ed8', fontFamily:'JetBrains Mono,monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#1d4ed8', fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </div>
             ) : (
               <>
-                <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                   onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
                   value={r.actual?fmtNum(r.actual):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -300,13 +300,13 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Savings</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totSavP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#1d4ed8', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totSavA)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:'#1d4ed8', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>

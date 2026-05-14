@@ -112,7 +112,7 @@ function MetricCard({ label, value, note, tone = 'neutral' }: { label: string; v
   return (
     <div style={{ background:bg, border:`1px solid ${border}`, borderRadius:'10px', padding:'14px 15px' }}>
       <div style={{ fontSize:'10px', fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>{label}</div>
-      <div style={{ fontSize:'20px', fontWeight:800, fontFamily:'JetBrains Mono, monospace', color, letterSpacing:'-.5px' }}>{value}</div>
+      <div style={{ fontSize:'20px', fontWeight:800, fontFamily:'var(--font-mono), monospace', color, letterSpacing:'-.5px' }}>{value}</div>
       <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'7px', lineHeight:1.4 }}>{note}</div>
       <style>{`
         @media (max-width: 760px) {
@@ -262,7 +262,7 @@ const { curMonth, curYear } = useMonthContext()
               <div>
                 <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', marginBottom:'6px' }}>
                   <span style={{ fontWeight:700, color:'#111827' }}>Budget usage</span>
-                  <span style={{ color:'#6b7280', fontFamily:'JetBrains Mono,monospace' }}>{pct(budgetUseRate)}</span>
+                  <span style={{ color:'#6b7280', fontFamily:'var(--font-mono), monospace' }}>{pct(budgetUseRate)}</span>
                 </div>
                 <ProgressBar value={budgetUseRate} color={budgetUseRate > 100 ? '#b91c1c' : '#1a5c42'} />
                 <div style={{ display:'flex', justifyContent:'space-between', fontSize:'11px', color:'#9ca3af', marginTop:'6px' }}>
@@ -274,15 +274,15 @@ const { curMonth, curYear } = useMonthContext()
               <div className="dash-mini-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'10px' }}>
                 <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
                   <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Expense Rate</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:expenseRate > 80 ? '#b91c1c' : '#111827', fontFamily:'JetBrains Mono,monospace' }}>{pct(expenseRate)}</div>
+                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:expenseRate > 80 ? '#b91c1c' : '#111827', fontFamily:'var(--font-mono), monospace' }}>{pct(expenseRate)}</div>
                 </div>
                 <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
                   <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Saving Rate</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:savingRate >= 20 ? '#15803d' : '#1d4ed8', fontFamily:'JetBrains Mono,monospace' }}>{pct(savingRate)}</div>
+                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:savingRate >= 20 ? '#15803d' : '#1d4ed8', fontFamily:'var(--font-mono), monospace' }}>{pct(savingRate)}</div>
                 </div>
                 <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
                   <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Transactions</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:'#111827', fontFamily:'JetBrains Mono,monospace' }}>{tx.length}</div>
+                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{tx.length}</div>
                 </div>
               </div>
             </div>
@@ -300,7 +300,7 @@ const { curMonth, curYear } = useMonthContext()
                   <div key={cat.label}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px', marginBottom:'6px' }}>
                       <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>{cat.label}</span>
-                      <span style={{ fontSize:'12px', fontFamily:'JetBrains Mono,monospace', color:'#4b5563' }}>{fmt(cat.actual)}</span>
+                      <span style={{ fontSize:'12px', fontFamily:'var(--font-mono), monospace', color:'#4b5563' }}>{fmt(cat.actual)}</span>
                     </div>
                     <ProgressBar value={share} color="#f59e0b" />
                     <div style={{ fontSize:'10.5px', color:'#9ca3af', marginTop:'4px' }}>{pct(share)} dari total pengeluaran</div>
@@ -323,11 +323,11 @@ const { curMonth, curYear } = useMonthContext()
                   <div className="dash-saving-summary-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px', marginBottom:'12px' }}>
                     <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'9px', padding:'10px' }}>
                       <div style={{ fontSize:'10px', color:'#1d4ed8', fontWeight:800, textTransform:'uppercase' }}>Collected</div>
-                      <div style={{ fontSize:'15px', fontFamily:'JetBrains Mono,monospace', fontWeight:800, color:'#1d4ed8', marginTop:'4px' }}>{fmt(summary.totalCollected)}</div>
+                      <div style={{ fontSize:'15px', fontFamily:'var(--font-mono), monospace', fontWeight:800, color:'#1d4ed8', marginTop:'4px' }}>{fmt(summary.totalCollected)}</div>
                     </div>
                     <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'9px', padding:'10px' }}>
                       <div style={{ fontSize:'10px', color:'#15803d', fontWeight:800, textTransform:'uppercase' }}>Progress</div>
-                      <div style={{ fontSize:'15px', fontFamily:'JetBrains Mono,monospace', fontWeight:800, color:'#15803d', marginTop:'4px' }}>{pct(summary.pct)}</div>
+                      <div style={{ fontSize:'15px', fontFamily:'var(--font-mono), monospace', fontWeight:800, color:'#15803d', marginTop:'4px' }}>{pct(summary.pct)}</div>
                     </div>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
@@ -339,7 +339,7 @@ const { curMonth, curYear } = useMonthContext()
                         <div key={g.id}>
                           <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', marginBottom:'5px' }}>
                             <span style={{ fontSize:'12px', fontWeight:700, color:'#111827' }}>{g.name}</span>
-                            <span style={{ fontSize:'11px', color:'#6b7280', fontFamily:'JetBrains Mono,monospace' }}>{pct(p)}</span>
+                            <span style={{ fontSize:'11px', color:'#6b7280', fontFamily:'var(--font-mono), monospace' }}>{pct(p)}</span>
                           </div>
                           <ProgressBar value={p} color="#1d4ed8" />
                         </div>
@@ -369,7 +369,7 @@ const { curMonth, curYear } = useMonthContext()
                       <div style={{ fontSize:'12px', fontWeight:700, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || t.cat}</div>
                       <div style={{ fontSize:'10.5px', color:'#9ca3af', marginTop:'2px' }}>{String(t.date).padStart(2,'0')} · {t.cat}</div>
                     </div>
-                    <div className="dash-tx-amount" style={{ fontSize:'12px', fontWeight:800, fontFamily:'JetBrains Mono,monospace', color:isIn?'#15803d':isSave?'#1d4ed8':'#b91c1c', whiteSpace:'nowrap' }}>
+                    <div className="dash-tx-amount" style={{ fontSize:'12px', fontWeight:800, fontFamily:'var(--font-mono), monospace', color:isIn?'#15803d':isSave?'#1d4ed8':'#b91c1c', whiteSpace:'nowrap' }}>
                       {isIn ? '+' : '-'}{fmt(t.amt)}
                     </div>
                   </div>

@@ -133,7 +133,7 @@ function MetricCard({ label, value, tone, note }: { label:string; value:string; 
   return (
     <div style={{ background:t.bg, border:`1px solid ${t.border}`, borderRadius:13, padding:'13px 14px' }}>
       <div style={{ fontSize:10, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.7px', fontWeight:900 }}>{label}</div>
-      <div style={{ marginTop:7, color:t.color, fontSize:20, fontWeight:900, fontFamily:'JetBrains Mono, monospace', letterSpacing:'-.6px' }}>{value}</div>
+      <div style={{ marginTop:7, color:t.color, fontSize:20, fontWeight:900, fontFamily:'var(--font-mono), monospace', letterSpacing:'-.6px' }}>{value}</div>
       <div style={{ marginTop:7, color:'#6b7280', fontSize:11.5, lineHeight:1.45 }}>{note}</div>
     </div>
   )
@@ -285,7 +285,7 @@ export default function FinancialDoctorPage() {
           <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:12 }}>
             <div style={{ fontSize:12, fontWeight:900, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.8px' }}>FiNK Score</div>
             <div style={{ display:'flex', alignItems:'baseline', gap:8 }}>
-              <div style={{ fontSize:52, lineHeight:1, fontWeight:950, color:toneMap[data.statusTone].color, fontFamily:'JetBrains Mono, monospace', letterSpacing:'-2px' }}>
+              <div style={{ fontSize:52, lineHeight:1, fontWeight:950, color:toneMap[data.statusTone].color, fontFamily:'var(--font-mono), monospace', letterSpacing:'-2px' }}>
                 {data.score}
               </div>
               <div style={{ fontSize:16, color:'#9ca3af', fontWeight:800 }}>/100</div>

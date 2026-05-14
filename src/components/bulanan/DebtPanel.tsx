@@ -91,29 +91,29 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
             style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid', borderColor: dragOver===dk?'#92400e':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
             onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
-            <input style={{ ...inp, flex:'3', minWidth:0, fontSize:'13px', fontWeight:500, color:'#111827', cursor:'text' }}
+            <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>updateRow(i,{label:e.target.value})}
               onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value) }} />
             {isMobile ? (
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
                   onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
                   onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
-                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </div>
             ) : (
               <>
-                <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
                   onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
                   onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
-                <div style={{ minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:(r.actual||0)>0?'#8a5f2b':'#9ca3af', whiteSpace:'nowrap' }}>
+                <div style={{ minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(r.actual||0)>0?'#8a5f2b':'#9ca3af', whiteSpace:'nowrap' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </>
@@ -131,13 +131,13 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Debt</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totDebtP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totDebtA)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>

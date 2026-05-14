@@ -207,7 +207,7 @@ export default function AdminPage() {
         ].map(([label, value, tone]) => (
           <AppCard key={label as string} style={{ padding:'14px 15px' }}>
             <div style={{ fontSize:'10px', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'.7px' }}>{label}</div>
-            <div style={{ fontSize:'22px', fontWeight:900, fontFamily:'JetBrains Mono,monospace', color:tone==='green'?'#15803d':tone==='blue'?'#1d4ed8':tone==='purple'?'#5b21b6':tone==='red'?'#991b1b':'#111827', marginTop:6 }}>{value as number}</div>
+            <div style={{ fontSize:'22px', fontWeight:900, fontFamily:'var(--font-mono), monospace', color:tone==='green'?'#15803d':tone==='blue'?'#1d4ed8':tone==='purple'?'#5b21b6':tone==='red'?'#991b1b':'#111827', marginTop:6 }}>{value as number}</div>
           </AppCard>
         ))}
       </div>

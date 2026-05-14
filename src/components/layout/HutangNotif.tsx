@@ -129,7 +129,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                   {/* Info baris */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>{d.note}</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', fontFamily: 'JetBrains Mono, monospace' }}>{fmt(d.amt)}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', fontFamily: 'var(--font-mono), monospace' }}>{fmt(d.amt)}</div>
                   </div>
                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '10px' }}>
                     {d.date} {MONTH_NAMES[d.month]} {d.year} · {d.cat || '—'}
@@ -151,7 +151,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                       placeholder="Partial amount (Rp)"
                       value={partial[d.id] || ''}
                       onChange={e => setPartial(p => ({ ...p, [d.id]: e.target.value }))}
-                      style={{ flex: 1, padding: '6px 9px', fontSize: '12.5px', border: '1.5px solid #e3e7ee', borderRadius: '6px', background: '#fff', outline: 'none', fontFamily: 'JetBrains Mono, monospace' }}
+                      style={{ flex: 1, padding: '6px 9px', fontSize: '12.5px', border: '1.5px solid #e3e7ee', borderRadius: '6px', background: '#fff', outline: 'none', fontFamily: 'var(--font-mono), monospace' }}
                     />
                     <button
                       disabled={saving === d.id}

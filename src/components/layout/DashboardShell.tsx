@@ -170,7 +170,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
                 {/* Year nav */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 6px 8px', borderBottom:'1px solid #e3e7ee', marginBottom:'4px' }}>
                   <button onClick={()=>setCurYear(y=>y-1)} style={{ width:'28px', height:'28px', border:'1px solid #e3e7ee', borderRadius:'6px', background:'none', cursor:'pointer', fontSize:'15px', fontWeight:600, color:'#4b5563', display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
-                  <span style={{ fontSize:'15px', fontWeight:700, color:'#111827', fontFamily:'JetBrains Mono,monospace' }}>{curYear}</span>
+                  <span style={{ fontSize:'15px', fontWeight:700, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{curYear}</span>
                   <button onClick={()=>setCurYear(y=>y+1)} style={{ width:'28px', height:'28px', border:'1px solid #e3e7ee', borderRadius:'6px', background:'none', cursor:'pointer', fontSize:'15px', fontWeight:600, color:'#4b5563', display:'flex', alignItems:'center', justifyContent:'center' }}>›</button>
                 </div>
                 {/* Month grid — 3 columns on mobile for compactness */}

@@ -82,13 +82,13 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                 onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,label:e.target.value}))} />
               {isMobile ? (
                 <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
-                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'JetBrains Mono,monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
+                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
+                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
                 </div>
               ) : (
                 <>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
+                  <span style={{ minWidth:'86px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
+                  <span style={{ minWidth:'86px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
               <button
@@ -133,14 +133,14 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                             onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                             defaultValue={item.plan?fmtNum(item.plan):''} placeholder="0"
                             key={`incplan-${ci}-${ii}-${item.plan}`}
                             onMouseDown={e=>e.stopPropagation()}
                             onFocus={e=>{ e.target.value=item.plan?String(item.plan):''; e.target.select() }}
                             onBlur={e=>{ const v=pNum(e.target.value); onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:v})})); e.target.value=v?fmtNum(v):'' }}
                             onChange={()=>{}} />
-                          <div style={{ fontSize:'11.5px', fontWeight:600, fontFamily:'JetBrains Mono,monospace', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          <div style={{ fontSize:'11.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                             {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
                           </div>
                         </div>
@@ -151,12 +151,12 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                           value={item.label} onMouseDown={e=>e.stopPropagation()}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                           onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
-                        <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                        <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                           value={item.plan?fmtNum(item.plan):''} placeholder="0"
                           onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                           onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:pNum(e.target.value)})}))} />
-                        <div style={{ minWidth:'86px', fontSize:'12px', fontWeight:600, textAlign:'right', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af' }}>
+                        <div style={{ minWidth:'86px', fontSize:'12px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', color: (item.actual||0)>0?(isRekon?'#a16207':'#15803d'):'#9ca3af' }}>
                           {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
                         </div>
                       </>
@@ -191,13 +191,13 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Income</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#15803d', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totA)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:'#15803d', fontFamily:'var(--font-mono), monospace' }}>{fmt(totA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#15803d', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totA)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totP)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#15803d', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>

@@ -36,12 +36,12 @@ export function TxDetailModal({ label, tx, onClose }: {
           ) : (
             filtered.map(t => (
               <div key={t.id} style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 16px', borderBottom:'1px solid #f3f4f6' }}>
-                <div style={{ fontSize:'11px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', minWidth:'20px', fontWeight:600 }}>{t.date}</div>
+                <div style={{ fontSize:'11px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', minWidth:'20px', fontWeight:600 }}>{t.date}</div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:'12.5px', fontWeight:500, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note}</div>
                   {t.debt && !t.settled && <span style={{ fontSize:'9.5px', fontWeight:700, background:'#fef3c7', color:'#92400e', padding:'1px 6px', borderRadius:'10px' }}>Debt</span>}
                 </div>
-                <div style={{ fontSize:'12.5px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color:'#b91c1c', whiteSpace:'nowrap' }}>
+                <div style={{ fontSize:'12.5px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c', whiteSpace:'nowrap' }}>
                   -{fmt(t.amt)}
                 </div>
               </div>
@@ -92,7 +92,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
         <div style={{ padding:'20px', display:'flex', flexDirection:'column', gap:'14px' }}>
           <div style={{ background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'8px', padding:'12px 14px' }}>
             <div style={{ fontSize:'11px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.5px', marginBottom:'4px' }}>Balance per app</div>
-            <div style={{ fontSize:'18px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color: sisaApp>=0?'#15803d':'#b91c1c' }}>
+            <div style={{ fontSize:'18px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color: sisaApp>=0?'#15803d':'#b91c1c' }}>
               {sisaApp >= 0 ? '' : '-'}{fmt(sisaApp)}
             </div>
           </div>
@@ -105,7 +105,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
               <input type="text" inputMode="numeric" value={aktualStr} onChange={e=>setAktualStr(fmtInput(e.target.value))}
                 placeholder="Enter actual balance..."
                 autoFocus
-                style={{ width:'100%', padding:'10px 12px', fontSize:'15px', fontWeight:600, fontFamily:'JetBrains Mono,monospace', border:'2px solid #e3e7ee', borderRadius:'8px', outline:'none', background:'#f7f8fa' }}
+                style={{ width:'100%', padding:'10px 12px', fontSize:'15px', fontWeight:600, fontFamily:'var(--font-mono), monospace', border:'2px solid #e3e7ee', borderRadius:'8px', outline:'none', background:'#f7f8fa' }}
                 onFocus={e=>{ e.target.style.borderColor='#1a5c42'; e.target.style.background='#fff' }}
                 onBlur={e=>{ e.target.style.borderColor='#e3e7ee'; e.target.style.background='#f7f8fa' }} />
             </div>
@@ -115,7 +115,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
             <div style={{ background: type==='out'?'#fef2f2':'#f0fdf4', border:`1px solid ${type==='out'?'#fecaca':'#bbf7d0'}`, borderRadius:'8px', padding:'12px 14px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px' }}>
                 <span style={{ fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Difference</span>
-                <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'JetBrains Mono,monospace', color: type==='out'?'#b91c1c':'#15803d' }}>
+                <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color: type==='out'?'#b91c1c':'#15803d' }}>
                   {selisih > 0 ? '+' : ''}{fmt(selisih)}
                 </span>
               </div>
