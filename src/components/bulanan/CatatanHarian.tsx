@@ -97,9 +97,16 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
     setActionMenuId(null)
     setEditId(t.id)
     setEditData({ ...t })
-    const opts = (() => {
-      if (t.type === 'out')  return budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-      if (t.type === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+        const opts = (() => {
+      if (t.type === 'out') {
+        const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+        const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
+        return debtItems.length
+          ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
+          : budgetGroups
+      }
+      if (t.type === 'inn')
+        return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
       return [{ group: 'Savings', items: saving.map(r => r.label) }]
     })()
     setEditCatOpts(opts)
