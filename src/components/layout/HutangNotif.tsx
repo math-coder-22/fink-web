@@ -12,7 +12,7 @@ const MONTH_NAMES: Record<string, string> = {
 const fmt = (n: number) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID')
 
 export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }) {
-  const [debts,    setDebts]    = useState<Transaction[]>([])
+  const [unpaidTx, setUnpaidTx]    = useState<Transaction[]>([])
   const [open,     setOpen]     = useState(false)
   const [partial,  setPartial]  = useState<Record<string, string>>({})
   const [saving,   setSaving]   = useState<string | null>(null)
@@ -20,7 +20,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
   const load = useCallback(async () => {
     const res  = await fetch('/api/hutang')
     const json = await res.json()
-    setDebts(json.data || [])
+    setUnpaidTx(json.data || [])
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -37,10 +37,10 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
     return () => window.removeEventListener('hutang-refresh', load)
   }, [load])
 
-  async function settleDebt(id: string, full: boolean) {
+  async function settleUnpaid(id: string, full: boolean) {
     setSaving(id)
-    const debt = debts.find(d => d.id === id)
-    if (!debt) return
+    const unpaid = unpaidTx.find(d => d.id === id)
+    if (!unpaid) return
 
     let updates: Partial<Transaction>
 
@@ -53,10 +53,10 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
         setSaving(null)
         return
       }
-      if (partialAmt >= debt.amt) {
+      if (partialAmt >= unpaid.amt) {
         updates = { settled: true }
       } else {
-        updates = { amt: debt.amt - partialAmt }
+        updates = { amt: unpaid.amt - partialAmt }
       }
     }
 
@@ -71,7 +71,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
     setSaving(null)
   }
 
-  if (debts.length === 0) return null
+  if (unpaidTx.length === 0) return null
 
   return (
     <>
@@ -92,7 +92,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
           background: '#fbbf24', flexShrink: 0,
           animation: 'pulse 1.6s infinite',
         }} />
-        {isMobile ? debts.length : `${debts.length} unpaid debt${debts.length > 1 ? 's' : ''}`}
+        {isMobile ? unpaidTx.length : `${unpaidTx.length} unpaid expense${unpaidTx.length > 1 ? 's' : ''}`}
       </button>
 
       {/* MODAL */}
@@ -112,19 +112,19 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
           }}>
             {/* Head */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e3e7ee' }}>
-              <div style={{ fontSize: '15px', fontWeight: 700 }}>⚠️ Unpaid Debts</div>
+              <div style={{ fontSize: '15px', fontWeight: 700 }}>⚠️ Unpaid Expenses</div>
               <button onClick={() => setOpen(false)} style={{ width: '28px', height: '28px', border: 'none', background: '#f7f8fa', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', color: '#4b5563' }}>×</button>
             </div>
 
             {/* Body */}
             <div style={{ padding: '16px 20px', maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {debts.length === 0 && (
+              {unpaidTx.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
                   <div style={{ fontSize: '28px', marginBottom: '8px' }}>✅</div>
-                  No unpaid debts!
+                  No unpaid expenses!
                 </div>
               )}
-              {debts.map(d => (
+              {unpaidTx.map(d => (
                 <div key={d.id} style={{ background: '#f7f8fa', border: '1px solid #e3e7ee', borderRadius: '8px', padding: '12px 14px' }}>
                   {/* Info baris */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -138,7 +138,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                   {/* Tombol lunas semua */}
                   <button
                     disabled={saving === d.id}
-                    onClick={() => settleDebt(d.id, true)}
+                    onClick={() => settleUnpaid(d.id, true)}
                     style={{ width: '100%', padding: '7px', borderRadius: '6px', border: 'none', background: saving === d.id ? '#9ca3af' : '#d1eadd', color: '#1a5c42', fontSize: '12.5px', fontWeight: 600, cursor: saving === d.id ? 'not-allowed' : 'pointer', marginBottom: '8px' }}
                   >
                     {saving === d.id ? 'Saving...' : '✓ Mark as Settled'}
@@ -155,7 +155,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                     />
                     <button
                       disabled={saving === d.id}
-                      onClick={() => settleDebt(d.id, false)}
+                      onClick={() => settleUnpaid(d.id, false)}
                       style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 600, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '6px', cursor: saving === d.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
                     >
                       Pay Partial

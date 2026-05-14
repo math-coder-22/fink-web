@@ -48,6 +48,7 @@ function getDailyBalanceStatus(leftToSpend: number, remainingDays: number, total
 export default function StatStrip({
   income,
   saving,
+  debt = [],
   budget,
   tx = [],
   isMobile = false,
@@ -58,8 +59,12 @@ export default function StatStrip({
   const totalIncomePlan = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
   const totalIncomeActual = income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
 
-  const totalBudgetPlan = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
-  const totalBudgetActual = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
+  const totalRegularExpensePlan = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
+  const totalRegularExpenseActual = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
+  const totalDebtPlan = debt.reduce((s, r) => s + (r.plan || 0), 0)
+  const totalDebtActual = debt.reduce((s, r) => s + (r.actual || 0), 0)
+  const totalBudgetPlan = totalRegularExpensePlan + totalDebtPlan
+  const totalBudgetActual = totalRegularExpenseActual + totalDebtActual
 
   const totalSavingPlan = saving.reduce((s, i) => s + (i.plan || 0), 0)
   const totalSavingActual = saving.reduce((s, i) => s + (i.actual || 0), 0)

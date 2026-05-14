@@ -1,4 +1,4 @@
-import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
+import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 export type FinancialMetric = {
   label: string
@@ -64,10 +64,10 @@ function sumByType(tx: Transaction[], type: Transaction['type']) {
     .reduce((s, t) => s + Number(t.amt || 0), 0)
 }
 
-function sumDebt(tx: Transaction[]) {
-  return tx
-    .filter(t => t.type === 'out' && !!t.debt)
-    .reduce((s, t) => s + Number(t.amt || 0), 0)
+function sumDebtRows(rows: DebtRow[]) {
+  // Debt di FiNK adalah cicilan/kewajiban bulanan, bukan checkbox unpaid.
+  // Untuk debt ratio, gunakan actual jika ada; fallback ke plan.
+  return rows.reduce((s, r) => s + Number((r.actual || 0) > 0 ? r.actual : r.plan || 0), 0)
 }
 
 function categoryTotals(tx: Transaction[], type: Transaction['type']) {
@@ -152,11 +152,13 @@ export function analyzeFinancialDoctor(input: {
   budget: BudgetCategory[]
   income: IncomeCategory[]
   saving: SavingRow[]
+  debt?: DebtRow[]
   currentDay?: number
   daysInMonth?: number
 }): FinancialDoctorResult {
   const safeTx = safeArray<Transaction>(input.tx)
   const safeSaving = safeArray<SavingRow>(input.saving)
+  const safeDebt = safeArray<DebtRow>(input.debt)
   const now = new Date()
   const elapsedDays = Math.max(1, input.currentDay || now.getDate())
   const daysInMonth = Math.max(28, input.daysInMonth || new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate())
@@ -164,7 +166,7 @@ export function analyzeFinancialDoctor(input: {
   const totalIncome = sumByType(safeTx, 'inn')
   const totalExpense = sumByType(safeTx, 'out')
   const totalSaving = sumByType(safeTx, 'save')
-  const debtPayment = sumDebt(safeTx)
+  const debtPayment = sumDebtRows(safeDebt)
   const cashflow = totalIncome - totalExpense - totalSaving
   const savingRate = totalIncome > 0 ? totalSaving / totalIncome : 0
   const debtRatio = totalIncome > 0 ? debtPayment / totalIncome : 0

@@ -59,7 +59,7 @@ function makeDayData(totalDays: number, tx: Transaction[], fallbackIncome: numbe
   const byDay = Array.from({ length: totalDays + 1 }, () => ({ income: 0, expense: 0, saving: 0 }))
 
   for (const t of tx) {
-    // Unpaid debt/utang belum lunas belum dianggap sebagai cash-out riil.
+    // Unpaid adalah pengeluaran tertunda; belum dianggap cash-out riil sampai settled.
     if (t.debt && !t.settled) continue
     const day = Math.min(totalDays, Math.max(1, Number(t.date || 1)))
     const amount = Number(t.amt || 0)

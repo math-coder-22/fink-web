@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-// GET /api/hutang — ambil semua hutang belum lunas milik user (lintas bulan)
+// GET /api/hutang — ambil semua pengeluaran unpaid / tertunda milik user (lintas bulan)
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

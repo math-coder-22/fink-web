@@ -36,14 +36,11 @@ function sumTx(tx: Transaction[], type: Transaction['type']) {
     .reduce((s, t) => s + Number(t.amt || 0), 0)
 }
 
-function sumDebt(tx: Transaction[]) {
-  // debt flag now means Unpaid/transaction pending, not financial debt.
-  // Kept only for backward compatibility; Financial Doctor uses Debt Payment rows.
-  return 0
-}
-
 function sumDebtRows(rows: DebtRow[]) {
-  return rows.reduce((s, r) => s + Number(r.actual || 0), 0)
+  // Debt di FiNK adalah cicilan/kewajiban bulanan.
+  // Untuk debt ratio, gunakan actual jika sudah ada pembayaran,
+  // fallback ke plan agar rasio hutang tetap terlihat sejak awal bulan.
+  return rows.reduce((s, r) => s + Number((r.actual || 0) > 0 ? r.actual : r.plan || 0), 0)
 }
 
 function uniqueDays(tx: Transaction[]) {
@@ -303,7 +300,7 @@ export default function FinancialDoctorPage() {
         <div className="doctor-metric-grid" style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:10 }}>
           <MetricCard label="Cashflow" value={fmt(data.cashflow)} tone={data.cashflow >= 0 ? 'good' : 'danger'} note={data.cashflow >= 0 ? 'Saldo bulan ini masih positif.' : 'Pengeluaran melebihi pemasukan.'} />
           <MetricCard label="Saving Rate" value={pct(data.savingRate)} tone={data.savingRate >= .15 ? 'good' : data.savingRate >= .05 ? 'warning' : 'danger'} note="Porsi saving terhadap income." />
-          <MetricCard label="Debt Ratio" value={pct(data.debtRatio)} tone={data.debtRatio <= .25 ? 'good' : data.debtRatio <= .35 ? 'warning' : 'danger'} note="Porsi cicilan/utang terhadap income." />
+          <MetricCard label="Debt Ratio" value={pct(data.debtRatio)} tone={data.debtRatio <= .25 ? 'good' : data.debtRatio <= .35 ? 'warning' : 'danger'} note="Porsi cicilan/utang bulanan terhadap income." />
           <MetricCard label="Daily Burn" value={fmt(data.dailyBurn) + '/hari'} tone="neutral" note="Rata-rata pengeluaran harian." />
         </div>
       </div>
