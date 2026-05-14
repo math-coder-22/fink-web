@@ -7,7 +7,7 @@ import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import StatStrip from '@/components/bulanan/StatStrip'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
-import type { BudgetCategory, IncomeCategory, SavingRow, Transaction } from '@/types/database'
+import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   }, [])
 
 const { curMonth, curYear } = useMonthContext()
-  const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
+  const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
 
   const budget = computedBudget()
@@ -240,7 +240,7 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <CashFlowTrendChart tx={tx} income={income} saving={saving} />
+      <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} debt={debt} />
 
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>

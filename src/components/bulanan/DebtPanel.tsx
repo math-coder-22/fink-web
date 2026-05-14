@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import type { DebtRow } from '@/types/database'
 
 type Props = {
@@ -9,195 +10,137 @@ type Props = {
   isMobile?: boolean
 }
 
-const fmtNum = (n: number) => Math.round(n || 0).toLocaleString('id-ID')
-const pNum = (v: string) => Number(String(v).replace(/\D/g,'')) || 0
+const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
+const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
+
+const fmt = (n:number) => 'Rp ' + Math.round(Math.abs(n||0)).toLocaleString('id-ID')
+const fmtNum = (n:number) => Math.round(n||0).toLocaleString('id-ID')
+const pNum = (v:string) => Number(String(v).replace(/\D/g,'')) || 0
+
+function DragHandle() {
+  return (
+    <span style={{ width:'6px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center', touchAction:'none' }} />
+  )
+}
+
+function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hover,setHover]=useState(false)
+  return (
+    <button style={{ width:'100%', padding:'8px 10px', border:'1.5px dashed #cbd5e1', borderRadius:'6px', background:hover?'#f7f8fa':'none', color:hover?'#4b5563':'#9ca3af', fontSize:'12px', fontWeight:500, cursor:'pointer', marginTop:'6px', transition:'all .13s', textAlign:'left' }}
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      onClick={onClick}>{label}</button>
+  )
+}
 
 export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Props) {
   const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt', plan:0, actual:0 }]
-  const totalPlan = rows.reduce((s, r) => s + (r.plan || 0), 0)
-  const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0)
+  const [hovRow, setHovRow] = useState<string|null>(null)
+  const [dragOver, setDragOver] = useState<string|null>(null)
+  const debtDragSrc = useRef<number|null>(null)
 
-  function updateRow(i: number, patch: Partial<DebtRow>) {
-    onDebtChange(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r))
+  const totDebtP = rows.reduce((s,r)=>s+(r.plan||0),0)
+  const totDebtA = rows.reduce((s,r)=>s+(r.actual||0),0)
+
+  function onDebtDragStart(e: React.DragEvent, i: number) {
+    debtDragSrc.current = i
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('type','debt')
+    e.stopPropagation()
   }
 
-  function addDebt() {
-    onDebtChange([...rows, { label:'New Debt', plan:0, actual:0 }])
+  function onDebtDrop(e: React.DragEvent, i: number) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(null)
+    const from = debtDragSrc.current
+    if (from === null || from === i) return
+    const arr = [...rows]
+    const [m] = arr.splice(from,1)
+    arr.splice(i,0,m)
+    onDebtChange(arr)
+    debtDragSrc.current = null
   }
 
-  function removeDebt(i: number) {
+  function updateRow(i:number, patch:Partial<DebtRow>) {
+    onDebtChange(rows.map((r,i2)=>i2!==i?r:{...r,...patch}))
+  }
+
+  function removeRow(i:number) {
     if (rows.length <= 1) {
       alert('Minimal harus ada satu Debt Payment.')
       return
     }
     const ok = confirm(`Hapus debt item "${rows[i].label}"?`)
     if (!ok) return
-    onDebtChange(rows.filter((_, idx) => idx !== i))
+    onDebtChange(rows.filter((_,i2)=>i2!==i))
   }
 
-  const rowGrid = isMobile ? '1fr 104px 92px 22px' : '1fr 132px 112px 22px'
-
-  const labelStyle: React.CSSProperties = {
-    border:'none',
-    background:'transparent',
-    outline:'none',
-    color:'#111827',
-    fontFamily:'Inter, system-ui, sans-serif',
-    fontSize:'13px',
-    fontWeight:500,
-    minWidth:0,
-  }
-
-  const moneyInputStyle: React.CSSProperties = {
-    border:'none',
-    background:'transparent',
-    outline:'none',
-    textAlign:'right',
-    fontFamily:'JetBrains Mono, monospace',
-    fontSize:'12.5px',
-    fontWeight:700,
-    color:'#4b5563',
-    width:'100%',
-  }
-
-  const moneyActualStyle = (active: boolean): React.CSSProperties => ({
-    textAlign:'right',
-    fontFamily:'JetBrains Mono, monospace',
-    fontSize:'12.5px',
-    fontWeight:700,
-    color: active ? '#8a5f2b' : '#9ca3af',
-  })
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
 
   return (
-    <div style={{ marginTop:18, paddingTop:14, borderTop:'1px solid #e3e7ee' }}>
-      <div style={{
-        fontSize:'10px',
-        fontWeight:700,
-        color:'#9ca3af',
-        textTransform:'uppercase',
-        letterSpacing:'.7px',
-        margin:'0 0 8px',
-        fontFamily:'Inter, system-ui, sans-serif',
-      }}>
-        Debt Payment
-      </div>
+    <div>
+      <div style={{ height:'1px', background:'#e3e7ee', margin:'14px 0 10px' }} />
+      <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>Debt Payment</div>
 
-      <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-        {rows.map((row, i) => (
-          <div key={`${row.label}-${i}`} style={{
-            display:'grid',
-            gridTemplateColumns: rowGrid,
-            alignItems:'center',
-            gap:8,
-            border:'1px solid #dfe5ec',
-            borderRadius:9,
-            padding:'8px 16px',
-            background:'#f7f8fa',
-            minHeight:'44px',
-          }}>
-            <input
-              style={labelStyle}
-              value={row.label}
-              onFocus={e => { e.currentTarget.dataset.oldLabel = row.label }}
-              onChange={e => updateRow(i, { label:e.target.value })}
-              onBlur={e => {
-                const old = e.currentTarget.dataset.oldLabel || row.label
-                const next = e.target.value
-                if (old && old !== next && onRename) onRename(old, next)
-              }}
-            />
-            <input
-              type="text"
-              inputMode="numeric"
-              style={moneyInputStyle}
-              value={row.plan ? fmtNum(row.plan) : ''}
-              placeholder="0"
-              onChange={e => updateRow(i, { plan:pNum(e.target.value) })}
-            />
-            <div style={moneyActualStyle((row.actual || 0) > 0)}>
-              {row.actual ? fmtNum(row.actual) : '-'}
-            </div>
-            <button
-              type="button"
-              onClick={() => removeDebt(i)}
-              title="Hapus debt item"
-              style={{
-                border:'none',
-                background:'transparent',
-                color:'#9ca3af',
-                fontSize:18,
-                cursor:'pointer',
-                lineHeight:1,
-                fontFamily:'Inter, system-ui, sans-serif',
-              }}
-            >
-              ×
-            </button>
+      {rows.map((r,i)=>{
+        const dk = `debt-${i}`
+        return (
+          <div key={i} draggable onDragStart={e=>onDebtDragStart(e,i)}
+            onDragOver={e=>{ e.preventDefault(); setDragOver(dk) }}
+            onDrop={e=>onDebtDrop(e,i)} onDragLeave={()=>setDragOver(null)}
+            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid', borderColor: dragOver===dk?'#92400e':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
+            onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}>
+            <DragHandle />
+            <input style={{ ...inp, flex:'3', minWidth:0, fontSize:'13px', fontWeight:500, color:'#111827', cursor:'text' }}
+              value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
+              onChange={e=>updateRow(i,{label:e.target.value})}
+              onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value) }} />
+            {isMobile ? (
+              <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
+                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'JetBrains Mono,monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                  value={r.plan?fmtNum(r.plan):''} placeholder="0"
+                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
+                  onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
+                  onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
+                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  {r.actual ? fmtNum(r.actual) : '-'}
+                </div>
+              </div>
+            ) : (
+              <>
+                <input style={{ ...inp, minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                  value={r.plan?fmtNum(r.plan):''} placeholder="0"
+                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
+                  onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
+                  onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
+                <div style={{ minWidth:'86px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'JetBrains Mono,monospace', color:(r.actual||0)>0?'#8a5f2b':'#9ca3af', whiteSpace:'nowrap' }}>
+                  {r.actual ? fmtNum(r.actual) : '-'}
+                </div>
+              </>
+            )}
+            <button style={{ ...delBtn, opacity: hovRow===dk?1:0 }} onMouseDown={e=>e.stopPropagation()}
+              onClick={()=>removeRow(i)}>×</button>
           </div>
-        ))}
-      </div>
+        )
+      })}
 
-      <button
-        type="button"
-        onClick={addDebt}
-        style={{
-          width:'100%',
-          marginTop:8,
-          border:'1px dashed #cbd5e1',
-          background:'#fff',
-          color:'#9ca3af',
-          borderRadius:9,
-          padding:'9px 16px',
-          fontSize:'12px',
-          fontWeight:600,
-          cursor:'pointer',
-          textAlign:'left',
-          fontFamily:'Inter, system-ui, sans-serif',
-        }}
-      >
-        + add debt item
-      </button>
+      <AddBtn label="+ add debt item" onClick={()=>onDebtChange([...rows,{label:'New Debt',plan:0,actual:0}])} />
 
-      <div style={{
-        display:'grid',
-        gridTemplateColumns: rowGrid,
-        gap:8,
-        alignItems:'center',
-        marginTop:12,
-        border:'1px solid #dfe5ec',
-        borderRadius:9,
-        padding:'9px 16px',
-        background:'#f7f8fa',
-        minHeight:'44px',
-      }}>
-        <div style={{
-          fontSize:'13px',
-          fontWeight:700,
-          color:'#4b5563',
-          paddingLeft: isMobile ? 0 : 26,
-          fontFamily:'Inter, system-ui, sans-serif',
-        }}>
-          Total Debt
-        </div>
-        <div style={{
-          textAlign:'right',
-          fontFamily:'JetBrains Mono, monospace',
-          fontSize:'12.5px',
-          fontWeight:700,
-          color:'#9ca3af',
-        }}>
-          Rp {fmtNum(totalPlan)}
-        </div>
-        <div style={{
-          textAlign:'right',
-          fontFamily:'JetBrains Mono, monospace',
-          fontSize:'12.5px',
-          fontWeight:700,
-          color:'#8a5f2b',
-        }}>
-          Rp {fmtNum(totalActual)}
-        </div>
-        <div />
+      <div style={totalRow}>
+        <div style={{ width:'14px' }}/>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Debt</div>
+        {isMobile ? (
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totDebtP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace' }}>{fmt(totDebtA)}</span>
+          </div>
+        ) : (
+          <>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
+            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#8a5f2b', fontFamily:'JetBrains Mono,monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
+          </>
+        )}
+        <div style={{ width:'18px' }}/>
       </div>
     </div>
   )

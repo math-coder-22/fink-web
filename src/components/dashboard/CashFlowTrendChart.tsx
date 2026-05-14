@@ -1,12 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { IncomeCategory, SavingRow, Transaction } from '@/types/database'
+import type { IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 type Props = {
   tx: Transaction[]
   income?: IncomeCategory[]
   saving?: SavingRow[]
+  debt?: DebtRow[]
   curDay?: number
   daysInMonth?: number
 }
@@ -50,7 +51,11 @@ function sumSaving(saving?: SavingRow[]) {
   return (saving || []).reduce((s, r) => s + (r.actual || 0), 0)
 }
 
-function makeDayData(totalDays: number, tx: Transaction[], fallbackIncome: number, fallbackSaving: number, visibleUntilDay: number): DayData[] {
+function sumDebtRows(debt?: DebtRow[]) {
+  return (debt || []).reduce((s, r) => s + (r.actual || 0), 0)
+}
+
+function makeDayData(totalDays: number, tx: Transaction[], fallbackIncome: number, fallbackSaving: number, fallbackDebt: number, visibleUntilDay: number): DayData[] {
   const byDay = Array.from({ length: totalDays + 1 }, () => ({ income: 0, expense: 0, saving: 0 }))
 
   for (const t of tx) {
@@ -64,9 +69,11 @@ function makeDayData(totalDays: number, tx: Transaction[], fallbackIncome: numbe
 
   const incomeFromTx = tx.filter(t => t.type === 'inn').reduce((s, t) => s + Number(t.amt || 0), 0)
   const savingFromTx = tx.filter(t => t.type === 'save').reduce((s, t) => s + Number(t.amt || 0), 0)
+  const debtFromTx = 0
 
   if (incomeFromTx <= 0 && fallbackIncome > 0) byDay[1].income += fallbackIncome
   if (savingFromTx <= 0 && fallbackSaving > 0) byDay[Math.min(visibleUntilDay, totalDays)].saving += fallbackSaving
+  if (debtFromTx <= 0 && fallbackDebt > 0) byDay[Math.min(visibleUntilDay, totalDays)].expense += fallbackDebt
 
   return byDay
 }
@@ -122,7 +129,7 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n))
 }
 
-export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInMonth }: Props) {
+export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, daysInMonth }: Props) {
   const [hoverDay, setHoverDay] = useState<number | null>(null)
 
   const today = Math.max(1, curDay || new Date().getDate())
@@ -131,10 +138,11 @@ export default function CashFlowTrendChart({ tx, income, saving, curDay, daysInM
 
   const fallbackIncome = sumIncome(income)
   const fallbackSaving = sumSaving(saving)
+  const fallbackDebt = sumDebtRows(debt)
 
   const dayData = useMemo(
-    () => makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay),
-    [totalDays, tx, fallbackIncome, fallbackSaving, visibleUntilDay],
+    () => makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, fallbackDebt, visibleUntilDay),
+    [totalDays, tx, fallbackIncome, fallbackSaving, fallbackDebt, visibleUntilDay],
   )
 
   const points = useMemo(() => buildPoints(dayData, visibleUntilDay), [dayData, visibleUntilDay])

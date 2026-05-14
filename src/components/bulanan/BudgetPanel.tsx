@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
-import type { BudgetCategory, SavingRow } from '@/types/database'
+import type { BudgetCategory, SavingRow, DebtRow } from '@/types/database'
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
 const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
@@ -27,6 +27,7 @@ function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
 interface Props {
   budget:         BudgetCategory[]
   saving:         SavingRow[]
+  debt?:          DebtRow[]
   onBudgetChange: (b: BudgetCategory[]) => void
   onSavingChange: (s: SavingRow[]) => void
   onRename:       (oldLabel: string, newLabel: string) => void
@@ -34,7 +35,7 @@ interface Props {
   isMobile?:      boolean
 }
 
-export default function BudgetPanel({ budget, saving, onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
+export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
   const { isPremium } = useSubscription()
   const [hovRow,   setHovRow]   = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
