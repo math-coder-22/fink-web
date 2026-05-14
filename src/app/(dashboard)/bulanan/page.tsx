@@ -122,7 +122,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           {tx.length} record{tx.length !== 1 ? 's' : ''}
         </span>
       </div>
-      <CatatanHarian tx={tx} budget={budget} income={plan.income} saving={savingComputed} debt={debtComputed} debt={debtComputed} debt={debtComputed} debt={debtComputed} debt={debtComputed}
+      <CatatanHarian tx={tx} budget={budget} income={plan.income} saving={savingComputed} debt={debtComputed}
         onAdd={addTx} onUpdate={updateTx} onDelete={deleteTx} />
     </div>
   )
@@ -161,7 +161,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         {activePanel==='budget' ? (
           <>
             <BudgetPanel
-              budget={budget} saving={savingComputed} debt={debtComputed} debt={debtComputed}
+              budget={budget} saving={savingComputed} debt={debtComputed}
               onBudgetChange={b=>updatePlan(prev=>({...prev,budget:b}))}
               onSavingChange={s=>updatePlan(prev=>({...prev,saving:s}))}
               onRename={renameTxCat}

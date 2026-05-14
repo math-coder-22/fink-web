@@ -58,7 +58,7 @@ function isExpired(sub: any) {
 
 export async function GET() {
   const auth = await requireAdmin()
-  if (!auth.ok) return auth.response
+  if (auth.ok === false) return auth.response
 
   let admin
   try {
@@ -85,7 +85,7 @@ export async function GET() {
 
   if (subsError) return NextResponse.json({ error: subsError.message }, { status: 500 })
 
-  const subByUser = new Map((subscriptions || []).map((s: any) => [s.user_id, s]))
+  const subByUser = new Map<string, any>((subscriptions || []).map((s: any) => [s.user_id, s]))
 
   const users = (profiles || []).map((p: any) => {
     const sub = subByUser.get(p.id) || null
@@ -111,7 +111,7 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   const auth = await requireAdmin()
-  if (!auth.ok) return auth.response
+  if (auth.ok === false) return auth.response
 
   let admin
   try {
@@ -263,7 +263,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const auth = await requireAdmin()
-  if (!auth.ok) return auth.response
+  if (auth.ok === false) return auth.response
 
   if (auth.role !== 'super_admin') {
     return NextResponse.json({ error: 'Hard delete hanya untuk super admin.' }, { status: 403 })

@@ -192,7 +192,7 @@ export function analyzeFinancialDoctor(input: {
     score >= 40 ? 'Perlu Dijaga' :
     'Perlu Perhatian'
 
-  const observationDays = countUniqueDays(tx)
+  const observationDays = countUniqueDays(safeTx)
   const observationReady = observationDays >= 20 || elapsedDays >= 28
 
   const metrics: FinancialMetric[] = [

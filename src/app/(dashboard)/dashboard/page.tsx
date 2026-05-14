@@ -182,7 +182,7 @@ export default function DashboardPage() {
   }, [])
 
 const { curMonth, curYear } = useMonthContext()
-  const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
+  const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
 
   const budget = computedBudget()
@@ -240,7 +240,7 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} debt={debt} />
+      <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
 
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>

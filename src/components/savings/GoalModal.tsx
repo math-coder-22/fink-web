@@ -26,6 +26,7 @@ const defaultForm = (): FormData => ({
   expense:0, coverageTarget:6,
   eduCurrent:0, eduInflasi:8,
   pensionExp:0, pensionInflasi:5,
+  history:[],
 })
 
 interface Props {
