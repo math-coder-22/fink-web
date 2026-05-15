@@ -62,8 +62,8 @@ export function TopupModal({
             alignItems: "center",
           }}
         >
-          <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#1a5c42" }}>
-            <AppIcon name="income" size={15} />Setor Dana
+          <div style={{ fontSize: "15px", fontWeight: 700, color: "#1a5c42" }}>
+            ↑ Setor Dana
           </div>
           <button
             onClick={onClose}
@@ -222,8 +222,8 @@ export function WithdrawModal({
             alignItems: "center",
           }}
         >
-          <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#b45309" }}>
-            <AppIcon name="expense" size={15} />Tarik Dana
+          <div style={{ fontSize: "15px", fontWeight: 700, color: "#b45309" }}>
+            ↓ Tarik Dana
           </div>
           <button
             onClick={onClose}
@@ -430,7 +430,7 @@ export function ReconcileModal({
             <div
               style={{ fontSize: "15px", fontWeight: 700, color: "#92400e" }}
             >
-              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Saldo</span>
+              ⚖ Reconcile Saldo
             </div>
             <div
               style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}
@@ -672,8 +672,8 @@ export function SummaryCard({
 
       <div className="savings-summary-tip">
         {count === 0
-          ? "Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
-          : `Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
+          ? "💡 Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
+          : `💡 Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
       </div>
     </div>
   );

@@ -68,6 +68,10 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
   // ── Shared styles ──
   const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
   const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
+  const amountCell: React.CSSProperties = { width:'116px', minWidth:'116px', maxWidth:'116px', boxSizing:'border-box', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }
+  const amountInput: React.CSSProperties = { ...inp, ...amountCell, fontSize:'12px', fontWeight:500, color:'#4b5563' }
+  const amountActualInput: React.CSSProperties = { ...inp, ...amountCell, fontSize:'12px', fontWeight:500, color:'#1a5c42' }
+  const totalAmountCell: React.CSSProperties = { ...amountCell, fontSize:'11.5px' }
   const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'8px' }
 
   return (
@@ -101,8 +105,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                 </div>
               ) : (
                 <>
-                  <span style={{ minWidth:'100px', fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ minWidth:'100px', fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
+                  <span style={{ ...totalAmountCell, color:'#9ca3af' }}>{fmt(catP)}</span>
+                  <span style={{ ...totalAmountCell, fontWeight:600, color:clr }}>{fmt(catA)}</span>
                 </>
               )}
               <button
@@ -240,8 +244,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           </div>
         ) : (
           <>
-            <div style={{ width:'110px', minWidth:'110px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
-            <div style={{ width:'110px', minWidth:'110px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
+            <div style={{ ...totalAmountCell, color:'#9ca3af' }}>{fmt(totExpP)}</div>
+            <div style={{ ...totalAmountCell, fontWeight:700, color:'#1a5c42' }}>{fmt(totExpA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>
@@ -277,12 +281,12 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               </div>
             ) : (
               <>
-                <input style={{ ...inp, width:'110px', minWidth:'110px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={amountInput}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                   onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <input style={{ ...inp, width:'110px', minWidth:'110px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
+                <input style={amountActualInput}
                   value={r.actual?fmtNum(r.actual):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -305,8 +309,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
+            <div style={{ ...totalAmountCell, color:'#9ca3af' }}>{fmt(totSavP)}</div>
+            <div style={{ ...totalAmountCell, fontWeight:700, color:'#1a5c42' }}>{fmt(totSavA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>

@@ -10,7 +10,6 @@ import CatatanHarian from '@/components/bulanan/CatatanHarian'
 import { RekonModal, TxDetailModal } from '@/components/bulanan/BulananModals'
 import type { MonthKey } from '@/types/database'
 import DebtPanel from '@/components/bulanan/DebtPanel'
-import { AppIcon } from '@/components/ui/design'
 
 type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
@@ -93,7 +92,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     )
     if (!confirmed) return
     await copyBudgetToNext()
-    alert(`Budget berhasil disalin ke ${nextLabel}!`)
+    alert(`✓ Budget berhasil disalin ke ${nextLabel}!`)
   }
 
 
@@ -201,18 +200,18 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
-          {/* Reflection, Reconcile, Copy */}
+          {/* Reflection → Reconcile → Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            <AppIcon name="mirror" size={14} /> Reflection
+            🪞 Reflection
           </button>
           <button onClick={()=>setRekonOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            <AppIcon name="scale" size={14} /> Reconcile
+            ⚖️ Reconcile
           </button>
           <button onClick={handleCopyBudget}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            <AppIcon name="copy" size={14} /> Copy
+            📋 Copy →
           </button>
         </div>
       </div>
@@ -223,165 +222,137 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         const totalSavings = savingComputed.reduce((s,r)=>s+(r.actual||0),0)
         const totalExp     = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
         const totalDebt    = debtComputed.reduce((s,r)=>s+(r.actual||0),0)
-        const grandTotalExp = totalExp + totalDebt
+        const totalOutflow = totalExp + totalDebt
+        const cashAfterOutflow = totalIncome - totalOutflow
+        const savingRate = totalIncome > 0 ? Math.round((totalSavings/totalIncome)*100) : 0
+        const expenseRate = totalIncome > 0 ? Math.round((totalExp/totalIncome)*100) : 0
+        const debtRate = totalIncome > 0 ? Math.round((totalDebt/totalIncome)*100) : 0
+        const finalBalance = rawSisa
+
+        const miniLabel: React.CSSProperties = { fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }
+        const row: React.CSSProperties = { display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', fontSize:'12.5px' }
+        const mono: React.CSSProperties = { fontFamily:'var(--font-mono), monospace', fontWeight:700, whiteSpace:'nowrap' }
+        const softCard: React.CSSProperties = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'13px 14px' }
+        const scoreColor = finalBalance >= 0 ? '#15803d' : '#b91c1c'
 
         return (
           <div onClick={e=>{ if(e.target===e.currentTarget) setRefleksiOpen(false) }}
-            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:800, display:'flex', alignItems:'flex-start', justifyContent:'flex-end', padding:'60px 20px 20px' }}>
+            style={{ position:'fixed', inset:0, background:'rgba(15,23,42,.42)', zIndex:800, display:'flex', alignItems:'stretch', justifyContent:'flex-end', padding:isMobile?'12px':'20px' }}>
             <div style={{
-              background:'#fff', borderRadius:'12px', width:'100%', maxWidth:'400px',
-              maxHeight:'calc(100dvh - 80px)', overflowY:'auto',
-              boxShadow:'0 20px 60px rgba(0,0,0,.2)',
+              background:'#fff', borderRadius:'16px', width:'100%', maxWidth:isMobile?'100%':'460px',
+              maxHeight:'calc(100dvh - 40px)', overflowY:'auto', alignSelf:'center',
+              boxShadow:'0 24px 70px rgba(15,23,42,.24)', border:'1px solid #e3e7ee',
               animation:'slideIn .2s ease',
             }}>
               {/* Head */}
-              <div style={{ position:'sticky', top:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
+              <div style={{ position:'sticky', top:0, background:'rgba(255,255,255,.96)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
                 <div>
-                  <div style={{ fontSize:'15px', fontWeight:700, color:'#111827' }}><span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="mirror" size={16} /></span>Monthly Reflection</div>
-                  <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear}</div>
+                  <div style={{ fontSize:'15px', fontWeight:800, color:'#111827' }}>Monthly Reflection</div>
+                  <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear} · Kakeibo review</div>
                 </div>
-                <button onClick={()=>setRefleksiOpen(false)} style={{ width:'28px', height:'28px', border:'none', background:'#f7f8fa', borderRadius:'6px', fontSize:'16px', cursor:'pointer', color:'#4b5563' }}>×</button>
+                <button onClick={()=>setRefleksiOpen(false)} style={{ width:'30px', height:'30px', border:'1px solid #e3e7ee', background:'#f7f8fa', borderRadius:'8px', fontSize:'17px', cursor:'pointer', color:'#4b5563' }}>×</button>
               </div>
 
-              <div style={{ padding:'20px', display:'flex', flexDirection:'column', gap:'16px' }}>
+              <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:'14px' }}>
 
-                {/* A. Total Income */}
-                <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', padding:'14px 16px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
-                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="income" size={14} /></span>Money You Earned
+                {/* Summary */}
+                <div style={{ ...softCard, background:'#f8fafc' }}>
+                  <div style={{ ...miniLabel, marginBottom:'10px' }}>Ringkasan Bulan Ini</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
+                    <div style={row}><span style={{ color:'#4b5563' }}>Total Income</span><span style={{ ...mono, color:'#15803d' }}>{fmt(totalIncome)}</span></div>
+                    <div style={row}><span style={{ color:'#4b5563' }}>Expenses</span><span style={{ ...mono, color:'#b91c1c' }}>{fmt(totalExp)}</span></div>
+                    <div style={row}><span style={{ color:'#4b5563' }}>Debt Payment</span><span style={{ ...mono, color:'#8a5f2b' }}>{fmt(totalDebt)}</span></div>
+                    <div style={{ height:'1px', background:'#e3e7ee', margin:'2px 0' }} />
+                    <div style={row}><span style={{ color:'#111827', fontWeight:700 }}>Total Outflow</span><span style={{ ...mono, color:'#4b5563' }}>{fmt(totalOutflow)}</span></div>
+                    <div style={row}><span style={{ color:'#4b5563' }}>Saving Allocation</span><span style={{ ...mono, color:'#1d4ed8' }}>{fmt(totalSavings)}</span></div>
+                    <div style={{ marginTop:'6px', background: finalBalance>=0?'#f0fdf4':'#fef2f2', border:`1px solid ${finalBalance>=0?'#bbf7d0':'#fecaca'}`, borderRadius:'9px', padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'12px' }}>
+                      <span style={{ fontSize:'12.5px', fontWeight:700, color:scoreColor }}>{finalBalance>=0?'Cashflow Akhir':'Defisit Akhir'}</span>
+                      <span style={{ ...mono, color:scoreColor }}>{finalBalance<0?'-':''}{fmt(finalBalance)}</span>
+                    </div>
                   </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#15803d', letterSpacing:'-.5px' }}>
-                    {fmt(totalIncome)}
-                  </div>
-                  <div style={{ fontSize:'11.5px', color:'#4b5563', marginTop:'6px' }}>
-                    Total income received this month across all sources.
-                  </div>
-                  {/* Income breakdown */}
-                  <div style={{ marginTop:'10px', display:'flex', flexDirection:'column', gap:'3px' }}>
-                    {incomeComputed.flatMap(c=>c.items).filter(i=>(i.actual||0)>0).map(i=>(
-                      <div key={i.label} style={{ display:'flex', justifyContent:'space-between', fontSize:'12px' }}>
-                        <span style={{ color:'#6b7280' }}>{i.label}</span>
-                        <span style={{ fontFamily:'var(--font-mono), monospace', fontWeight:500, color:'#15803d' }}>{fmt(i.actual)}</span>
-                      </div>
-                    ))}
+                </div>
 
+                {/* Ratio cards */}
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px' }}>
+                  <div style={{ ...softCard, padding:'11px 10px' }}>
+                    <div style={miniLabel}>Expense</div>
+                    <div style={{ ...mono, color:'#b91c1c', fontSize:'16px', marginTop:'5px' }}>{expenseRate}%</div>
+                  </div>
+                  <div style={{ ...softCard, padding:'11px 10px' }}>
+                    <div style={miniLabel}>Debt</div>
+                    <div style={{ ...mono, color:'#8a5f2b', fontSize:'16px', marginTop:'5px' }}>{debtRate}%</div>
+                  </div>
+                  <div style={{ ...softCard, padding:'11px 10px' }}>
+                    <div style={miniLabel}>Saving</div>
+                    <div style={{ ...mono, color:'#1d4ed8', fontSize:'16px', marginTop:'5px' }}>{savingRate}%</div>
+                  </div>
+                </div>
 
-                    {/* Debt section */}
+                {/* Debt as separate expense block */}
+                {totalDebt > 0 && (
+                  <div style={{ ...softCard, background:'#fffbeb', borderColor:'#fde68a' }}>
+                    <div style={{ ...miniLabel, color:'#92400e', marginBottom:'8px' }}>Debt Payment</div>
+                    <div style={{ fontSize:'12px', color:'#6b7280', lineHeight:1.55, marginBottom:'10px' }}>
+                      Debt dicatat sebagai bagian dari outflow/pengeluaran, bukan income. Bagian ini dibuat terpisah agar kewajiban bulanan terlihat jelas.
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      {debtComputed.filter(r=>(r.actual||0)>0).map(r=>(
+                        <div key={r.label} style={row}>
+                          <span style={{ color:'#4b5563' }}>{r.label}</span>
+                          <span style={{ ...mono, color:'#8a5f2b' }}>{fmt(r.actual)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Expense breakdown */}
+                <div style={softCard}>
+                  <div style={{ ...miniLabel, marginBottom:'10px' }}>Distribusi Pengeluaran</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                    {budget.map(cat => {
+                      const catTotal = cat.items.reduce((s,i)=>s+(i.actual||0),0)
+                      if (catTotal === 0) return null
+                      const catPct = totalOutflow > 0 ? Math.round((catTotal/totalOutflow)*100) : 0
+                      return (
+                        <div key={cat.label}>
+                          <div style={{ display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', marginBottom:'4px' }}>
+                            <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>{cat.label}</span>
+                            <span style={{ ...mono, fontSize:'12.5px', color:'#b91c1c' }}>{fmt(catTotal)}</span>
+                          </div>
+                          <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'99px' }}>
+                            <div style={{ height:'5px', borderRadius:'99px', background:'#fca5a5', width:`${catPct}%`, transition:'width .4s' }} />
+                          </div>
+                        </div>
+                      )
+                    })}
                     {totalDebt > 0 && (
                       <div>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>
-                          <span style={{ fontSize:'12.5px', fontWeight:600, color:'#111827' }}>Debt Payment</span>
-                          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                            <span style={{ fontSize:'11px', color:'#9ca3af' }}>{grandTotalExp > 0 ? Math.round((totalDebt/grandTotalExp)*100) : 0}%</span>
-                            <span style={{ fontSize:'12.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:'#a16207' }}>{fmt(totalDebt)}</span>
-                          </div>
+                        <div style={{ display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', marginBottom:'4px' }}>
+                          <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>Debt Payment</span>
+                          <span style={{ ...mono, fontSize:'12.5px', color:'#8a5f2b' }}>{fmt(totalDebt)}</span>
                         </div>
-                        <div style={{ height:'3px', background:'#f3f4f6', borderRadius:'2px', marginBottom:'6px' }}>
-                          <div style={{ height:'3px', borderRadius:'2px', background:'#fcd34d', width:`${grandTotalExp > 0 ? Math.round((totalDebt/grandTotalExp)*100) : 0}%`, transition:'width .4s' }} />
+                        <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'99px' }}>
+                          <div style={{ height:'5px', borderRadius:'99px', background:'#fbbf24', width:`${totalOutflow > 0 ? Math.round((totalDebt/totalOutflow)*100) : 0}%`, transition:'width .4s' }} />
                         </div>
-                        {debtComputed.filter(i=>(i.actual||0)>0).map(item=>(
-                          <div key={item.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'2px 0 2px 10px', fontSize:'12px' }}>
-                            <span style={{ color:'#6b7280' }}>└ {item.label}</span>
-                            <span style={{ fontFamily:'var(--font-mono), monospace', color:'#4b5563' }}>{fmt(item.actual)}</span>
-                          </div>
-                        ))}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* B. Total Savings */}
-                <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'10px', padding:'14px 16px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
-                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="saving" size={14} /></span>Money You Saved
+                {/* Insight */}
+                <div style={{ ...softCard, background:'#f0f9ff', borderColor:'#bae6fd' }}>
+                  <div style={{ ...miniLabel, color:'#0369a1', marginBottom:'7px' }}>Insight Bulan Ini</div>
+                  <div style={{ fontSize:'12.5px', color:'#075985', lineHeight:1.6 }}>
+                    {finalBalance >= 0
+                      ? `Cashflow akhir masih positif sebesar ${fmt(finalBalance)}. Setelah expenses dan debt payment, sisa sebelum saving adalah ${fmt(cashAfterOutflow)}.`
+                      : `Cashflow akhir defisit sebesar ${fmt(finalBalance)}. Evaluasi ulang expenses, debt payment, atau alokasi saving agar bulan berikutnya lebih seimbang.`}
                   </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#1d4ed8', letterSpacing:'-.5px' }}>
-                    {fmt(totalSavings)}
-                  </div>
-                  <div style={{ fontSize:'11.5px', color:'#4b5563', marginTop:'6px' }}>
-                    {totalIncome > 0
-                      ? `${Math.round((totalSavings/totalIncome)*100)}% of your income was saved this month.`
-                      : 'Total savings allocated this month.'}
-                  </div>
-                  {/* Savings breakdown */}
-                  {savingComputed.filter(r=>(r.actual||0)>0).length > 0 && (
-                    <div style={{ marginTop:'10px', display:'flex', flexDirection:'column', gap:'3px' }}>
-                      {savingComputed.filter(r=>(r.actual||0)>0).map(r=>(
-                        <div key={r.label} style={{ display:'flex', justifyContent:'space-between', fontSize:'12px' }}>
-                          <span style={{ color:'#6b7280' }}>{r.label}</span>
-                          <span style={{ fontFamily:'var(--font-mono), monospace', fontWeight:500, color:'#1d4ed8' }}>{fmt(r.actual)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* C. Spending breakdown by category */}
-                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'14px 16px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'4px' }}>
-                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="expense" size={14} /></span>Money You Spent
-                  </div>
-                  <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c', letterSpacing:'-.5px', marginBottom:'12px' }}>
-                    {fmt(grandTotalExp)}
-                  </div>
-
-                  {/* Per category */}
-                  <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                    {budget.map(cat => {
-                      const catTotal = cat.items.reduce((s,i)=>s+(i.actual||0),0)
-                      if (catTotal === 0) return null
-                      const catPct = totalExp > 0 ? Math.round((catTotal/totalExp)*100) : 0
-                      return (
-                        <div key={cat.label}>
-                          {/* Category header */}
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>
-                            <span style={{ fontSize:'12.5px', fontWeight:600, color:'#111827' }}>{cat.label}</span>
-                            <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                              <span style={{ fontSize:'11px', color:'#9ca3af' }}>{catPct}%</span>
-                              <span style={{ fontSize:'12.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:'#b91c1c' }}>{fmt(catTotal)}</span>
-                            </div>
-                          </div>
-                          {/* Progress bar */}
-                          <div style={{ height:'3px', background:'#f3f4f6', borderRadius:'2px', marginBottom:'6px' }}>
-                            <div style={{ height:'3px', borderRadius:'2px', background:'#fca5a5', width:`${catPct}%`, transition:'width .4s' }} />
-                          </div>
-                          {/* Items */}
-                          {cat.items.filter(i=>(i.actual||0)>0).map(item=>(
-                            <div key={item.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'2px 0 2px 10px', fontSize:'12px' }}>
-                              <span style={{ color:'#6b7280' }}>└ {item.label}</span>
-                              <span style={{ fontFamily:'var(--font-mono), monospace', color:'#4b5563' }}>{fmt(item.actual)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Summary ratio */}
-                  {totalIncome > 0 && (
-                    <div style={{ marginTop:'14px', paddingTop:'12px', borderTop:'1px solid #f3f4f6' }}>
-                      <div style={{ fontSize:'11.5px', color:'#6b7280' }}>
-                        Spending rate: <span style={{ fontWeight:600, color: totalExp/totalIncome > 0.8 ? '#b91c1c' : '#4b5563' }}>
-                          {Math.round((totalExp/totalIncome)*100)}% of income
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Balance summary */}
-                <div style={{ background: rawSisa>=0?'#f0fdf4':'#fef2f2', border:`1px solid ${rawSisa>=0?'#bbf7d0':'#fecaca'}`, borderRadius:'10px', padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ fontSize:'13px', fontWeight:600, color: rawSisa>=0?'#15803d':'#b91c1c' }}>
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name={rawSisa >= 0 ? 'check' : 'warning'} size={14} />{rawSisa >= 0 ? 'Remaining Balance' : 'Balance Deficit'}</span>
-                  </span>
-                  <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color: rawSisa>=0?'#15803d':'#b91c1c' }}>
-                    {rawSisa < 0 ? '-' : ''}{fmt(rawSisa)}
-                  </span>
                 </div>
 
               </div>
             </div>
-            <style>{`@keyframes slideIn { from { opacity:0; transform:translateY(-10px) } to { opacity:1; transform:translateY(0) } }`}</style>
+            <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(18px) } to { opacity:1; transform:translateX(0) } }`}</style>
           </div>
         )
       })()}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { AppIcon } from '@/components/ui/design'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID')
 const onlyDigits = (v: string) => v.replace(/\D/g, '')
@@ -74,8 +73,8 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
     await onSave(aktual, selisih, type)
     setDone(
       selisih > 0
-        ? `Balance surplus ${fmt(selisih)} recorded as income`
-        : `Balance deficit ${fmt(Math.abs(selisih))} recorded as expense`
+        ? `Balance surplus ${fmt(selisih)} recorded as income ✓`
+        : `Balance deficit ${fmt(Math.abs(selisih))} recorded as expense ✓`
     )
     setLoading(false)
   }
@@ -86,7 +85,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
       <div style={{ background:'#fff', borderRadius:'12px', width:'100%', maxWidth:'400px', overflow:'hidden', boxShadow:'0 20px 60px rgba(0,0,0,.2)' }}>
 
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #e3e7ee' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:700 }}><AppIcon name="scale" size={16} /> Balance Reconciliation</div>
+          <div style={{ fontSize:'15px', fontWeight:700 }}>⚖️ Balance Reconciliation</div>
           <button onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f7f8fa', borderRadius:'6px', fontSize:'16px', cursor:'pointer', color:'#4b5563' }}>×</button>
         </div>
 
@@ -122,21 +121,21 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
               </div>
               <div style={{ fontSize:'12.5px', color: type==='out'?'#b91c1c':'#15803d' }}>
                 {type==='out'
-                  ? `Cash is less than recorded — will be logged as an expense`
-                  : `Cash is more than recorded — will be logged as income`}
+                  ? `💸 Cash is less than recorded — will be logged as an expense`
+                  : `💰 Cash is more than recorded — will be logged as income`}
               </div>
             </div>
           )}
 
           {aktualStr && !done && selisih === 0 && (
             <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'8px', padding:'12px 14px', fontSize:'13px', color:'#15803d', fontWeight:500 }}>
-              Balance matches — no adjustment needed!
+              ✓ Balance matches — no adjustment needed!
             </div>
           )}
 
           {done && (
             <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'8px', padding:'14px', fontSize:'13px', color:'#15803d', fontWeight:500, textAlign:'center' }}>
-              <div style={{ display:'flex', justifyContent:'center', marginBottom:'6px' }}><AppIcon name="check" size={24} /></div>
+              <div style={{ fontSize:'24px', marginBottom:'6px' }}>✅</div>
               {done}
             </div>
           )}
@@ -149,7 +148,7 @@ export function RekonModal({ sisaApp, onClose, onSave }: {
           {!done && aktualStr && Math.abs(selisih) > 0 && (
             <button onClick={handleSave} disabled={loading}
               style={{ padding:'7px 16px', border:'none', borderRadius:'6px', background: loading?'#9ca3af':'#1a5c42', color:'#fff', fontSize:'13px', fontWeight:600, cursor: loading?'not-allowed':'pointer' }}>
-              {loading ? 'Saving...' : <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name="scale" size={14} />Apply Reconciliation</span>}
+              {loading ? 'Saving...' : '⚖️ Apply Reconciliation'}
             </button>
           )}
         </div>

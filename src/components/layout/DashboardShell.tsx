@@ -246,7 +246,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
               borderRadius:'20px', padding: isMobile?'3px 9px':'4px 11px',
               fontSize:'11.5px', fontWeight:500, color:'rgba(255,255,255,.85)', cursor:'pointer',
             }}>
-              {isMobile ? 'Out' : 'Sign Out'}
+              {isMobile ? '↩' : 'Sign Out'}
             </button>
           </div>
         </nav>
