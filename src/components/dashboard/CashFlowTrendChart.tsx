@@ -149,7 +149,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 260
+  const height = 300
   const pad = { l: 70, r: 28, t: 24, b: 42 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
@@ -186,7 +186,6 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       boxShadow: '0 2px 10px rgba(15,23,42,.05)',
       overflow: 'hidden',
       marginBottom: 14,
-      height: '100%',
     }}>
       <div className="fink-cashflow-head" style={{
         padding: '14px 16px 10px',
@@ -212,7 +211,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '10px 16px 12px' }}>
+      <div className="fink-cashflow-body" style={{ padding: '12px 16px 14px' }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -220,7 +219,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'260px', display:'block', cursor:'crosshair' }}
+          style={{ width:'100%', height:'300px', display:'block', cursor:'crosshair' }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
