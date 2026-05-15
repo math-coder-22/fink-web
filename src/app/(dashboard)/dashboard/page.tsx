@@ -55,49 +55,89 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
   const chartData = data
     .filter(d => d.income > 0 || d.expense > 0 || d.saving > 0)
     .slice(-3)
-    .map(d => ({ ...d, outflow: Number(d.expense || 0) + Number(d.saving || 0), surplus: Number(d.income || 0) - Number(d.expense || 0) - Number(d.saving || 0) }))
-  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.outflow]))
+    .map(d => ({
+      ...d,
+      net: Number(d.income || 0) - Number(d.expense || 0) - Number(d.saving || 0),
+    }))
+  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.expense, d.saving]))
+  const chartHeight = 178
 
   return (
-    <Card style={{ marginBottom:0, height:'100%', minHeight:320, width:'100%', display:'flex', flexDirection:'column' }}>
+    <Card style={{ marginBottom:0, height:'100%', minHeight:322, width:'100%', display:'flex', flexDirection:'column', borderRadius:18 }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
-        subtitle="Income vs total outflow for the last 3 months"
-        right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>3 months</span>}
+        subtitle="Income, expenses, dan saving 3 bulan terakhir"
+        right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:800 }}>3 months</span>}
       />
-      <div style={{ padding:'0 16px 0', flex:1, display:'flex', flexDirection:'column' }}>
+      <div className="monthly-comparison-card" style={{ padding:'12px 14px 8px', flex:1, display:'flex', flexDirection:'column', minHeight:0 }}>
         {chartData.length === 0 ? (
           <div style={{ fontSize:12, color:'#9ca3af' }}>Belum ada data historis untuk ditampilkan.</div>
         ) : (
           <>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:18, flex:1, minHeight:0, padding:'0 8px 0', overflowX:'auto' }}>
-              {chartData.map(item => (
-                <div key={`${item.month}-${item.year}`} style={{ minWidth:96, flex:1 }}>
-                  <div style={{ height:'100%', minHeight:210, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:10, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
-                    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%' }}>
-                      <div style={{ fontSize:10.5, color:'#15803d', fontWeight:800, marginBottom:5, whiteSpace:'nowrap' }}>{fmtShort(item.income).replace('Rp ', '')}</div>
-                      <div title={`Income ${fmt(item.income)}`} style={{ width:24, height:`${Math.max(8, (item.income / maxVal) * 190)}px`, background:'#16a34a', borderRadius:'7px 7px 0 0' }} />
+            <div className="monthly-comparison-plot" style={{
+              flex:1,
+              minHeight:0,
+              display:'grid',
+              gridTemplateColumns:`repeat(${chartData.length}, minmax(86px, 1fr))`,
+              gap:14,
+              alignItems:'end',
+              overflowX:'auto',
+              padding:'6px 0 0',
+            }}>
+              {chartData.map(item => {
+                const bars = [
+                  { key:'income', label:'Income', value:item.income, color:'#16a34a' },
+                  { key:'expense', label:'Expenses', value:item.expense, color:'#ef4444' },
+                  { key:'saving', label:'Saving', value:item.saving, color:'#2563eb' },
+                ]
+                return (
+                  <div key={`${item.month}-${item.year}`} style={{ minWidth:86, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+                    <div style={{ height:chartHeight, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:7, borderBottom:'1px solid #e5e7eb', padding:'0 2px' }}>
+                      {bars.map(bar => (
+                        <div key={bar.key} title={`${bar.label} ${fmt(bar.value)}`} style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', minWidth:20 }}>
+                          <div className="monthly-bar-label" style={{
+                            fontSize:9.5,
+                            lineHeight:1,
+                            color:bar.color,
+                            fontWeight:900,
+                            marginBottom:5,
+                            whiteSpace:'nowrap',
+                            transform:'translateY(0)',
+                          }}>{fmtShort(bar.value).replace('Rp ', '')}</div>
+                          <div style={{
+                            width:22,
+                            height:`${Math.max(bar.value > 0 ? 8 : 0, (bar.value / maxVal) * (chartHeight - 26))}px`,
+                            background:bar.color,
+                            borderRadius:'8px 8px 0 0',
+                            boxShadow:'0 8px 18px rgba(15,23,42,.08)',
+                          }} />
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:'100%' }}>
-                      <div style={{ fontSize:10.5, color:'#b91c1c', fontWeight:800, marginBottom:5, whiteSpace:'nowrap' }}>{fmtShort(item.outflow).replace('Rp ', '')}</div>
-                      <div title={`Outflow ${fmt(item.outflow)} · Expense ${fmt(item.expense)} · Saving ${fmt(item.saving)}`} style={{ width:24, height:`${Math.max(8, (item.outflow / maxVal) * 190)}px`, background:'#ef4444', borderRadius:'7px 7px 0 0' }} />
+                    <div style={{ marginTop:8, textAlign:'center', fontSize:11, color:'#64748b', fontWeight:900 }}>{item.label}</div>
+                    <div style={{ marginTop:3, textAlign:'center', fontSize:10.5, color:item.net >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace', fontWeight:800 }}>
+                      {item.net >= 0 ? 'Surplus +' : 'Defisit -'}{fmtShort(item.net)}
                     </div>
                   </div>
-                  <div style={{ marginTop:9, textAlign:'center', fontSize:11, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
-                  <div style={{ marginTop:4, textAlign:'center', fontSize:10.5, color:item.surplus >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>
-                    {item.surplus >= 0 ? '+' : '-'}{fmtShort(item.surplus)}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:6, fontSize:10.5, color:'#6b7280' }}>
+            <div className="monthly-comparison-legend" style={{ display:'flex', gap:10, flexWrap:'wrap', marginTop:8, fontSize:10.5, color:'#64748b', alignItems:'center' }}>
               <span><b style={{ color:'#16a34a' }}>■</b> Income</span>
-              <span><b style={{ color:'#ef4444' }}>■</b> Outflow</span>
-              <span style={{ color:'#9ca3af' }}>Outflow = expense + saving</span>
+              <span><b style={{ color:'#ef4444' }}>■</b> Expenses</span>
+              <span><b style={{ color:'#2563eb' }}>■</b> Saving</span>
             </div>
           </>
         )}
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .monthly-comparison-card { padding: 10px 10px 8px !important; }
+          .monthly-comparison-plot { gap: 10px !important; }
+          .monthly-bar-label { font-size: 9px !important; }
+          .monthly-comparison-legend { font-size: 10px !important; }
+        }
+      `}</style>
     </Card>
   )
 }
@@ -309,9 +349,11 @@ const { curMonth, curYear } = useMonthContext()
   const insight = getInsight(totalIncome, totalExpense, totalSaving, rawSisa)
 
   const now = new Date()
-  const daysInActiveMonth = new Date(curYear, curMonth + 1, 0).getDate()
+  const monthIndex = Number(curMonth)
+  const yearNumber = Number(curYear)
+  const daysInActiveMonth = new Date(yearNumber, monthIndex + 1, 0).getDate()
   const chartVisibleDay =
-    now.getFullYear() === curYear && now.getMonth() === curMonth
+    now.getFullYear() === yearNumber && now.getMonth() === monthIndex
       ? Math.min(now.getDate(), daysInActiveMonth)
       : daysInActiveMonth
 
@@ -341,7 +383,7 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.55fr) minmax(360px, 1fr)', gap:'14px', alignItems:'stretch', marginBottom:'14px', width:'100%' }}>
+      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.65fr) minmax(300px, .95fr)', gap:'14px', alignItems:'stretch', marginBottom:'14px', width:'100%' }}>
         <div style={{ minWidth:0, display:'flex', width:'100%' }}>
           <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} curDay={chartVisibleDay} daysInMonth={daysInActiveMonth} />
         </div>
@@ -494,6 +536,12 @@ const { curMonth, curYear } = useMonthContext()
           max-width: 100%;
           overflow-x: hidden;
           padding-bottom: max(18px, env(safe-area-inset-bottom));
+        }
+
+        @media (max-width: 1100px) {
+          .fink-dashboard-page .overview-chart-layout {
+            grid-template-columns: 1fr !important;
+          }
         }
 
         @media (max-width: 920px) {

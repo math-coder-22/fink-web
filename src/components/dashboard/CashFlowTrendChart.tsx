@@ -150,8 +150,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 380
-  const pad = { l: 70, r: 96, t: 8, b: 34 }
+  const height = 310
+  const pad = { l: 54, r: 18, t: 16, b: 26 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -183,18 +183,18 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
     <section className="fink-cashflow-card" style={{
       background: '#fff',
       border: '1px solid #e3e7ee',
-      borderRadius: 16,
-      boxShadow: '0 2px 10px rgba(15,23,42,.05)',
+      borderRadius: 18,
+      boxShadow: '0 4px 18px rgba(15,23,42,.055)',
       overflow: 'hidden',
       marginBottom: 0,
       height: '100%',
-      minHeight: 320,
+      minHeight: 322,
       width: '100%',
       display: 'flex',
       flexDirection: 'column',
     }}>
       <div className="fink-cashflow-head" style={{
-        padding: '12px 16px 9px',
+        padding: '13px 16px 10px',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
@@ -203,10 +203,10 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         borderBottom: '1px solid #eef2f7',
       }}>
         <div>
-          <div style={{ fontSize: 14.5, fontWeight: 900, color: '#111827' }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#111827', letterSpacing:'-.2px' }}>
             Tren Kapasitas Cash Flow
           </div>
-          <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
+          <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 3 }}>
             Income dibanding total outflow (expense + saving)
           </div>
         </div>
@@ -217,7 +217,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '0 16px 0', flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="fink-cashflow-body" style={{ padding: '0 8px 4px', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="none"
@@ -228,12 +228,22 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           className="fink-cashflow-svg"
           style={{ width:'100%', height:'100%', minHeight:0, display:'block', cursor:'crosshair', flex: 1 }}
         >
+          <defs>
+            <linearGradient id="finkIncomeArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={GREEN} stopOpacity="0.20" />
+              <stop offset="100%" stopColor={GREEN} stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="finkOutflowArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={RED} stopOpacity="0.16" />
+              <stop offset="100%" stopColor={RED} stopOpacity="0" />
+            </linearGradient>
+          </defs>
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
             return (
               <g key={`y-${idx}`}>
                 <line x1={pad.l} x2={width - pad.r} y1={y} y2={y} stroke={GRID} strokeWidth="1" />
-                <text x={pad.l - 12} y={y + 4} textAnchor="end" fontSize="12" fill={TEXT}>{fmtShort(tick)}</text>
+                <text x={pad.l - 12} y={y + 4} textAnchor="end" fontSize="10" fill={TEXT}>{fmtShort(tick)}</text>
               </g>
             )
           })}
@@ -242,7 +252,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             const x = scale.x(day, xDomainDays)
             return (
               <g key={`x-${day}`}>
-                <text x={x} y={height - 8} textAnchor="middle" fontSize="12" fill={TEXT}>{day}</text>
+                <text x={x} y={height - 8} textAnchor="middle" fontSize="10" fill={TEXT}>{day}</text>
               </g>
             )
           })}
@@ -259,10 +269,24 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
 
           {totalIncome > 0 && (
             <path
+              d={`${incomePath} L ${scale.x(lastPoint.day, xDomainDays).toFixed(2)} ${(height - pad.b).toFixed(2)} L ${scale.x(points[0].day, xDomainDays).toFixed(2)} ${(height - pad.b).toFixed(2)} Z`}
+              fill="url(#finkIncomeArea)"
+            />
+          )}
+
+          {totalCashOut > 0 && (
+            <path
+              d={`${cashOutPath} L ${scale.x(lastPoint.day, xDomainDays).toFixed(2)} ${(height - pad.b).toFixed(2)} L ${scale.x(points[0].day, xDomainDays).toFixed(2)} ${(height - pad.b).toFixed(2)} Z`}
+              fill="url(#finkOutflowArea)"
+            />
+          )}
+
+          {totalIncome > 0 && (
+            <path
               d={incomePath}
               fill="none"
               stroke={GREEN}
-              strokeWidth="3.2"
+              strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
@@ -274,7 +298,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
               d={cashOutPath}
               fill="none"
               stroke={RED}
-              strokeWidth="3.2"
+              strokeWidth="3.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
@@ -287,12 +311,12 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
                 <>
                   <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
                   {(() => {
-                    const x = clamp(scale.x(lastPoint.day, xDomainDays) + 10, pad.l + 8, width - 88)
-                    const y = clamp(scale.y(totalIncome) - 14, pad.t + 4, height - pad.b - 22)
+                    const x = clamp(scale.x(lastPoint.day, xDomainDays) - 76, pad.l + 4, width - 76)
+                    const y = clamp(scale.y(totalIncome) - 28, pad.t + 2, height - pad.b - 22)
                     return (
                       <g>
-                        <rect x={x} y={y} width="80" height="25" rx="7" fill={GREEN} opacity="0.96" />
-                        <text x={x + 40} y={y + 17} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff">{fmtShort(totalIncome)}</text>
+                        <rect x={x} y={y} width="72" height="23" rx="11" fill={GREEN} opacity="0.96" />
+                        <text x={x + 36} y={y + 16} textAnchor="middle" fontSize="10.8" fontWeight="800" fill="#fff">{fmtShort(totalIncome)}</text>
                       </g>
                     )
                   })()}
@@ -302,12 +326,12 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
                 <>
                   <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
                   {(() => {
-                    const x = clamp(scale.x(lastPoint.day, xDomainDays) + 10, pad.l + 8, width - 88)
-                    const y = clamp(scale.y(totalCashOut) - 14, pad.t + 4, height - pad.b - 22)
+                    const x = clamp(scale.x(lastPoint.day, xDomainDays) - 76, pad.l + 4, width - 76)
+                    const y = clamp(scale.y(totalCashOut) + 8, pad.t + 2, height - pad.b - 22)
                     return (
                       <g>
-                        <rect x={x} y={y} width="80" height="25" rx="7" fill={RED} opacity="0.96" />
-                        <text x={x + 40} y={y + 17} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff">{fmtShort(totalCashOut)}</text>
+                        <rect x={x} y={y} width="72" height="23" rx="11" fill={RED} opacity="0.96" />
+                        <text x={x + 36} y={y + 16} textAnchor="middle" fontSize="10.8" fontWeight="800" fill="#fff">{fmtShort(totalCashOut)}</text>
                       </g>
                     )
                   })()}
@@ -317,8 +341,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           )}
 
           {hoveredPoint && (() => {
-            const tooltipW = 176
-            const tooltipH = 108
+            const tooltipW = 158
+            const tooltipH = 104
             const cursorX = scale.x(hoveredPoint.day, xDomainDays)
             const topValue = Math.max(hoveredPoint.income, hoveredPoint.cashOut)
             const rawX = cursorX + 12
@@ -347,21 +371,21 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
 
                 <g>
                   <rect x={x} y={y} width={tooltipW} height={tooltipH} rx="10" fill="#111827" opacity="0.94" />
-                  <text x={x + 13} y={y + 21} fontSize="12" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
+                  <text x={x + 13} y={y + 21} fontSize="10" fontWeight="800" fill="#fff">Hari {hoveredPoint.day}</text>
 
                   <circle cx={x + 14} cy={y + 40} r="4" fill={GREEN} />
-                  <text x={x + 27} y={y + 44} fontSize="11" fill="#e5e7eb">Income</text>
-                  <text x={x + tooltipW - 13} y={y + 44} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
+                  <text x={x + 27} y={y + 44} fontSize="10" fill="#e5e7eb">Income</text>
+                  <text x={x + tooltipW - 13} y={y + 44} fontSize="10" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
 
                   <circle cx={x + 14} cy={y + 59} r="4" fill={RED} />
-                  <text x={x + 27} y={y + 63} fontSize="11" fill="#e5e7eb">Outflow</text>
-                  <text x={x + tooltipW - 13} y={y + 63} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.cashOut)}</text>
+                  <text x={x + 27} y={y + 63} fontSize="10" fill="#e5e7eb">Outflow</text>
+                  <text x={x + tooltipW - 13} y={y + 63} fontSize="10" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.cashOut)}</text>
 
-                  <text x={x + 27} y={y + 82} fontSize="10.5" fill="#d1d5db">Expense</text>
-                  <text x={x + tooltipW - 13} y={y + 82} fontSize="10.5" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
+                  <text x={x + 27} y={y + 82} fontSize="10" fill="#d1d5db">Expense</text>
+                  <text x={x + tooltipW - 13} y={y + 82} fontSize="10" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
 
-                  <text x={x + 27} y={y + 99} fontSize="10.5" fill="#d1d5db">Saving</text>
-                  <text x={x + tooltipW - 13} y={y + 99} fontSize="10.5" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
+                  <text x={x + 27} y={y + 99} fontSize="10" fill="#d1d5db">Saving</text>
+                  <text x={x + tooltipW - 13} y={y + 99} fontSize="10" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
                 </g>
               </>
             )
@@ -378,8 +402,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             padding: 0 8px 0 !important;
           }
           .fink-cashflow-svg {
-            height: 250px !important;
-            min-height: 250px !important;
+            height: 260px !important;
+            min-height: 260px !important;
           }
           .fink-cashflow-legend {
             font-size: 10.5px !important;
