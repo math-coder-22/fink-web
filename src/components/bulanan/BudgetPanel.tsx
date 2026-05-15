@@ -240,8 +240,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           </div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
-            <div style={{ minWidth:'100px', textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
+            <div style={{ width:'110px', minWidth:'110px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
+            <div style={{ width:'110px', minWidth:'110px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>
@@ -277,12 +277,12 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               </div>
             ) : (
               <>
-                <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, width:'110px', minWidth:'110px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                   onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, width:'110px', minWidth:'110px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
                   value={r.actual?fmtNum(r.actual):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}

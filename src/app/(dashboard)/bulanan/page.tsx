@@ -222,6 +222,8 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         const totalIncome  = incomeComputed.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
         const totalSavings = savingComputed.reduce((s,r)=>s+(r.actual||0),0)
         const totalExp     = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
+        const totalDebt    = debtComputed.reduce((s,r)=>s+(r.actual||0),0)
+        const grandTotalExp = totalExp + totalDebt
 
         return (
           <div onClick={e=>{ if(e.target===e.currentTarget) setRefleksiOpen(false) }}
@@ -262,6 +264,29 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                         <span style={{ fontFamily:'var(--font-mono), monospace', fontWeight:500, color:'#15803d' }}>{fmt(i.actual)}</span>
                       </div>
                     ))}
+
+
+                    {/* Debt section */}
+                    {totalDebt > 0 && (
+                      <div>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>
+                          <span style={{ fontSize:'12.5px', fontWeight:600, color:'#111827' }}>Debt Payment</span>
+                          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                            <span style={{ fontSize:'11px', color:'#9ca3af' }}>{grandTotalExp > 0 ? Math.round((totalDebt/grandTotalExp)*100) : 0}%</span>
+                            <span style={{ fontSize:'12.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:'#a16207' }}>{fmt(totalDebt)}</span>
+                          </div>
+                        </div>
+                        <div style={{ height:'3px', background:'#f3f4f6', borderRadius:'2px', marginBottom:'6px' }}>
+                          <div style={{ height:'3px', borderRadius:'2px', background:'#fcd34d', width:`${grandTotalExp > 0 ? Math.round((totalDebt/grandTotalExp)*100) : 0}%`, transition:'width .4s' }} />
+                        </div>
+                        {debtComputed.filter(i=>(i.actual||0)>0).map(item=>(
+                          <div key={item.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'2px 0 2px 10px', fontSize:'12px' }}>
+                            <span style={{ color:'#6b7280' }}>└ {item.label}</span>
+                            <span style={{ fontFamily:'var(--font-mono), monospace', color:'#4b5563' }}>{fmt(item.actual)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -297,7 +322,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                     <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="expense" size={14} /></span>Money You Spent
                   </div>
                   <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c', letterSpacing:'-.5px', marginBottom:'12px' }}>
-                    {fmt(totalExp)}
+                    {fmt(grandTotalExp)}
                   </div>
 
                   {/* Per category */}
