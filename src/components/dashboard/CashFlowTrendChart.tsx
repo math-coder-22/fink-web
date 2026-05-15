@@ -150,8 +150,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 250
-  const pad = { l: 70, r: 96, t: 8, b: 24 }
+  const height = 380
+  const pad = { l: 70, r: 96, t: 8, b: 34 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -188,7 +188,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       overflow: 'hidden',
       marginBottom: 0,
       height: '100%',
-      minHeight: 330,
+      minHeight: 320,
       display: 'flex',
       flexDirection: 'column',
     }}>
@@ -216,15 +216,16 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '0 16px 6px', flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="fink-cashflow-body" style={{ padding: '0 16px 0', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
           role="img"
           aria-label="Tren cash flow harian"
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'100%', minHeight:'238px', display:'block', cursor:'crosshair', flex: 1 }}
+          style={{ width:'100%', height:'100%', minHeight:0, display:'block', cursor:'crosshair', flex: 1 }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
@@ -373,11 +374,11 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             padding: 12px 14px 9px !important;
           }
           .fink-cashflow-body {
-            padding: 8px 8px 10px !important;
+            padding: 0 8px 0 !important;
           }
           .fink-cashflow-svg {
-            height: 245px !important;
-            min-height: 245px !important;
+            height: 250px !important;
+            min-height: 250px !important;
           }
           .fink-cashflow-legend {
             font-size: 10.5px !important;
