@@ -10,6 +10,7 @@ import CatatanHarian from '@/components/bulanan/CatatanHarian'
 import { RekonModal, TxDetailModal } from '@/components/bulanan/BulananModals'
 import type { MonthKey } from '@/types/database'
 import DebtPanel from '@/components/bulanan/DebtPanel'
+import { AppIcon } from '@/components/ui/design'
 
 type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
@@ -92,7 +93,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     )
     if (!confirmed) return
     await copyBudgetToNext()
-    alert(`✓ Budget berhasil disalin ke ${nextLabel}!`)
+    alert(`Budget berhasil disalin ke ${nextLabel}!`)
   }
 
 
@@ -200,18 +201,18 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
-          {/* Reflection → Reconcile → Copy */}
+          {/* Reflection, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            🪞 Reflection
+            <AppIcon name="mirror" size={14} /> Reflection
           </button>
           <button onClick={()=>setRekonOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            ⚖️ Reconcile
+            <AppIcon name="scale" size={14} /> Reconcile
           </button>
           <button onClick={handleCopyBudget}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            📋 Copy →
+            <AppIcon name="copy" size={14} /> Copy
           </button>
         </div>
       </div>
@@ -234,7 +235,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
               {/* Head */}
               <div style={{ position:'sticky', top:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
                 <div>
-                  <div style={{ fontSize:'15px', fontWeight:700, color:'#111827' }}>🪞 Monthly Reflection</div>
+                  <div style={{ fontSize:'15px', fontWeight:700, color:'#111827' }}><span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="mirror" size={16} /></span>Monthly Reflection</div>
                   <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear}</div>
                 </div>
                 <button onClick={()=>setRefleksiOpen(false)} style={{ width:'28px', height:'28px', border:'none', background:'#f7f8fa', borderRadius:'6px', fontSize:'16px', cursor:'pointer', color:'#4b5563' }}>×</button>
@@ -245,7 +246,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                 {/* A. Total Income */}
                 <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', padding:'14px 16px' }}>
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#15803d', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
-                    💰 Money You Earned
+                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="income" size={14} /></span>Money You Earned
                   </div>
                   <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#15803d', letterSpacing:'-.5px' }}>
                     {fmt(totalIncome)}
@@ -267,7 +268,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                 {/* B. Total Savings */}
                 <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'10px', padding:'14px 16px' }}>
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'6px' }}>
-                    🏦 Money You Saved
+                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="saving" size={14} /></span>Money You Saved
                   </div>
                   <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#1d4ed8', letterSpacing:'-.5px' }}>
                     {fmt(totalSavings)}
@@ -293,7 +294,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                 {/* C. Spending breakdown by category */}
                 <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'14px 16px' }}>
                   <div style={{ fontSize:'10px', fontWeight:700, color:'#b91c1c', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'4px' }}>
-                    💸 Money You Spent
+                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="expense" size={14} /></span>Money You Spent
                   </div>
                   <div style={{ fontSize:'22px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c', letterSpacing:'-.5px', marginBottom:'12px' }}>
                     {fmt(totalExp)}
@@ -346,7 +347,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
                 {/* Balance summary */}
                 <div style={{ background: rawSisa>=0?'#f0fdf4':'#fef2f2', border:`1px solid ${rawSisa>=0?'#bbf7d0':'#fecaca'}`, borderRadius:'10px', padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                   <span style={{ fontSize:'13px', fontWeight:600, color: rawSisa>=0?'#15803d':'#b91c1c' }}>
-                    {rawSisa >= 0 ? '✅ Remaining Balance' : '⚠️ Balance Deficit'}
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name={rawSisa >= 0 ? 'check' : 'warning'} size={14} />{rawSisa >= 0 ? 'Remaining Balance' : 'Balance Deficit'}</span>
                   </span>
                   <span style={{ fontSize:'15px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color: rawSisa>=0?'#15803d':'#b91c1c' }}>
                     {rawSisa < 0 ? '-' : ''}{fmt(rawSisa)}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
+import { AppIcon } from '@/components/ui/design'
 import { useSavings } from '@/hooks/useSavings'
 import type { Transaction, BudgetCategory, IncomeCategory, SavingRow, DebtRow } from '@/types/database'
 
@@ -241,7 +242,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                 flexShrink:0
               }}
             >
-              🧮
+              <AppIcon name="chart" size={16} />
             </button>
           </div>
         </div>
@@ -327,7 +328,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
           <div style={{ width:'100%', maxWidth:'340px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
             <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
               <div>
-                <div style={{ fontSize:'15px', fontWeight:800, color:'#111827' }}>🧮 Kalkulator Pengeluaran</div>
+                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:800, color:'#111827' }}><AppIcon name="chart" size={16} />Kalkulator Pengeluaran</div>
                 <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>Hitung lalu masukkan ke Amount</div>
               </div>
               <button type="button" onClick={()=>setCalcOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f3f4f6', borderRadius:'8px', fontSize:'18px', color:'#4b5563', cursor:'pointer' }}>×</button>
@@ -392,7 +393,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
         <div style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.7px' }}>Transaction History</div>
         {debtCount > 0 && (
           <span style={{ fontSize: '10px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '20px' }}>
-            ⚠ {debtCount} unpaid{debtCount > 1 ? 's' : ''}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><AppIcon name="warning" size={12} />{debtCount} unpaid{debtCount > 1 ? 's' : ''}</span>
           </span>
         )}
       </div>
@@ -401,7 +402,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 16px' }}>
         {tx.length === 0 && (
           <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '6px' }}>🗒️</div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:'6px' }}><AppIcon name="transactions" size={24} /></div>
             No transactions yet
           </div>
         )}
@@ -410,7 +411,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
           const isEdit = editId === t.id
           const bc = t.type === 'inn' ? '#d1eadd' : t.type === 'save' ? '#eff6ff' : '#fee2e2'
           const tc = t.type === 'inn' ? '#1a5c42' : t.type === 'save' ? '#1e40af' : '#991b1b'
-          const sg = t.type === 'inn' ? '+' : t.type === 'save' ? '→' : '-'
+          const sg = t.type === 'inn' ? '+' : t.type === 'save' ? '' : '-'
 
           if (isEdit) return (
             <div key={t.id} style={{ background: '#fff', border: '1.5px solid #1a5c42', borderRadius: '6px', padding: '10px 12px' }}>
@@ -494,8 +495,8 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {t.cat && <span style={{ fontSize: '9.5px', fontWeight: 600, background: bc, color: tc, padding: '2px 7px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '.3px' }}>{t.cat}</span>}
-                  {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}>⚠ Unpaid</span>}
-                  {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}>✓ Settled</span>}
+                  {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="warning" size={10} />Unpaid</span></span>}
+                  {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="check" size={10} />Settled</span></span>}
                 </div>
               </div>
               <div style={{ fontSize: '12.5px', fontWeight: 700, fontFamily: 'var(--font-mono), monospace', color: tc, textAlign: 'right', minWidth: '78px' }}>{sg} {fmt(t.amt)}</div>
@@ -566,7 +567,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                           cursor:'pointer'
                         }}
                       >
-                        ✏️ Edit
+                        <span style={{ display:'inline-flex', alignItems:'center', gap:7 }}><AppIcon name="edit" size={13} />Edit</span>
                       </button>
                       <button
                         type="button"
@@ -587,7 +588,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                           cursor:'pointer'
                         }}
                       >
-                        🗑️ Delete
+                        <span style={{ display:'inline-flex', alignItems:'center', gap:7 }}><AppIcon name="trash" size={13} />Delete</span>
                       </button>
                     </div>
                   </>

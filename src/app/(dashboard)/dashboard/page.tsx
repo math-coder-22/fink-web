@@ -7,6 +7,7 @@ import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import StatStrip from '@/components/bulanan/StatStrip'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
+import { AppIcon } from '@/components/ui/design'
 import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
@@ -20,6 +21,97 @@ const fmtShort = (n: number) => {
   }
   if (abs >= 1_000) return `Rp ${Math.round(abs / 1_000).toLocaleString('id-ID')}rb`
   return `Rp ${abs.toLocaleString('id-ID')}`
+}
+
+type MonthlyTrendItem = {
+  month: string
+  year: number
+  label: string
+  income: number
+  expense: number
+  saving: number
+  cashflow: number
+  savingRate: number
+  expenseRate: number
+  transactionCount: number
+}
+
+const trendPct = (current?: number, previous?: number) => {
+  if (!previous) return null
+  return ((Number(current || 0) - previous) / previous) * 100
+}
+
+const trendLabel = (value: number | null, goodWhenUp = true) => {
+  if (value === null || !Number.isFinite(value)) return { text: 'Belum ada pembanding', color: '#9ca3af' }
+  const up = value >= 0
+  const good = goodWhenUp ? up : !up
+  return {
+    text: `${up ? 'Naik' : 'Turun'} ${Math.abs(Math.round(value))}% vs bulan lalu`,
+    color: good ? '#15803d' : '#b91c1c',
+  }
+}
+
+function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
+  const chartData = data.filter(d => d.income > 0 || d.expense > 0 || d.saving > 0)
+  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.expense, d.saving]))
+  const current = data[data.length - 1]
+  const previous = data[data.length - 2]
+  const savingTrend = trendLabel(trendPct(current?.savingRate, previous?.savingRate), true)
+  const expenseTrend = trendLabel(trendPct(current?.expense, previous?.expense), false)
+
+  return (
+    <Card style={{ marginBottom:'14px' }}>
+      <CardHead
+        title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
+        subtitle="Perbandingan income, expense, dan saving beberapa bulan terakhir"
+        right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>6 bulan</span>}
+      />
+      <div style={{ padding:'15px 16px' }}>
+        {chartData.length === 0 ? (
+          <div style={{ fontSize:12, color:'#9ca3af' }}>Belum ada data historis untuk ditampilkan.</div>
+        ) : (
+          <>
+            <div className="monthly-trend-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:9, marginBottom:14 }}>
+              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
+                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Saving Rate</div>
+                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{pct(current?.savingRate || 0)}</div>
+                <div style={{ marginTop:4, fontSize:10.5, color:savingTrend.color }}>{savingTrend.text}</div>
+              </div>
+              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
+                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Expense</div>
+                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(current?.expense || 0)}</div>
+                <div style={{ marginTop:4, fontSize:10.5, color:expenseTrend.color }}>{expenseTrend.text}</div>
+              </div>
+              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
+                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Surplus</div>
+                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:(current?.cashflow || 0) >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(current?.cashflow || 0)}</div>
+                <div style={{ marginTop:4, fontSize:10.5, color:'#9ca3af' }}>Income - expense - saving</div>
+              </div>
+            </div>
+
+            <div style={{ display:'flex', alignItems:'flex-end', gap:10, minHeight:180, padding:'8px 2px 0', overflowX:'auto' }}>
+              {chartData.map(item => (
+                <div key={`${item.month}-${item.year}`} style={{ minWidth:78, flex:1 }}>
+                  <div style={{ height:138, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:4, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
+                    <div title={`Income ${fmt(item.income)}`} style={{ width:13, height:`${Math.max(3, (item.income / maxVal) * 128)}px`, background:'#16a34a', borderRadius:'5px 5px 0 0' }} />
+                    <div title={`Expense ${fmt(item.expense)}`} style={{ width:13, height:`${Math.max(3, (item.expense / maxVal) * 128)}px`, background:'#ef4444', borderRadius:'5px 5px 0 0' }} />
+                    <div title={`Saving ${fmt(item.saving)}`} style={{ width:13, height:`${Math.max(3, (item.saving / maxVal) * 128)}px`, background:'#2563eb', borderRadius:'5px 5px 0 0' }} />
+                  </div>
+                  <div style={{ marginTop:7, textAlign:'center', fontSize:10.5, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
+                  <div style={{ marginTop:3, textAlign:'center', fontSize:10, color:item.cashflow >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(item.cashflow)}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:13, fontSize:10.5, color:'#6b7280' }}>
+              <span><b style={{ color:'#16a34a' }}>■</b> Income</span>
+              <span><b style={{ color:'#ef4444' }}>■</b> Expense</span>
+              <span><b style={{ color:'#2563eb' }}>■</b> Saving</span>
+            </div>
+          </>
+        )}
+      </div>
+    </Card>
+  )
 }
 
 function dailyBalanceStatus(leftToSpend: number, remainingDays: number, totalExpense: number, currentDay: number) {
@@ -77,11 +169,11 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
-function CardHead({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
+function CardHead({ title, icon, subtitle, right }: { title: string; icon?: React.ReactNode; subtitle?: string; right?: React.ReactNode }) {
   return (
     <div className="dash-card-head" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', padding:'14px 16px', borderBottom:'1px solid #e3e7ee' }}>
       <div>
-        <div style={{ fontSize:'13px', fontWeight:700, color:'#111827' }}>{title}</div>
+        <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'13px', fontWeight:700, color:'#111827' }}>{icon}{title}</div>
         {subtitle && <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{subtitle}</div>}
       </div>
       {right}
@@ -173,6 +265,7 @@ function getInsight(totalIncome: number, totalExpense: number, totalSaving: numb
 export default function DashboardPage() {
   
   const [isMobile, setIsMobile] = useState(false)
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendItem[]>([])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 760)
@@ -182,6 +275,16 @@ export default function DashboardPage() {
   }, [])
 
 const { curMonth, curYear } = useMonthContext()
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/overview/trend?month=${curMonth}&year=${curYear}&count=6`, { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(json => { if (!cancelled) setMonthlyTrend(Array.isArray(json.data) ? json.data : []) })
+      .catch(() => { if (!cancelled) setMonthlyTrend([]) })
+    return () => { cancelled = true }
+  }, [curMonth, curYear])
+
   const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
 
@@ -242,10 +345,12 @@ const { curMonth, curYear } = useMonthContext()
 
       <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
 
+      <MonthlyComparisonChart data={monthlyTrend} />
+
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>
         <div style={{ padding:'15px 16px', display:'flex', alignItems:'flex-start', gap:'12px' }}>
-          <div style={{ width:'34px', height:'34px', borderRadius:'10px', background:'#e8f5ef', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'17px', flexShrink:0 }}>💡</div>
+          <div style={{ width:'34px', height:'34px', borderRadius:'10px', background:'#e8f5ef', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name="insight" size={17} /></div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:'13px', fontWeight:800, color:'#111827', marginBottom:'3px' }}>Financial Insight</div>
             <div style={{ fontSize:'12.5px', color:'#4b5563', lineHeight:1.55 }}>{insight}</div>
@@ -257,7 +362,7 @@ const { curMonth, curYear } = useMonthContext()
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Cashflow overview */}
           <Card>
-            <CardHead title="📊 Cash Flow Overview" subtitle="Perbandingan pemasukan, pengeluaran, dan tabungan bulan ini" />
+            <CardHead title="Cash Flow Overview" icon={<AppIcon name="chart" size={16} />} subtitle="Perbandingan pemasukan, pengeluaran, dan tabungan bulan ini" />
             <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:'13px' }}>
               <div>
                 <div style={{ display:'flex', justifyContent:'space-between', fontSize:'12px', marginBottom:'6px' }}>
@@ -290,7 +395,7 @@ const { curMonth, curYear } = useMonthContext()
 
           {/* Top categories */}
           <Card>
-            <CardHead title="💸 Top Spending Categories" subtitle="Kategori dengan pengeluaran terbesar" right={<Link href="/bulanan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Detail →</Link>} />
+            <CardHead title="Top Spending Categories" icon={<AppIcon name="expense" size={16} />} subtitle="Kategori dengan pengeluaran terbesar" right={<Link href="/bulanan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Detail</Link>} />
             <div style={{ padding:'14px 16px', display:'flex', flexDirection:'column', gap:'11px' }}>
               {topCategories.length === 0 ? (
                 <div style={{ fontSize:'12px', color:'#9ca3af', padding:'8px 0' }}>Belum ada pengeluaran atau budget yang tercatat.</div>
@@ -314,7 +419,7 @@ const { curMonth, curYear } = useMonthContext()
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Smart saving */}
           <Card>
-            <CardHead title="Goals" subtitle="Ringkasan target tabungan aktif" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola →</Link>} />
+            <CardHead title="Goals" subtitle="Ringkasan target tabungan aktif" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola</Link>} />
             <div style={{ padding:'14px 16px' }}>
               {!goalsLoaded ? (
                 <div style={{ fontSize:'12px', color:'#9ca3af' }}>Loading target tabungan...</div>
@@ -353,7 +458,7 @@ const { curMonth, curYear } = useMonthContext()
 
           {/* Recent transactions */}
           <Card>
-            <CardHead title="📝 Recent Transactions" subtitle="Transaksi terbaru bulan ini" right={<Link href="/bulanan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Tambah →</Link>} />
+            <CardHead title="Recent Transactions" icon={<AppIcon name="transactions" size={16} />} subtitle="Transaksi terbaru bulan ini" right={<Link href="/bulanan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Tambah</Link>} />
             <div style={{ padding:'8px 0' }}>
               {recentTx.length === 0 ? (
                 <div style={{ fontSize:'12px', color:'#9ca3af', padding:'14px 16px' }}>Belum ada transaksi bulan ini.</div>
@@ -362,8 +467,8 @@ const { curMonth, curYear } = useMonthContext()
                 const isSave = t.type === 'save'
                 return (
                   <div key={t.id} className="dash-tx-row" style={{ display:'flex', alignItems:'center', gap:'10px', padding:'9px 16px', borderBottom:'1px solid #f3f4f6' }}>
-                    <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:isIn?'#f0fdf4':isSave?'#eff6ff':'#fef2f2', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:'13px' }}>
-                      {isIn ? '↗' : isSave ? '🏦' : '↘'}
+                    <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:isIn?'#f0fdf4':isSave?'#eff6ff':'#fef2f2', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, }}>
+                      {isIn ? <AppIcon name="income" size={14} /> : isSave ? <AppIcon name="saving" size={14} /> : <AppIcon name="expense" size={14} />}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:'12px', fontWeight:700, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || t.cat}</div>
@@ -466,7 +571,8 @@ const { curMonth, curYear } = useMonthContext()
           }
 
           .fink-dashboard-page .dash-mini-grid,
-          .fink-dashboard-page .dash-saving-summary-grid {
+          .fink-dashboard-page .dash-saving-summary-grid,
+          .fink-dashboard-page .monthly-trend-grid {
             grid-template-columns: 1fr !important;
           }
 

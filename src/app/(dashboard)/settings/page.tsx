@@ -1,6 +1,6 @@
 'use client'
 
-import { AppCard, EmptyState, PageHeader } from '@/components/ui/design'
+import { AppCard, AppIcon, EmptyState, PageHeader } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
 
 const fmtDate = (s?: string | null) => {
@@ -35,13 +35,13 @@ export default function SettingsPage() {
           <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:isPremium?'#eff6ff':'#f0fdf4' }}>
             <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Subscription</div>
             <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>
-              {loading ? 'Memuat subscription...' : `${plan.toUpperCase()} · ${subscription?.status || 'active'}`}
+              {loading ? 'Memuat subscription...' : `${plan.toUpperCase()} • ${subscription?.status || 'active'}`}
             </div>
           </div>
           <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fffdf7' }}>
             <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Masa Aktif</div>
             <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>
-              {periodText}{isExpired ? ' · Expired' : ''}
+              {periodText}{isExpired ? ' • Expired' : ''}
             </div>
           </div>
           <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#f7f8fa' }}>
@@ -79,7 +79,7 @@ export default function SettingsPage() {
         </div>
       </AppCard>
 
-      <EmptyState icon="⚙️" title="Subscription Ready">
+      <EmptyState icon={<AppIcon name="settings" size={24} />} title="Subscription Ready">
         Sistem role, masa aktif, lifetime, suspend, dan pengelolaan user sudah disiapkan.
       </EmptyState>
     </div>

@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { AppIcon, type AppIconName } from '@/components/ui/design'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +98,7 @@ export default function LandingPage() {
             fontWeight: 900,
             marginBottom: '18px',
           }}>
-            ✨ Personal finance app untuk keluarga
+            <AppIcon name="insight" size={15} /> Personal finance app untuk keluarga
           </div>
 
           <h1 style={{
@@ -162,9 +163,9 @@ export default function LandingPage() {
             fontSize: '14px',
             fontWeight: 750,
           }}>
-            <span>✅ Journal</span>
-            <span>✅ Goals</span>
-            <span>✅ Financial Insight</span>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name="journal" size={14} />Journal</span>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name="goals" size={14} />Goals</span>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><AppIcon name="insight" size={14} />Financial Insight</span>
           </div>
         </div>
 
@@ -208,9 +209,9 @@ export default function LandingPage() {
           gap: '16px',
         }}>
           {[
-            ['📒', 'Journal', 'Atur rencana pemasukan dan pengeluaran setiap bulan dengan ringkas.'],
-            ['🏦', 'Goals', 'Buat target tabungan seperti dana darurat, pendidikan, dan pensiun.'],
-            ['💡', 'Insight Keluarga', 'Lihat sisa dana, spending rate, dan kondisi keuangan secara cepat.'],
+            ['journal', 'Journal', 'Atur rencana pemasukan dan pengeluaran setiap bulan dengan ringkas.'],
+            ['goals', 'Goals', 'Buat target tabungan seperti dana darurat, pendidikan, dan pensiun.'],
+            ['insight', 'Insight Keluarga', 'Lihat sisa dana, spending rate, dan kondisi keuangan secara cepat.'],
           ].map(([icon, title, desc]) => (
             <div key={title} style={{
               background: '#fff',
@@ -231,7 +232,7 @@ export default function LandingPage() {
                 fontSize: 22,
                 marginBottom: 16,
               }}>
-                {icon}
+                <AppIcon name={icon as AppIconName} size={22} />
               </div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>{title}</h3>
               <p style={{ margin: '10px 0 0', color: '#64748b', lineHeight: 1.65, fontSize: 14.5 }}>

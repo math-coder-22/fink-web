@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AppButton, AppCard, EmptyState, PageHeader } from '@/components/ui/design'
+import { AppButton, AppCard, AppIcon, EmptyState, PageHeader } from '@/components/ui/design'
 
 type Role = 'user' | 'admin' | 'super_admin'
 type Plan = 'free' | 'premium'
@@ -240,7 +240,7 @@ export default function AdminPage() {
         {loading ? (
           <div style={{ padding:18, color:'#9ca3af', fontSize:13 }}>Loading admin data...</div>
         ) : filtered.length === 0 ? (
-          <EmptyState icon="👥" title="Tidak ada user ditemukan">Coba kata kunci lain atau refresh data.</EmptyState>
+          <EmptyState icon={<AppIcon name="users" size={24} />} title="Tidak ada user ditemukan">Coba kata kunci lain atau refresh data.</EmptyState>
         ) : (
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%', borderCollapse:'collapse', minWidth:1040 }}>
