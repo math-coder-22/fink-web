@@ -59,23 +59,23 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
   const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.outflow]))
 
   return (
-    <Card style={{ marginBottom:'14px' }}>
+    <Card style={{ marginBottom:0, height:'100%', minHeight:430, display:'flex', flexDirection:'column' }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
         subtitle="Income vs total outflow for the last 3 months"
         right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>3 months</span>}
       />
-      <div style={{ padding:'15px 16px 14px' }}>
+      <div style={{ padding:'15px 16px 14px', flex:1, display:'flex', flexDirection:'column' }}>
         {chartData.length === 0 ? (
           <div style={{ fontSize:12, color:'#9ca3af' }}>Belum ada data historis untuk ditampilkan.</div>
         ) : (
           <>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:18, minHeight:270, padding:'18px 8px 0', overflowX:'auto' }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:18, flex:1, minHeight:300, padding:'18px 8px 0', overflowX:'auto' }}>
               {chartData.map(item => (
                 <div key={`${item.month}-${item.year}`} style={{ minWidth:96, flex:1 }}>
-                  <div style={{ height:220, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:10, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
-                    <div title={`Income ${fmt(item.income)}`} style={{ width:24, height:`${Math.max(8, (item.income / maxVal) * 190)}px`, background:'#16a34a', borderRadius:'7px 7px 0 0' }} />
-                    <div title={`Outflow ${fmt(item.outflow)} · Expense ${fmt(item.expense)} · Saving ${fmt(item.saving)}`} style={{ width:24, height:`${Math.max(8, (item.outflow / maxVal) * 190)}px`, background:'#ef4444', borderRadius:'7px 7px 0 0' }} />
+                  <div style={{ height:260, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:10, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
+                    <div title={`Income ${fmt(item.income)}`} style={{ width:24, height:`${Math.max(8, (item.income / maxVal) * 230)}px`, background:'#16a34a', borderRadius:'7px 7px 0 0' }} />
+                    <div title={`Outflow ${fmt(item.outflow)} · Expense ${fmt(item.expense)} · Saving ${fmt(item.saving)}`} style={{ width:24, height:`${Math.max(8, (item.outflow / maxVal) * 230)}px`, background:'#ef4444', borderRadius:'7px 7px 0 0' }} />
                   </div>
                   <div style={{ marginTop:9, textAlign:'center', fontSize:11, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
                   <div style={{ marginTop:4, textAlign:'center', fontSize:10.5, color:item.surplus >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>
@@ -328,11 +328,11 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'start', marginBottom:'14px' }}>
-        <div style={{ minWidth:0 }}>
+      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'stretch', marginBottom:'14px' }}>
+        <div style={{ minWidth:0, display:'flex' }}>
           <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
         </div>
-        <div style={{ minWidth:0 }}>
+        <div style={{ minWidth:0, display:'flex' }}>
           <MonthlyComparisonChart data={monthlyTrend} />
         </div>
       </div>

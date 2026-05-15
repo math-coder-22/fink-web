@@ -186,7 +186,11 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       borderRadius: 16,
       boxShadow: '0 2px 10px rgba(15,23,42,.05)',
       overflow: 'hidden',
-      marginBottom: 14,
+      marginBottom: 0,
+      height: '100%',
+      minHeight: 430,
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       <div className="fink-cashflow-head" style={{
         padding: '14px 16px 10px',
@@ -212,7 +216,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '12px 16px 14px' }}>
+      <div className="fink-cashflow-body" style={{ padding: '12px 16px 14px', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -220,7 +224,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'300px', display:'block', cursor:'crosshair' }}
+          style={{ width:'100%', height:'100%', minHeight:'330px', display:'block', cursor:'crosshair', flex: 1 }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
@@ -348,7 +352,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             padding: 8px 8px 10px !important;
           }
           .fink-cashflow-svg {
-            height: 190px !important;
+            height: 240px !important;
+            min-height: 240px !important;
           }
           .fink-cashflow-legend {
             font-size: 10.5px !important;
