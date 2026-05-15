@@ -8,6 +8,7 @@ import { useSavings } from '@/hooks/useSavings'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
 import { AppIcon } from '@/components/ui/design'
 import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
+import type { SavingsGoal } from '@/types/savings'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
@@ -348,7 +349,7 @@ function FinancialPositionHero({
 
         <div className="financial-position-cards" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12 }}>
           {smallCard('Smart Saving', fmt(trackedSavings), `${activeGoalCount} goal aktif/non-arsip`, '#1d4ed8', '#eff6ff')}
-          {smallCard('Cash Bulan Ini', fmt(currentCash), currentCash > 0 ? 'Sisa uang yang belum dialokasikan' : 'Belum ada sisa positif', currentCash >= 0 ? '#15803d' : '#b91c1c', currentCash >= 0 ? '#f0fdf4' : '#fef2f2')}
+          {smallCard('Left To Spend', fmt(currentCash), currentCash > 0 ? 'Sisa aman bulan ini' : 'Belum ada sisa positif', currentCash >= 0 ? '#15803d' : '#b91c1c', currentCash >= 0 ? '#f0fdf4' : '#fef2f2')}
           {smallCard('Monthly Surplus', `${monthlySurplus >= 0 ? '+' : '-'}${fmt(monthlySurplus)}`, 'Income - expenses - saving', monthlySurplus >= 0 ? '#15803d' : '#b91c1c', monthlySurplus >= 0 ? '#f0fdf4' : '#fef2f2')}
           {smallCard('Debt Payment', fmt(totalDebtPayment), 'Cicilan/kewajiban bulan ini', '#b7791f', '#fffbeb')}
           {smallCard('Emergency Cover', emergencyMonths === null ? 'Not Set' : `${emergencyMonths.toFixed(1).replace('.', ',')} bln`, emergencyNote, emergencyMonths !== null && emergencyMonths >= 6 ? '#15803d' : emergencyMonths !== null ? '#b7791f' : '#64748b', '#f8fafc')}
@@ -391,6 +392,106 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
           }
         }
       `}</style>
+    </div>
+  )
+}
+
+
+function QuickActionsSection() {
+  const actions = [
+    { href:'/bulanan', icon:'transactions' as const, title:'Add Transaction', note:'Catat pemasukan atau pengeluaran' },
+    { href:'/tabungan', icon:'goals' as const, title:'Update Goal', note:'Perbarui progres target keluarga' },
+    { href:'/financial-doctor', icon:'advisor' as const, title:'Financial Checkup', note:'Lihat diagnosis dan saran FiNK' },
+  ]
+  return (
+    <div className="overview-quick-actions" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12, marginBottom:14 }}>
+      {actions.map(a => (
+        <Link key={a.href} href={a.href} style={{ textDecoration:'none', color:'inherit' }}>
+          <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:18, padding:'14px 15px', display:'flex', gap:12, alignItems:'center', minHeight:78, boxShadow:'0 8px 22px rgba(15,23,42,.045)' }}>
+            <div style={{ width:38, height:38, borderRadius:14, background:'#f0fdf4', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name={a.icon} size={18} /></div>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:900, color:'#0f172a' }}>{a.title}</div>
+              <div style={{ fontSize:11.5, color:'#64748b', marginTop:3, lineHeight:1.35 }}>{a.note}</div>
+            </div>
+          </div>
+        </Link>
+      ))}
+      <style>{`
+        @media (max-width: 760px) {
+          .overview-quick-actions { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, monthlySurplus }: { insight: string; savingRate: number; expenseRate: number; emergencyMonths: number | null; monthlySurplus: number }) {
+  const alerts: { text: string; tone: 'good' | 'warn' | 'danger' }[] = []
+  if (monthlySurplus < 0) alerts.push({ text:'Cash flow bulan ini negatif. Cek kategori terbesar sebelum menambah alokasi baru.', tone:'danger' })
+  if (expenseRate > 80) alerts.push({ text:'Expense rate melewati 80% pemasukan. Ruang napas keuangan mulai sempit.', tone:'warn' })
+  if (savingRate >= 20) alerts.push({ text:'Saving rate sudah sehat. Pertahankan pola alokasi ini.', tone:'good' })
+  else if (savingRate > 0) alerts.push({ text:'Saving rate masih bisa dinaikkan bertahap menuju 20%.', tone:'warn' })
+  if (emergencyMonths !== null) {
+    if (emergencyMonths >= 6) alerts.push({ text:'Dana darurat sudah kuat untuk kebutuhan dasar beberapa bulan.', tone:'good' })
+    else if (emergencyMonths < 3) alerts.push({ text:'Dana darurat masih perlu diprioritaskan hingga minimal 3 bulan.', tone:'warn' })
+  }
+  const visibleAlerts = alerts.slice(0, 3)
+
+  return (
+    <Card style={{ marginBottom:'14px', borderRadius:18 }}>
+      <div style={{ padding:'16px', display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(260px, .85fr)', gap:14, alignItems:'stretch' }} className="overview-insight-grid">
+        <div style={{ display:'flex', alignItems:'flex-start', gap:'12px' }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'13px', background:'#e8f5ef', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name="insight" size={18} /></div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:'13px', fontWeight:900, color:'#111827', marginBottom:'4px' }}>This Month Insight</div>
+            <div style={{ fontSize:'12.5px', color:'#4b5563', lineHeight:1.6 }}>{insight}</div>
+          </div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {visibleAlerts.length === 0 ? (
+            <div style={{ fontSize:12, color:'#94a3b8' }}>FiNK akan menampilkan catatan penting setelah data bulan ini lebih lengkap.</div>
+          ) : visibleAlerts.map((a, idx) => {
+            const color = a.tone === 'good' ? '#15803d' : a.tone === 'danger' ? '#b91c1c' : '#b7791f'
+            const bg = a.tone === 'good' ? '#f0fdf4' : a.tone === 'danger' ? '#fef2f2' : '#fffbeb'
+            return <div key={idx} style={{ border:`1px solid ${color}22`, background:bg, borderRadius:12, padding:'9px 11px', fontSize:11.5, color, lineHeight:1.4, fontWeight:700 }}>{a.text}</div>
+          })}
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 820px) { .overview-insight-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+    </Card>
+  )
+}
+
+function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
+  if (goals.length === 0) return <div style={{ fontSize:'12px', color:'#9ca3af' }}>Belum ada target tabungan aktif.</div>
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      {goals.map(g => {
+        const p = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0
+        const remaining = Math.max(0, (g.target || 0) - (g.current || 0))
+        const isFocus = Boolean(g.focus)
+        return (
+          <div key={g.id} style={{ border:'1px solid #e2e8f0', borderRadius:14, padding:'11px 12px', background:isFocus ? '#f0fdf4' : '#fff' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', alignItems:'flex-start', marginBottom:7 }}>
+              <div style={{ minWidth:0 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
+                  <span style={{ fontSize:'12.5px', fontWeight:900, color:'#111827' }}>{g.name}</span>
+                  {isFocus && <span style={{ fontSize:9.5, color:'#15803d', background:'#dcfce7', border:'1px solid #bbf7d0', borderRadius:999, padding:'2px 6px', fontWeight:900 }}>Focus</span>}
+                </div>
+                <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:3 }}>Sisa {fmt(remaining)} · target {fmt(g.target || 0)}</div>
+              </div>
+              <div style={{ fontSize:'12px', color:'#1d4ed8', fontFamily:'var(--font-mono), monospace', fontWeight:900 }}>{pct(p)}</div>
+            </div>
+            <ProgressBar value={p} color={isFocus ? '#15803d' : '#1d4ed8'} />
+            <div style={{ display:'flex', justifyContent:'space-between', gap:10, marginTop:7, fontSize:10.5, color:'#64748b' }}>
+              <span>Terkumpul {fmt(g.current || 0)}</span>
+              <span>Bulanan {fmt(g.monthly || 0)}</span>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -479,7 +580,7 @@ const { curMonth, curYear } = useMonthContext()
     return [...tx].sort((a: Transaction, b: Transaction) => Number(b.date || 0) - Number(a.date || 0)).slice(0,6)
   }, [tx])
 
-  const activeGoals = useMemo(() => goals.filter(g => g.status === 'active').slice(0,4), [goals])
+  const activeGoals = useMemo(() => goals.filter(g => g.status === 'active').sort((a, b) => Number(Boolean(b.focus)) - Number(Boolean(a.focus)) || ((b.target > 0 ? b.current / b.target : 0) - (a.target > 0 ? a.current / a.target : 0))).slice(0,4), [goals])
   const insight = getInsight(totalIncome, totalExpense, totalSaving, rawSisa)
 
   const now = new Date()
@@ -498,7 +599,7 @@ const { curMonth, curYear } = useMonthContext()
         <div>
           <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Overview</h1>
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>
-            Posisi keuangan dan arus kas {MONTH_NAMES[curMonth]} {curYear} · Smart Family Finance
+            Financial position, money flow, goals, dan insight {MONTH_NAMES[curMonth]} {curYear}
           </p>
         </div>
         <div className="dash-actions" style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>
@@ -521,6 +622,7 @@ const { curMonth, curYear } = useMonthContext()
         activeGoalCount={activeTrackedGoals}
       />
 
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:12, margin:'2px 0 10px' }}><div><div style={{ fontSize:14, fontWeight:900, color:'#0f172a' }}>Money Flow</div><div style={{ fontSize:11.5, color:'#94a3b8', marginTop:2 }}>Arus masuk, keluar, dan saving bulan berjalan</div></div></div>
       <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.65fr) minmax(300px, .95fr)', gap:'14px', alignItems:'stretch', marginBottom:'14px', width:'100%' }}>
         <div style={{ minWidth:0, display:'flex', width:'100%' }}>
           <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} curDay={chartVisibleDay} daysInMonth={daysInActiveMonth} />
@@ -530,16 +632,9 @@ const { curMonth, curYear } = useMonthContext()
         </div>
       </div>
 
-      {/* Insight */}
-      <Card style={{ marginBottom:'14px' }}>
-        <div style={{ padding:'15px 16px', display:'flex', alignItems:'flex-start', gap:'12px' }}>
-          <div style={{ width:'34px', height:'34px', borderRadius:'10px', background:'#e8f5ef', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name="insight" size={17} /></div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:'13px', fontWeight:800, color:'#111827', marginBottom:'3px' }}>Financial Insight</div>
-            <div style={{ fontSize:'12.5px', color:'#4b5563', lineHeight:1.55 }}>{insight}</div>
-          </div>
-        </div>
-      </Card>
+      {/* Insight and actions */}
+      <InsightPanel insight={insight} savingRate={savingRate} expenseRate={expenseRate} emergencyMonths={emergencyMonths} monthlySurplus={rawSisa} />
+      <QuickActionsSection />
 
       <div className="dash-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(320px, .85fr)', gap:'14px', alignItems:'start' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
@@ -602,7 +697,7 @@ const { curMonth, curYear } = useMonthContext()
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Smart saving */}
           <Card>
-            <CardHead title="Goals" subtitle="Ringkasan target tabungan aktif" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola</Link>} />
+            <CardHead title="Priority Goals" subtitle="Target utama yang paling perlu dipantau" right={<Link href="/tabungan" style={{ fontSize:'11px', color:'#1a5c42', fontWeight:700, textDecoration:'none' }}>Kelola</Link>} />
             <div style={{ padding:'14px 16px' }}>
               {!goalsLoaded ? (
                 <div style={{ fontSize:'12px', color:'#9ca3af' }}>Loading target tabungan...</div>
@@ -618,22 +713,7 @@ const { curMonth, curYear } = useMonthContext()
                       <div style={{ fontSize:'15px', fontFamily:'var(--font-mono), monospace', fontWeight:800, color:'#15803d', marginTop:'4px' }}>{pct(summary.pct)}</div>
                     </div>
                   </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
-                    {activeGoals.length === 0 ? (
-                      <div style={{ fontSize:'12px', color:'#9ca3af' }}>Belum ada target tabungan aktif.</div>
-                    ) : activeGoals.map(g => {
-                      const p = g.target > 0 ? (g.current / g.target) * 100 : 0
-                      return (
-                        <div key={g.id}>
-                          <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', marginBottom:'5px' }}>
-                            <span style={{ fontSize:'12px', fontWeight:700, color:'#111827' }}>{g.name}</span>
-                            <span style={{ fontSize:'11px', color:'#6b7280', fontFamily:'var(--font-mono), monospace' }}>{pct(p)}</span>
-                          </div>
-                          <ProgressBar value={p} color="#1d4ed8" />
-                        </div>
-                      )
-                    })}
-                  </div>
+                  <PriorityGoalsList goals={activeGoals} />
                 </>
               )}
             </div>
