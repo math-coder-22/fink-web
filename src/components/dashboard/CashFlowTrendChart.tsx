@@ -150,8 +150,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 300
-  const pad = { l: 70, r: 96, t: 12, b: 28 }
+  const height = 250
+  const pad = { l: 70, r: 96, t: 8, b: 24 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -188,12 +188,12 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       overflow: 'hidden',
       marginBottom: 0,
       height: '100%',
-      minHeight: 380,
+      minHeight: 330,
       display: 'flex',
       flexDirection: 'column',
     }}>
       <div className="fink-cashflow-head" style={{
-        padding: '14px 16px 10px',
+        padding: '12px 16px 9px',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
@@ -216,7 +216,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '6px 16px 10px', flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="fink-cashflow-body" style={{ padding: '0 16px 6px', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -224,7 +224,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'100%', minHeight:'286px', display:'block', cursor:'crosshair', flex: 1 }}
+          style={{ width:'100%', height:'100%', minHeight:'238px', display:'block', cursor:'crosshair', flex: 1 }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
@@ -240,7 +240,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             const x = scale.x(day, xDomainDays)
             return (
               <g key={`x-${day}`}>
-                <text x={x} y={height - 12} textAnchor="middle" fontSize="12" fill={TEXT}>{day}</text>
+                <text x={x} y={height - 8} textAnchor="middle" fontSize="12" fill={TEXT}>{day}</text>
               </g>
             )
           })}
