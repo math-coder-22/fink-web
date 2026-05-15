@@ -133,6 +133,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const today = Math.max(1, curDay || new Date().getDate())
   const totalDays = daysInMonth || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
   const visibleUntilDay = Math.min(today, totalDays)
+  const xDomainDays = Math.max(2, visibleUntilDay)
 
   const fallbackIncome = sumIncome(income)
   const fallbackSaving = sumSaving(saving)
@@ -155,15 +156,15 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const scale = makeScale(maxValue, width, height, pad)
 
   const yTicks = [0, scale.yMax * 0.5, scale.yMax]
-  const xTicks = [1, Math.max(1, Math.round(totalDays / 3)), Math.max(1, Math.round((totalDays * 2) / 3)), totalDays]
+  const xTicks = Array.from(new Set([1, Math.max(1, Math.round(xDomainDays / 3)), Math.max(1, Math.round((xDomainDays * 2) / 3)), xDomainDays]))
 
   const incomePath = makePath(points.map(p => ({
-    x: scale.x(p.day, totalDays),
+    x: scale.x(p.day, xDomainDays),
     y: scale.y(p.income),
   })))
 
   const cashOutPath = makePath(points.map(p => ({
-    x: scale.x(p.day, totalDays),
+    x: scale.x(p.day, xDomainDays),
     y: scale.y(p.cashOut),
   })))
 
@@ -174,7 +175,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
     const rect = e.currentTarget.getBoundingClientRect()
     const px = ((e.clientX - rect.left) / rect.width) * width
     const ratio = (px - pad.l) / Math.max(1, width - pad.l - pad.r)
-    const day = Math.round(ratio * (totalDays - 1) + 1)
+    const day = Math.round(ratio * (xDomainDays - 1) + 1)
     setHoverDay(clamp(day, 1, visibleUntilDay))
   }
 
@@ -232,7 +233,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           })}
 
           {xTicks.map((day) => {
-            const x = scale.x(day, totalDays)
+            const x = scale.x(day, xDomainDays)
             return (
               <g key={`x-${day}`}>
                 <text x={x} y={height - 12} textAnchor="middle" fontSize="12" fill={TEXT}>{day}</text>
@@ -241,8 +242,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           })}
 
           <line
-            x1={scale.x(visibleUntilDay, totalDays)}
-            x2={scale.x(visibleUntilDay, totalDays)}
+            x1={scale.x(visibleUntilDay, xDomainDays)}
+            x2={scale.x(visibleUntilDay, xDomainDays)}
             y1={pad.t}
             y2={height - pad.b}
             stroke="#c7cdd6"
@@ -277,10 +278,10 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           {lastPoint && (
             <>
               {totalIncome > 0 && (
-                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
+                <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
               )}
               {totalCashOut > 0 && (
-                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
+                <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
               )}
             </>
           )}
@@ -288,7 +289,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           {hoveredPoint && (() => {
             const tooltipW = 176
             const tooltipH = 108
-            const cursorX = scale.x(hoveredPoint.day, totalDays)
+            const cursorX = scale.x(hoveredPoint.day, xDomainDays)
             const topValue = Math.max(hoveredPoint.income, hoveredPoint.cashOut)
             const rawX = cursorX + 12
             const rawY = scale.y(topValue) + 12
