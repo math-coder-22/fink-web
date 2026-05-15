@@ -47,6 +47,29 @@ export default function TabunganPage() {
   const { isPremium } = useSubscription();
 
   const filtered = goals.filter((g) => g.status === tab);
+  const goalPriority = (g: SavingsGoal) => {
+    const order: Record<string, number> = {
+      darurat: 1,
+      rumah: 2,
+      pendidikan: 3,
+      pensiun: 4,
+      investasi: 5,
+      kendaraan: 6,
+      darurat_lanjutan: 7,
+      biasa: 8,
+    };
+    return order[g.type] ?? 99;
+  };
+
+  const sortedGoals = [...filtered].sort((a, b) => {
+    if (a.focus && !b.focus) return -1;
+    if (!a.focus && b.focus) return 1;
+    return goalPriority(a) - goalPriority(b);
+  });
+
+  const focusGoals = sortedGoals.filter((g) => g.focus);
+  const regularGoals = sortedGoals.filter((g) => !g.focus);
+
   const topupGoalObj = topupId
     ? (goals.find((g) => g.id === topupId) ?? null)
     : null;
@@ -134,7 +157,34 @@ export default function TabunganPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      
+      {focusGoals.length > 0 && (
+        <div style={{ marginBottom: "18px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748b", marginBottom: "10px", textTransform: "uppercase", letterSpacing: ".4px" }}>
+            Focus Goals
+          </div>
+          <div className="goals-grid">
+            {focusGoals.map((goal) => {
+              const calc = calcGoal(goal);
+              return (
+                <GoalCard
+                  key={goal.id}
+                  goal={goal}
+                  calc={calc}
+                  onTopup={() => setTopupId(goal.id)}
+                  onWithdraw={() => setWithdrawId(goal.id)}
+                  onReconcile={() => setReconcileId(goal.id)}
+                  onEdit={() => setEditGoal(goal)}
+                  onStatus={changeStatus}
+                  onDelete={deleteGoal}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+{sortedGoals.length === 0 ? (
         <EmptyState
           icon={<AppIcon name="saving" size={24} />}
           title="Belum ada goal di kategori ini"

@@ -1,6 +1,6 @@
 // ─── Savings / Goal Types ───────────────────────────────
 
-export type GoalType   = 'darurat' | 'pendidikan' | 'pensiun' | 'biasa'
+export type GoalType   = 'darurat' | 'darurat_lanjutan' | 'rumah' | 'kendaraan' | 'pendidikan' | 'pensiun' | 'investasi' | 'biasa'
 export type GoalStatus = 'active' | 'pending' | 'complete' | 'archived'
 export type TxType     = 'topup' | 'withdraw'
 
@@ -30,6 +30,9 @@ export interface SavingsGoal {
   pensionExp?:    number
   pensionInflasi?: number
   history:     GoalTransaction[]
+  focus?:      boolean
+  priorityMode?: 'auto' | 'manual'
+  manualPriority?: 'high' | 'medium' | 'low'
   createdAt:   string
   updatedAt:   string
 }

@@ -13,10 +13,14 @@ const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
 
 const TYPE_LABEL: Record<string, string> = {
-  darurat: "Dana Darurat",
-  pendidikan: "Pendidikan Anak",
-  pensiun: "Dana Pensiun",
-  biasa: "Tabungan Biasa",
+  darurat: "Emergency Fund",
+  darurat_lanjutan: "Extended Emergency",
+  rumah: "House",
+  kendaraan: "Vehicle",
+  pendidikan: "Education",
+  pensiun: "Retirement",
+  investasi: "Investment",
+  biasa: "General Saving",
 };
 
 function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
