@@ -150,8 +150,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 400
-  const pad = { l: 70, r: 28, t: 10, b: 38 }
+  const height = 300
+  const pad = { l: 70, r: 96, t: 12, b: 28 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -188,7 +188,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       overflow: 'hidden',
       marginBottom: 0,
       height: '100%',
-      minHeight: 430,
+      minHeight: 380,
       display: 'flex',
       flexDirection: 'column',
     }}>
@@ -216,7 +216,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '8px 16px 12px', flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="fink-cashflow-body" style={{ padding: '6px 16px 10px', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -224,7 +224,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'100%', minHeight:'360px', display:'block', cursor:'crosshair', flex: 1 }}
+          style={{ width:'100%', height:'100%', minHeight:'286px', display:'block', cursor:'crosshair', flex: 1 }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
@@ -282,10 +282,34 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           {lastPoint && (
             <>
               {totalIncome > 0 && (
-                <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
+                <>
+                  <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
+                  {(() => {
+                    const x = clamp(scale.x(lastPoint.day, xDomainDays) + 10, pad.l + 8, width - 88)
+                    const y = clamp(scale.y(totalIncome) - 14, pad.t + 4, height - pad.b - 22)
+                    return (
+                      <g>
+                        <rect x={x} y={y} width="80" height="25" rx="7" fill={GREEN} opacity="0.96" />
+                        <text x={x + 40} y={y + 17} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff">{fmtShort(totalIncome)}</text>
+                      </g>
+                    )
+                  })()}
+                </>
               )}
               {totalCashOut > 0 && (
-                <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
+                <>
+                  <circle cx={scale.x(lastPoint.day, xDomainDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
+                  {(() => {
+                    const x = clamp(scale.x(lastPoint.day, xDomainDays) + 10, pad.l + 8, width - 88)
+                    const y = clamp(scale.y(totalCashOut) - 14, pad.t + 4, height - pad.b - 22)
+                    return (
+                      <g>
+                        <rect x={x} y={y} width="80" height="25" rx="7" fill={RED} opacity="0.96" />
+                        <text x={x + 40} y={y + 17} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff">{fmtShort(totalCashOut)}</text>
+                      </g>
+                    )
+                  })()}
+                </>
               )}
             </>
           )}
@@ -352,8 +376,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             padding: 8px 8px 10px !important;
           }
           .fink-cashflow-svg {
-            height: 280px !important;
-            min-height: 280px !important;
+            height: 245px !important;
+            min-height: 245px !important;
           }
           .fink-cashflow-legend {
             font-size: 10.5px !important;
