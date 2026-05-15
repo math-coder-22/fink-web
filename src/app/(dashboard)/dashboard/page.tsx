@@ -59,7 +59,7 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
   const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.outflow]))
 
   return (
-    <Card style={{ marginBottom:0, height:'100%', minHeight:320, display:'flex', flexDirection:'column' }}>
+    <Card style={{ marginBottom:0, height:'100%', minHeight:320, width:'100%', display:'flex', flexDirection:'column' }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
         subtitle="Income vs total outflow for the last 3 months"
@@ -341,11 +341,11 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'stretch', marginBottom:'14px' }}>
-        <div style={{ minWidth:0, display:'flex' }}>
+      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.55fr) minmax(360px, 1fr)', gap:'14px', alignItems:'stretch', marginBottom:'14px', width:'100%' }}>
+        <div style={{ minWidth:0, display:'flex', width:'100%' }}>
           <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} curDay={chartVisibleDay} daysInMonth={daysInActiveMonth} />
         </div>
-        <div style={{ minWidth:0, display:'flex' }}>
+        <div style={{ minWidth:0, display:'flex', width:'100%' }}>
           <MonthlyComparisonChart data={monthlyTrend} />
         </div>
       </div>

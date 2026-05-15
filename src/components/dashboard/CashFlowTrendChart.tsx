@@ -189,6 +189,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       marginBottom: 0,
       height: '100%',
       minHeight: 320,
+      width: '100%',
       display: 'flex',
       flexDirection: 'column',
     }}>
