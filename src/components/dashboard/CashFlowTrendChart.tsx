@@ -24,7 +24,6 @@ type Point = {
   cashOut: number
   expense: number
   saving: number
-  segmentType: 'expense' | 'saving'
 }
 
 const GREEN = '#3f7f4a'
@@ -87,27 +86,23 @@ function buildPoints(byDay: DayData[], visibleUntilDay: number): Point[] {
   let cashOut = 0
   let expense = 0
   let saving = 0
-  let lastType: Point['segmentType'] = 'expense'
-
   for (let day = 1; day <= visibleUntilDay; day++) {
     income += byDay[day].income
 
     if (byDay[day].expense > 0) {
       expense += byDay[day].expense
       cashOut += byDay[day].expense
-      lastType = 'expense'
     }
 
     if (byDay[day].saving > 0) {
       saving += byDay[day].saving
       cashOut += byDay[day].saving
-      lastType = 'saving'
     }
 
-    points.push({ day, income, cashOut, expense, saving, segmentType: lastType })
+    points.push({ day, income, cashOut, expense, saving })
   }
 
-  if (points.length === 0) points.push({ day: 1, income: 0, cashOut: 0, expense: 0, saving: 0, segmentType: 'expense' })
+  if (points.length === 0) points.push({ day: 1, income: 0, cashOut: 0, expense: 0, saving: 0 })
   return points
 }
 
@@ -167,19 +162,10 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
     y: scale.y(p.income),
   })))
 
-  const cashOutSegments = []
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1]
-    const curr = points[i]
-    cashOutSegments.push({
-      key: `${i}-${curr.day}-${curr.segmentType}`,
-      color: curr.segmentType === 'saving' ? BLUE : RED,
-      d: makePath([
-        { x: scale.x(prev.day, totalDays), y: scale.y(prev.cashOut) },
-        { x: scale.x(curr.day, totalDays), y: scale.y(curr.cashOut) },
-      ]),
-    })
-  }
+  const cashOutPath = makePath(points.map(p => ({
+    x: scale.x(p.day, totalDays),
+    y: scale.y(p.cashOut),
+  })))
 
   const lastPoint = points[points.length - 1]
   const hoveredPoint = points.find(p => p.day === hoverDay) || null
@@ -213,17 +199,16 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       }}>
         <div>
           <div style={{ fontSize: 14.5, fontWeight: 900, color: '#111827' }}>
-            Tren Cash Flow Harian
+            Tren Kapasitas Cash Flow
           </div>
           <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 3 }}>
-            Cash in vs cash out kumulatif sampai hari ini
+            Income dibanding total outflow (expense + saving)
           </div>
         </div>
 
         <div className="fink-cashflow-legend" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11.5, fontWeight: 800 }}>
           <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: GREEN }}><i style={{ width:8, height:8, borderRadius:99, background:GREEN, display:'inline-block' }} />Income</span>
-          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: RED }}><i style={{ width:8, height:8, borderRadius:99, background:RED, display:'inline-block' }} />Expense</span>
-          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: BLUE }}><i style={{ width:8, height:8, borderRadius:99, background:BLUE, display:'inline-block' }} />Saving</span>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5, color: RED }}><i style={{ width:8, height:8, borderRadius:99, background:RED, display:'inline-block' }} />Total Outflow</span>
         </div>
       </div>
 
@@ -278,18 +263,17 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             />
           )}
 
-          {cashOutSegments.map((segment) => (
+          {totalCashOut > 0 && (
             <path
-              key={segment.key}
-              d={segment.d}
+              d={cashOutPath}
               fill="none"
-              stroke={segment.color}
+              stroke={RED}
               strokeWidth="3.2"
               strokeLinecap="round"
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
             />
-          ))}
+          )}
 
           {lastPoint && (
             <>
@@ -297,14 +281,14 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
                 <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalIncome)} r="4" fill={GREEN} stroke="#fff" strokeWidth="2" />
               )}
               {totalCashOut > 0 && (
-                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalCashOut)} r="4" fill={lastPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="2" />
+                <circle cx={scale.x(lastPoint.day, totalDays)} cy={scale.y(totalCashOut)} r="4" fill={RED} stroke="#fff" strokeWidth="2" />
               )}
             </>
           )}
 
           {hoveredPoint && (() => {
             const tooltipW = 176
-            const tooltipH = 88
+            const tooltipH = 108
             const cursorX = scale.x(hoveredPoint.day, totalDays)
             const topValue = Math.max(hoveredPoint.income, hoveredPoint.cashOut)
             const rawX = cursorX + 12
@@ -328,7 +312,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
                   <circle cx={cursorX} cy={scale.y(hoveredPoint.income)} r="3.8" fill={GREEN} stroke="#fff" strokeWidth="1.8" />
                 )}
                 {hoveredPoint.cashOut > 0 && (
-                  <circle cx={cursorX} cy={scale.y(hoveredPoint.cashOut)} r="3.8" fill={hoveredPoint.segmentType === 'saving' ? BLUE : RED} stroke="#fff" strokeWidth="1.8" />
+                  <circle cx={cursorX} cy={scale.y(hoveredPoint.cashOut)} r="3.8" fill={RED} stroke="#fff" strokeWidth="1.8" />
                 )}
 
                 <g>
@@ -340,12 +324,14 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
                   <text x={x + tooltipW - 13} y={y + 44} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.income)}</text>
 
                   <circle cx={x + 14} cy={y + 59} r="4" fill={RED} />
-                  <text x={x + 27} y={y + 63} fontSize="11" fill="#e5e7eb">Expense</text>
-                  <text x={x + tooltipW - 13} y={y + 63} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
+                  <text x={x + 27} y={y + 63} fontSize="11" fill="#e5e7eb">Outflow</text>
+                  <text x={x + tooltipW - 13} y={y + 63} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.cashOut)}</text>
 
-                  <circle cx={x + 14} cy={y + 78} r="4" fill={BLUE} />
-                  <text x={x + 27} y={y + 82} fontSize="11" fill="#e5e7eb">Saving</text>
-                  <text x={x + tooltipW - 13} y={y + 82} fontSize="11" fill="#fff" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
+                  <text x={x + 27} y={y + 82} fontSize="10.5" fill="#d1d5db">Expense</text>
+                  <text x={x + tooltipW - 13} y={y + 82} fontSize="10.5" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.expense)}</text>
+
+                  <text x={x + 27} y={y + 99} fontSize="10.5" fill="#d1d5db">Saving</text>
+                  <text x={x + tooltipW - 13} y={y + 99} fontSize="10.5" fill="#d1d5db" textAnchor="end">{fmtShort(hoveredPoint.saving)}</text>
                 </g>
               </>
             )

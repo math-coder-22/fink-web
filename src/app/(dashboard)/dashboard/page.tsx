@@ -52,37 +52,42 @@ const trendLabel = (value: number | null, goodWhenUp = true) => {
 }
 
 function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
-  const chartData = data.filter(d => d.income > 0 || d.expense > 0 || d.saving > 0).slice(-3)
-  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.expense, d.saving]))
+  const chartData = data
+    .filter(d => d.income > 0 || d.expense > 0 || d.saving > 0)
+    .slice(-3)
+    .map(d => ({ ...d, outflow: Number(d.expense || 0) + Number(d.saving || 0), surplus: Number(d.income || 0) - Number(d.expense || 0) - Number(d.saving || 0) }))
+  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.outflow]))
+
   return (
     <Card style={{ marginBottom:'14px', height:'100%' }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
-        subtitle="Compare your last 3 months performance"
+        subtitle="Income vs total outflow for the last 3 months"
         right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>3 months</span>}
       />
-      <div style={{ padding:'15px 16px' }}>
+      <div style={{ padding:'15px 16px 14px' }}>
         {chartData.length === 0 ? (
           <div style={{ fontSize:12, color:'#9ca3af' }}>Belum ada data historis untuk ditampilkan.</div>
         ) : (
           <>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:12, minHeight:320, padding:'22px 10px 0', overflowX:'auto' }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:16, minHeight:380, padding:'26px 10px 0', overflowX:'auto' }}>
               {chartData.map(item => (
-                <div key={`${item.month}-${item.year}`} style={{ minWidth:84, flex:1 }}>
-                  <div style={{ height:250, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:8, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
-                    <div title={`Income ${fmt(item.income)}`} style={{ width:18, height:`${Math.max(4, (item.income / maxVal) * 192)}px`, background:'#16a34a', borderRadius:'6px 6px 0 0' }} />
-                    <div title={`Expense ${fmt(item.expense)}`} style={{ width:18, height:`${Math.max(4, (item.expense / maxVal) * 192)}px`, background:'#ef4444', borderRadius:'6px 6px 0 0' }} />
-                    <div title={`Saving ${fmt(item.saving)}`} style={{ width:18, height:`${Math.max(4, (item.saving / maxVal) * 192)}px`, background:'#2563eb', borderRadius:'6px 6px 0 0' }} />
+                <div key={`${item.month}-${item.year}`} style={{ minWidth:96, flex:1 }}>
+                  <div style={{ height:286, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:10, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
+                    <div title={`Income ${fmt(item.income)}`} style={{ width:24, height:`${Math.max(6, (item.income / maxVal) * 236)}px`, background:'#16a34a', borderRadius:'7px 7px 0 0' }} />
+                    <div title={`Outflow ${fmt(item.outflow)} · Expense ${fmt(item.expense)} · Saving ${fmt(item.saving)}`} style={{ width:24, height:`${Math.max(6, (item.outflow / maxVal) * 236)}px`, background:'#ef4444', borderRadius:'7px 7px 0 0' }} />
                   </div>
-                  <div style={{ marginTop:8, textAlign:'center', fontSize:11, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
-                  <div style={{ marginTop:3, textAlign:'center', fontSize:10.5, color:item.cashflow >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(item.cashflow)}</div>
+                  <div style={{ marginTop:9, textAlign:'center', fontSize:11, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
+                  <div style={{ marginTop:4, textAlign:'center', fontSize:10.5, color:item.surplus >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>
+                    {item.surplus >= 0 ? '+' : '-'}{fmtShort(item.surplus)}
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:12, fontSize:10.5, color:'#6b7280' }}>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:14, fontSize:10.5, color:'#6b7280' }}>
               <span><b style={{ color:'#16a34a' }}>■</b> Income</span>
-              <span><b style={{ color:'#ef4444' }}>■</b> Expense</span>
-              <span><b style={{ color:'#2563eb' }}>■</b> Saving</span>
+              <span><b style={{ color:'#ef4444' }}>■</b> Outflow</span>
+              <span style={{ color:'#9ca3af' }}>Outflow = expense + saving</span>
             </div>
           </>
         )}
