@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
-import StatStrip from '@/components/bulanan/StatStrip'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
 import { AppIcon } from '@/components/ui/design'
 import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
@@ -165,6 +164,10 @@ function sumSaving(saving: SavingRow[]) {
   return saving.reduce((s, r) => s + (r.actual || 0), 0)
 }
 
+function sumDebt(debt: DebtRow[]) {
+  return debt.reduce((s, r) => s + (r.actual || 0), 0)
+}
+
 function sumBudgetPlan(budget: BudgetCategory[]) {
   return budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
 }
@@ -257,6 +260,115 @@ function MetricCard({ label, value, note, tone = 'neutral' }: { label: string; v
   )
 }
 
+
+type FinancialPositionProps = {
+  totalAssets: number
+  trackedSavings: number
+  currentCash: number
+  netWorth: number
+  totalDebtPayment: number
+  monthlySurplus: number
+  emergencyMonths: number | null
+  savingRate: number
+  expenseRate: number
+  activeGoalCount: number
+}
+
+function FinancialPositionHero({
+  totalAssets,
+  trackedSavings,
+  currentCash,
+  netWorth,
+  totalDebtPayment,
+  monthlySurplus,
+  emergencyMonths,
+  savingRate,
+  expenseRate,
+  activeGoalCount,
+}: FinancialPositionProps) {
+  const healthScore = Math.max(0, Math.min(100,
+    Math.round(
+      35 +
+      (monthlySurplus >= 0 ? 20 : -18) +
+      Math.min(25, savingRate) +
+      (expenseRate <= 70 ? 12 : expenseRate <= 85 ? 4 : -8) +
+      (emergencyMonths === null ? 0 : emergencyMonths >= 6 ? 8 : emergencyMonths >= 3 ? 4 : -6)
+    )
+  ))
+  const status = healthScore >= 75 ? 'Healthy' : healthScore >= 55 ? 'Watchful' : 'Needs Attention'
+  const statusColor = healthScore >= 75 ? '#15803d' : healthScore >= 55 ? '#b7791f' : '#b91c1c'
+
+  const smallCard = (label: string, value: string, note: string, color: string, bg: string) => (
+    <div style={{ background:bg, border:'1px solid rgba(148,163,184,.22)', borderRadius:16, padding:'13px 14px', minWidth:0 }}>
+      <div style={{ fontSize:10.5, fontWeight:900, color:'#64748b', textTransform:'uppercase', letterSpacing:'.65px' }}>{label}</div>
+      <div style={{ marginTop:7, fontSize:18, fontWeight:900, color, fontFamily:'var(--font-mono), monospace', letterSpacing:'-.5px', overflowWrap:'anywhere' }}>{value}</div>
+      <div style={{ marginTop:6, fontSize:11, color:'#64748b', lineHeight:1.35 }}>{note}</div>
+    </div>
+  )
+
+  return (
+    <div className="financial-position-hero" style={{
+      marginBottom:14,
+      borderRadius:24,
+      padding:18,
+      border:'1px solid #dfe7ef',
+      background:'linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #eefbf4 100%)',
+      boxShadow:'0 14px 36px rgba(15,23,42,.06)',
+      overflow:'hidden',
+      position:'relative',
+    }}>
+      <div style={{ position:'absolute', right:-70, top:-80, width:220, height:220, borderRadius:999, background:'rgba(34,197,94,.10)' }} />
+      <div style={{ position:'absolute', right:80, bottom:-110, width:240, height:240, borderRadius:999, background:'rgba(37,99,235,.07)' }} />
+      <div className="financial-position-grid" style={{ position:'relative', display:'grid', gridTemplateColumns:'minmax(260px, 1.15fr) minmax(0, 1.85fr)', gap:16, alignItems:'stretch' }}>
+        <div style={{ background:'#fff', border:'1px solid rgba(226,232,240,.9)', borderRadius:20, padding:18, boxShadow:'0 10px 28px rgba(15,23,42,.045)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:12 }}>
+            <div>
+              <div style={{ fontSize:11, color:'#64748b', fontWeight:900, textTransform:'uppercase', letterSpacing:'.75px' }}>Financial Position</div>
+              <div style={{ fontSize:12, color:'#94a3b8', marginTop:3 }}>Total uang yang tercatat di FiNK</div>
+            </div>
+            <div style={{ border:`1px solid ${statusColor}33`, background:`${statusColor}12`, color:statusColor, borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900 }}>{status}</div>
+          </div>
+          <div style={{ fontSize:34, lineHeight:1.08, fontWeight:950, color:'#0f172a', letterSpacing:'-1.4px', fontFamily:'var(--font-mono), monospace', overflowWrap:'anywhere' }}>{fmt(totalAssets)}</div>
+          <div style={{ marginTop:10, fontSize:12, color:'#64748b', lineHeight:1.55 }}>
+            Terdiri dari dana di Goals/Smart Saving dan sisa cash bulan berjalan yang masih tercatat positif.
+          </div>
+          <div style={{ marginTop:15, display:'grid', gridTemplateColumns:'1fr 1fr', gap:9 }}>
+            <div style={{ border:'1px solid #e2e8f0', borderRadius:14, padding:'10px 11px' }}>
+              <div style={{ fontSize:10, fontWeight:900, color:'#94a3b8', textTransform:'uppercase' }}>Net Worth Est.</div>
+              <div style={{ marginTop:5, fontSize:15, fontWeight:900, color:netWorth >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmt(netWorth)}</div>
+            </div>
+            <div style={{ border:'1px solid #e2e8f0', borderRadius:14, padding:'10px 11px' }}>
+              <div style={{ fontSize:10, fontWeight:900, color:'#94a3b8', textTransform:'uppercase' }}>Health Score</div>
+              <div style={{ marginTop:5, fontSize:15, fontWeight:900, color:statusColor, fontFamily:'var(--font-mono), monospace' }}>{healthScore}/100</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="financial-position-cards" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12 }}>
+          {smallCard('Smart Saving', fmt(trackedSavings), `${activeGoalCount} goal aktif/non-arsip`, '#1d4ed8', '#eff6ff')}
+          {smallCard('Cash Bulan Ini', fmt(currentCash), currentCash > 0 ? 'Sisa uang yang belum dialokasikan' : 'Belum ada sisa positif', currentCash >= 0 ? '#15803d' : '#b91c1c', currentCash >= 0 ? '#f0fdf4' : '#fef2f2')}
+          {smallCard('Monthly Surplus', `${monthlySurplus >= 0 ? '+' : '-'}${fmt(monthlySurplus)}`, 'Income - expenses - saving', monthlySurplus >= 0 ? '#15803d' : '#b91c1c', monthlySurplus >= 0 ? '#f0fdf4' : '#fef2f2')}
+          {smallCard('Debt Payment', fmt(totalDebtPayment), 'Cicilan/kewajiban bulan ini', '#b7791f', '#fffbeb')}
+          {smallCard('Emergency Cover', emergencyMonths === null ? '—' : `${emergencyMonths.toFixed(1).replace('.', ',')} bln`, 'Berdasarkan goal dana darurat', emergencyMonths !== null && emergencyMonths >= 6 ? '#15803d' : '#b7791f', '#f8fafc')}
+          {smallCard('Saving Rate', pct(savingRate), 'Persentase tabungan bulan ini', savingRate >= 20 ? '#15803d' : '#1d4ed8', '#f8fafc')}
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 980px) {
+          .financial-position-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 720px) {
+          .financial-position-hero { padding: 13px !important; border-radius: 18px !important; }
+          .financial-position-cards { grid-template-columns: 1fr 1fr !important; gap: 9px !important; }
+        }
+        @media (max-width: 420px) {
+          .financial-position-cards { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: string }) {
   return (
     <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'999px', overflow:'hidden' }}>
@@ -329,9 +441,17 @@ const { curMonth, curYear } = useMonthContext()
   const totalExpense = sumBudget(budget)
   const plannedExpense = sumBudgetPlan(budget)
   const totalSaving = sumSaving(saving)
+  const totalDebtPayment = sumDebt(debt)
   const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
   const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
   const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
+  const trackedSavings = goals.filter(g => g.status !== 'archived').reduce((s, g) => s + (g.current || 0), 0)
+  const currentCash = Math.max(0, rawSisa || 0)
+  const totalAssets = trackedSavings + currentCash
+  const netWorthEstimate = totalAssets - totalDebtPayment
+  const emergencyGoal = goals.find(g => g.type === 'darurat' && g.status !== 'archived' && (g.current || 0) > 0)
+  const emergencyMonths = emergencyGoal?.expense && emergencyGoal.expense > 0 ? (emergencyGoal.current || 0) / emergencyGoal.expense : null
+  const activeTrackedGoals = goals.filter(g => g.status !== 'archived').length
 
   const topCategories = useMemo(() => {
     return budget
@@ -364,7 +484,7 @@ const { curMonth, curYear } = useMonthContext()
         <div>
           <h1 style={{ fontSize:'20px', fontWeight:800, letterSpacing:'-.4px', color:'#111827' }}>Overview</h1>
           <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>
-            Ringkasan keuangan {MONTH_NAMES[curMonth]} {curYear} · Smart Family Finance
+            Posisi keuangan dan arus kas {MONTH_NAMES[curMonth]} {curYear} · Smart Family Finance
           </p>
         </div>
         <div className="dash-actions" style={{ display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap' }}>
@@ -372,15 +492,18 @@ const { curMonth, curYear } = useMonthContext()
         </div>
       </div>
 
-      {/* Main metrics */}
-      <StatStrip
-        income={income}
-        saving={saving}
-        debt={debt}
-        budget={budget}
-        tx={tx}
-        rawSisa={rawSisa}
-        isMobile={isMobile}
+      {/* Financial position */}
+      <FinancialPositionHero
+        totalAssets={totalAssets}
+        trackedSavings={trackedSavings}
+        currentCash={currentCash}
+        netWorth={netWorthEstimate}
+        totalDebtPayment={totalDebtPayment}
+        monthlySurplus={rawSisa}
+        emergencyMonths={emergencyMonths}
+        savingRate={savingRate}
+        expenseRate={expenseRate}
+        activeGoalCount={activeTrackedGoals}
       />
 
       <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.65fr) minmax(300px, .95fr)', gap:'14px', alignItems:'stretch', marginBottom:'14px', width:'100%' }}>
