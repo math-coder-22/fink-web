@@ -6,6 +6,27 @@ import { AppIcon } from '@/components/ui/design'
 
 type Tone = 'good' | 'warning' | 'danger' | 'neutral'
 type Priority = 'high' | 'medium' | 'low'
+type GoalPriority = 'critical' | 'high' | 'medium' | 'low' | 'maintain' | 'paused'
+
+type GoalPlannerItem = {
+  id: string
+  name: string
+  priority: GoalPriority
+  priorityLabel: string
+  healthLabel: string
+  recommendation: string
+  reason: string
+  progress: number
+  current: number
+  target: number
+  monthly?: number
+  monthlyNeeded?: number
+  gap?: number
+  monthsLeft?: number
+  typeLabel?: string
+  focus: boolean
+  mode: 'auto' | 'manual'
+}
 
 type AdvisorSummary = {
   score: number
@@ -48,6 +69,8 @@ type AdvisorSummary = {
   }
   risks: { tone: Tone; title: string; detail: string }[]
   priorities: { level: Priority; title: string; detail: string }[]
+  goalInsights: GoalPlannerItem[]
+  focusGoals: GoalPlannerItem[]
   milestone: {
     title: string
     current: number
@@ -75,10 +98,10 @@ const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('
 const pct = (n: number) => `${Math.round(n || 0)}%`
 
 function deltaText(value: number | null, goodWhenUp = true) {
-  if (value === null || !Number.isFinite(value)) return { text:'Belum ada pembanding', color:'#9ca3af' }
+  if (value === null || !Number.isFinite(value)) return { text:'No comparison yet', color:'#9ca3af' }
   const up = value >= 0
   const good = goodWhenUp ? up : !up
-  return { text:`${up ? 'Naik' : 'Turun'} ${Math.abs(Math.round(value))}% vs bulan lalu`, color: good ? '#15803d' : '#b91c1c' }
+  return { text:`${up ? 'Up' : 'Down'} ${Math.abs(Math.round(value))}% vs last month`, color: good ? '#15803d' : '#b91c1c' }
 }
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -153,7 +176,7 @@ export default function FinancialDoctorPage() {
       .catch(() => {
         if (!cancelled) {
           setSummary(null)
-          setError('Gagal memuat ringkasan Advisor.')
+          setError('Failed to load Advisor summary.')
         }
       })
       .finally(() => {
@@ -165,7 +188,7 @@ export default function FinancialDoctorPage() {
   if (loading) {
     return (
       <div style={{ minHeight:'45vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#9ca3af', fontSize:13 }}>
-        Memuat Advisor...
+        Loading Advisor...
       </div>
     )
   }
@@ -180,7 +203,7 @@ export default function FinancialDoctorPage() {
             Advisor
           </h1>
           <p style={{ margin:'5px 0 0', color:'#6b7280', fontSize:12.5, lineHeight:1.55 }}>
-            Pendamping keuangan pribadi untuk membaca kondisi, menentukan prioritas, dan menjaga target {MONTH_NAMES[curMonth]} {curYear}.
+            Personal financial planner to read your condition, set priorities, and protect your goals for {MONTH_NAMES[curMonth]} {curYear}.
           </p>
         </div>
         {data && <Badge tone={data.status}>{data.statusLabel}</Badge>}
@@ -201,7 +224,7 @@ export default function FinancialDoctorPage() {
                 </div>
                 <ProgressBar value={data.score} color={toneMap[data.status].color} />
                 <div style={{ fontSize:12.3, color:'#6b7280', lineHeight:1.55 }}>
-                  Skor dihitung dari cashflow, saving rate, expense rate, rasio cicilan, dan progres target aktif.
+                  Score is based on cashflow, saving rate, expense rate, debt burden, and active goal progress.
                 </div>
               </div>
             </Card>
@@ -212,7 +235,7 @@ export default function FinancialDoctorPage() {
                   <div style={{ width:34, height:34, borderRadius:12, background:'#dcfce7', color:'#166534', display:'flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="insight" size={17} /></div>
                   <div>
                     <div style={{ fontSize:14, fontWeight:950, color:'#111827' }}>Today's Insight</div>
-                    <div style={{ fontSize:11.5, color:'#9ca3af' }}>Ringkasan paling penting dari data bulan ini</div>
+                    <div style={{ fontSize:11.5, color:'#9ca3af' }}>The most important reading from this month's data</div>
                   </div>
                 </div>
                 <div style={{ fontSize:15, lineHeight:1.65, color:'#1f2937', fontWeight:650 }}>
@@ -226,13 +249,13 @@ export default function FinancialDoctorPage() {
             <MetricCard label="Cashflow" value={fmt(data.monthly.cashflow)} tone={data.monthly.cashflow >= 0 ? 'good' : 'danger'} note="Income - expense - saving" />
             <MetricCard label="Saving Rate" value={pct(data.ratios.savingRate)} tone={data.ratios.savingRate >= 20 ? 'good' : data.ratios.savingRate >= 10 ? 'warning' : 'danger'} note={deltaText(data.deltas.savingRateVsPrev, true).text} />
             <MetricCard label="Expense Rate" value={pct(data.ratios.expenseRate)} tone={data.ratios.expenseRate <= 70 ? 'good' : data.ratios.expenseRate <= 85 ? 'warning' : 'danger'} note={deltaText(data.deltas.expenseVsPrev, false).text} />
-            <MetricCard label="Debt Ratio" value={pct(data.ratios.debtRatio)} tone={data.ratios.debtRatio <= 25 ? 'good' : data.ratios.debtRatio <= 35 ? 'warning' : 'danger'} note="Rasio cicilan terhadap income" />
+            <MetricCard label="Debt Ratio" value={pct(data.ratios.debtRatio)} tone={data.ratios.debtRatio <= 25 ? 'good' : data.ratios.debtRatio <= 35 ? 'warning' : 'danger'} note="Debt payment ratio against income" />
           </div>
 
           <div className="advisor-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0,1.08fr) minmax(320px,.92fr)', gap:14 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <Card>
-                <SectionHead title="Langkah Prioritas" subtitle="Urutan aksi yang paling masuk akal untuk bulan ini." right={<Badge tone="neutral">Planner</Badge>} />
+                <SectionHead title="Priority Actions" subtitle="The most logical action order for this month." right={<Badge tone="neutral">Planner</Badge>} />
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
                   {data.priorities.map((item, idx) => {
                     const tone = priorityTone[item.level]
@@ -251,7 +274,7 @@ export default function FinancialDoctorPage() {
               </Card>
 
               <Card>
-                <SectionHead title="Money Risks" subtitle="Sinyal awal yang perlu diperhatikan sebelum menjadi masalah." />
+                <SectionHead title="Money Risks" subtitle="Early signals to watch before they become problems." />
                 <div style={{ padding:14, display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:10 }}>
                   {data.risks.map((risk, idx) => {
                     const t = toneMap[risk.tone]
@@ -268,7 +291,54 @@ export default function FinancialDoctorPage() {
 
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <Card>
-                <SectionHead title="Next Milestone" subtitle="Target aktif yang paling perlu dipantau." />
+                <SectionHead title="Current Focus Goals" subtitle="Goals FiNK recommends watching first." right={<Badge tone="neutral">Auto + Manual</Badge>} />
+                <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
+                  {data.focusGoals && data.focusGoals.length > 0 ? data.focusGoals.map((goal) => {
+                    const tone: Tone = goal.priority === 'critical' || goal.priority === 'high' ? 'danger' : goal.priority === 'medium' ? 'warning' : goal.priority === 'maintain' ? 'good' : 'neutral'
+                    const t = toneMap[tone]
+                    return (
+                      <div key={goal.id} style={{ border:`1px solid ${t.border}`, background:t.bg, borderRadius:13, padding:'12px 13px' }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10 }}>
+                          <div>
+                            <div style={{ fontSize:12.8, fontWeight:950, color:'#111827' }}>{goal.name}</div>
+                            <div style={{ fontSize:11.3, color:'#6b7280', marginTop:3 }}>{goal.healthLabel} · {goal.mode === 'manual' ? 'Manual' : 'Auto'} priority</div>
+                          </div>
+                          <Badge tone={tone}>{goal.priorityLabel}</Badge>
+                        </div>
+                        <div style={{ marginTop:9 }}><ProgressBar value={goal.progress} color={t.color} /></div>
+                        <div style={{ marginTop:8, fontSize:11.8, color:'#4b5563', lineHeight:1.5 }}>{goal.recommendation}</div>
+                      </div>
+                    )
+                  }) : (
+                    <div style={{ fontSize:12.5, color:'#6b7280', lineHeight:1.55 }}>No focus goals yet. Mark 1–3 goals as focus in Goals, or let FiNK auto-prioritize urgent goals.</div>
+                  )}
+                </div>
+              </Card>
+
+              <Card>
+                <SectionHead title="Goal Planning Queue" subtitle="All active goals ordered by Advisor priority, not by creation date." right={<Badge tone="neutral">Goal Engine</Badge>} />
+                <div style={{ padding:14, display:'flex', flexDirection:'column', gap:8 }}>
+                  {data.goalInsights && data.goalInsights.length > 0 ? data.goalInsights.map((goal, idx) => {
+                    const tone: Tone = goal.priority === 'critical' || goal.priority === 'high' ? 'danger' : goal.priority === 'medium' ? 'warning' : goal.priority === 'maintain' ? 'good' : 'neutral'
+                    const t = toneMap[tone]
+                    return (
+                      <div key={goal.id} style={{ display:'grid', gridTemplateColumns:'22px minmax(0,1fr) auto', gap:10, alignItems:'center', border:'1px solid #eef2f7', borderRadius:12, padding:'10px 11px', background:'#fff' }}>
+                        <div style={{ width:22, height:22, borderRadius:999, background:t.soft, color:t.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:950 }}>{idx + 1}</div>
+                        <div style={{ minWidth:0 }}>
+                          <div style={{ fontSize:12.5, color:'#111827', fontWeight:950, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{goal.name}</div>
+                          <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{goal.typeLabel || 'Goal'} · {goal.healthLabel} · {goal.mode === 'manual' ? 'Manual' : 'Auto'}</div>
+                        </div>
+                        <Badge tone={tone}>{goal.priorityLabel}</Badge>
+                      </div>
+                    )
+                  }) : (
+                    <div style={{ fontSize:12.5, color:'#6b7280', lineHeight:1.55 }}>No active goals yet.</div>
+                  )}
+                </div>
+              </Card>
+
+              <Card>
+                <SectionHead title="Next Milestone" subtitle="The active goal that needs the most attention." />
                 <div style={{ padding:15 }}>
                   {data.milestone ? (
                     <>
@@ -287,14 +357,14 @@ export default function FinancialDoctorPage() {
                     </>
                   ) : (
                     <div style={{ fontSize:12.5, color:'#6b7280', lineHeight:1.55 }}>
-                      Belum ada target aktif. Tambahkan target di Goals agar Advisor bisa memberi prioritas yang lebih personal.
+                      No active goal yet. Add goals so Advisor can recommend more personal priorities.
                     </div>
                   )}
                 </div>
               </Card>
 
               <Card>
-                <SectionHead title="Monthly Pattern" subtitle="Pembacaan cepat dibanding bulan sebelumnya dan rata-rata 3 bulan." />
+                <SectionHead title="Monthly Pattern" subtitle="Quick reading versus last month and 3-month averages." />
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', gap:10, borderBottom:'1px solid #f3f4f6', paddingBottom:9 }}>
                     <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Income</span>
@@ -305,20 +375,20 @@ export default function FinancialDoctorPage() {
                     <span style={{ fontSize:12.3, color:deltaText(data.deltas.expenseVsPrev, false).color, fontWeight:900 }}>{deltaText(data.deltas.expenseVsPrev, false).text}</span>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', gap:10 }}>
-                    <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Avg saving 3 bulan</span>
+                    <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Avg saving 3 months</span>
                     <span style={{ fontSize:12.3, color:'#111827', fontWeight:900, fontFamily:'var(--font-mono), monospace' }}>{fmt(data.averages.saving3m)}</span>
                   </div>
                 </div>
               </Card>
 
               <Card>
-                <SectionHead title="My Guide" subtitle="Alur sederhana agar FiNK terasa seperti pendamping." />
+                <SectionHead title="My Guide" subtitle="A simple flow to keep FiNK acting like a planner." />
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:9 }}>
                   {[
-                    ['Catat transaksi bulan ini', data.monthly.transactionCount > 0],
-                    ['Jaga cashflow positif', data.monthly.cashflow >= 0],
-                    ['Capai saving rate minimal 10%', data.ratios.savingRate >= 10],
-                    ['Pantau target aktif di Goals', !!data.milestone],
+                    ['Record this month's transactions', data.monthly.transactionCount > 0],
+                    ['Keep cashflow positive', data.monthly.cashflow >= 0],
+                    ['Reach at least 10% saving rate', data.ratios.savingRate >= 10],
+                    ['Review focus goals in Advisor', !!(data.focusGoals && data.focusGoals.length)],
                   ].map(([label, done], idx) => (
                     <div key={idx} style={{ display:'flex', alignItems:'center', gap:9, fontSize:12.3, color:'#374151' }}>
                       <span style={{ width:22, height:22, borderRadius:999, background:done ? '#dcfce7' : '#f3f4f6', color:done ? '#166534' : '#9ca3af', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:950 }}>{done ? <AppIcon name="check" size={12} /> : idx + 1}</span>

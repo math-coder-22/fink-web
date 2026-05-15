@@ -1,5 +1,6 @@
 import type { BudgetCategory, DebtRow, IncomeCategory, MonthKey, SavingRow, Transaction } from '@/types/database'
-import type { SavingsGoal } from '@/types/savings'
+import type { SavingsGoal, GoalCalcResult } from '@/types/savings'
+import { buildGoalAdvisorItem, sortGoalsByAdvisor, type GoalAdvisorItem } from '@/lib/finance/goals'
 
 export const MONTHS_ORDER: MonthKey[] = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 export const MONTH_LABELS: Record<MonthKey, string> = {
@@ -59,6 +60,8 @@ export type AdvisorSummary = {
   }
   risks: { tone: 'good' | 'warning' | 'danger' | 'neutral'; title: string; detail: string }[]
   priorities: AdvisorPriority[]
+  goalInsights: GoalAdvisorItem[]
+  focusGoals: GoalAdvisorItem[]
   milestone: {
     title: string
     current: number
@@ -126,6 +129,63 @@ export function aggregateMonth(month: MonthKey, year: number, tx: Transaction[],
   }
 }
 
+
+function monthsBetweenLocal(from: Date, to: Date): number {
+  return Math.max(1, (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth()))
+}
+
+function yearsUntilLocal(deadline: string): number {
+  if (!deadline) return 0
+  return Math.max(0, (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 365))
+}
+
+function futureValueLocal(currentVal: number, inflationRate: number, years: number): number {
+  if (years <= 0) return currentVal
+  return currentVal * Math.pow(1 + inflationRate / 100, years)
+}
+
+function effectiveGoalTarget(g: SavingsGoal): number {
+  if (g.type === 'darurat' && g.expense && g.coverageTarget) return Math.max(0, g.expense * g.coverageTarget)
+  if (g.type === 'pendidikan' && g.eduCurrent && g.deadline) return futureValueLocal(g.eduCurrent, g.eduInflasi || 8, yearsUntilLocal(g.deadline))
+  if (g.type === 'pensiun' && g.pensionExp && g.deadline) {
+    const futureAnnualExpense = futureValueLocal(g.pensionExp * 12, g.pensionInflasi || 5, yearsUntilLocal(g.deadline))
+    return 25 * futureAnnualExpense
+  }
+  return Math.max(0, g.target || 0)
+}
+
+function calcGoalForAdvisor(g: SavingsGoal): GoalCalcResult {
+  const deadline = g.deadline ? new Date(g.deadline) : null
+  const months = deadline ? monthsBetweenLocal(new Date(), deadline) : 60
+  const targetNow = effectiveGoalTarget(g)
+  const sisa = Math.max(0, targetNow - Number(g.current || 0))
+  const progress = targetNow > 0 ? Math.min(1, Number(g.current || 0) / targetNow) : 0
+  const monthlyNeeded = months > 0 ? sisa / months : sisa
+  let trackStatus: GoalCalcResult['trackStatus'] = 'ontrack'
+  if (progress >= 1) trackStatus = 'complete'
+  else if (g.monthly > 0 && monthlyNeeded > 0) {
+    if (g.monthly >= monthlyNeeded * 1.1) trackStatus = 'ahead'
+    else if (g.monthly < monthlyNeeded * 0.85) trackStatus = 'behind'
+  }
+  let coverage: number | undefined
+  let coverageStatus: GoalCalcResult['coverageStatus']
+  let excessDana: number | undefined
+  if (g.type === 'darurat' && g.expense && g.expense > 0) {
+    coverage = Number(g.current || 0) / g.expense
+    excessDana = Math.max(0, Number(g.current || 0) - 6 * g.expense)
+    if (coverage < 3) coverageStatus = 'Risiko Tinggi'
+    else if (coverage <= 6) coverageStatus = 'Cukup Aman'
+    else coverageStatus = 'Aman'
+  }
+  return { targetNow, sisa, progress, months, monthlyNeeded, trackStatus, coverage, coverageStatus, excessDana }
+}
+
+function buildGoalInsights(goals: SavingsGoal[]) {
+  const active = (goals || []).filter(g => g.status === 'active')
+  const sorted = sortGoalsByAdvisor(active, calcGoalForAdvisor)
+  return sorted.map(g => buildGoalAdvisorItem(g, calcGoalForAdvisor(g), goals)).slice(0, 6)
+}
+
 function scoreFromSummary(current: MonthlyTrendItem, debtRatio: number, milestoneProgress: number) {
   let score = 0
   if (current.cashflow >= current.income * 0.15) score += 30
@@ -158,22 +218,18 @@ function scoreFromSummary(current: MonthlyTrendItem, debtRatio: number, mileston
 function pickMilestone(goals: SavingsGoal[]) {
   const active = (goals || []).filter(g => g.status === 'active')
   if (active.length === 0) return null
-  const sorted = [...active].sort((a, b) => {
-    const ap = a.target > 0 ? a.current / a.target : 0
-    const bp = b.target > 0 ? b.current / b.target : 0
-    if (ap === bp) return (b.monthly || 0) - (a.monthly || 0)
-    return ap - bp
-  })
+  const sorted = sortGoalsByAdvisor(active, calcGoalForAdvisor)
   const g = sorted[0]
-  const progress = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0
-  const gap = Math.max(0, (g.target || 0) - (g.current || 0))
+  const calc = calcGoalForAdvisor(g)
+  const progress = Math.min(100, (calc.progress || 0) * 100)
+  const gap = Math.max(0, calc.sisa || 0)
   return {
-    title: g.name || 'Target utama',
+    title: g.name || 'Primary goal',
     current: Number(g.current || 0),
-    target: Number(g.target || 0),
+    target: Number(calc.targetNow || g.target || 0),
     progress,
     monthly: Number(g.monthly || 0),
-    detail: gap > 0 ? `Sisa target sekitar Rp ${Math.round(gap).toLocaleString('id-ID')}.` : 'Target ini sudah tercapai.',
+    detail: gap > 0 ? `Remaining gap around Rp ${Math.round(gap).toLocaleString('id-ID')}.` : 'This goal is already completed.',
   }
 }
 
@@ -189,6 +245,8 @@ export function buildAdvisorSummary(params: {
   const recent3 = params.trend.slice(-3)
   const avg = (key: keyof MonthlyTrendItem) => recent3.length ? recent3.reduce((s, m) => s + Number(m[key] || 0), 0) / recent3.length : 0
   const debtRatio = current.income > 0 ? (sumPlanDebt(params.currentPlan) / current.income) * 100 : 0
+  const goalInsights = buildGoalInsights(params.goals || [])
+  const focusGoals = goalInsights.filter(g => g.focus || g.priority === 'critical' || g.priority === 'high').slice(0, 3)
   const milestone = pickMilestone(params.goals || [])
   const milestoneProgress = milestone?.progress || 0
   const score = scoreFromSummary(current, debtRatio, milestoneProgress)
@@ -207,15 +265,21 @@ export function buildAdvisorSummary(params: {
   if (current.cashflow < 0) priorities.push({ level:'high', title:'Pulihkan cashflow dulu', detail:'Tahan belanja non-prioritas sampai cashflow kembali positif.' })
   if (current.savingRate < 10 && current.income > 0) priorities.push({ level:'medium', title:'Naikkan saving rate bertahap', detail:`Mulai dari 10% income, sekitar Rp ${Math.round(current.income * 0.1).toLocaleString('id-ID')}.` })
   if (debtRatio > 25) priorities.push({ level: debtRatio > 35 ? 'high' : 'medium', title:'Jaga beban cicilan', detail:'Hindari cicilan baru dan prioritaskan pelunasan utang berbunga tinggi.' })
+  focusGoals.slice(0, 2).forEach((g) => {
+    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Focus on ${g.name}`, detail: `${g.recommendation} Reason: ${g.reason}` })
+  })
   if (milestone) priorities.push({ level:'low', title:`Percepat ${milestone.title}`, detail: milestone.monthly > 0 ? `Pertahankan alokasi Rp ${Math.round(milestone.monthly).toLocaleString('id-ID')} per bulan.` : milestone.detail })
   if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Cashflow, saving, dan risiko utama masih terkendali.' })
 
-  let mainInsight = 'FiNK belum memiliki data yang cukup untuk membaca pola bulanan.'
-  if (current.income > 0) {
-    if (current.cashflow < 0) mainInsight = `Bulan ini perlu dijaga: cashflow minus Rp ${Math.abs(Math.round(current.cashflow)).toLocaleString('id-ID')}. Prioritasnya bukan menambah target, tetapi menekan pengeluaran fleksibel.`
-    else if (current.savingRate >= 20) mainInsight = `Kondisi bulan ini kuat. Saving rate ${Math.round(current.savingRate)}% dan cashflow masih positif, sehingga target keuangan bisa dipercepat.`
-    else if (current.expenseRate > 80) mainInsight = `Income sudah tercatat, tetapi expense rate ${Math.round(current.expenseRate)}%. FiNK menyarankan audit kategori terbesar sebelum menambah komitmen baru.`
-    else mainInsight = `Kondisi bulan ini cukup stabil. Fokus berikutnya adalah menjaga saving rate dan melanjutkan target prioritas.`
+  let mainInsight = 'FiNK does not have enough data yet to read your monthly pattern.'
+  const topGoal = focusGoals[0]
+  if (topGoal && (topGoal.priority === 'critical' || topGoal.priority === 'high')) {
+    mainInsight = `${topGoal.name} should be the main focus now. ${topGoal.recommendation}`
+  } else if (current.income > 0) {
+    if (current.cashflow < 0) mainInsight = `This month needs attention: cashflow is negative by Rp ${Math.abs(Math.round(current.cashflow)).toLocaleString('id-ID')}. Prioritize stabilizing spending before adding new goals.`
+    else if (current.savingRate >= 20) mainInsight = `This month is strong. Saving rate is ${Math.round(current.savingRate)}% and cashflow stays positive, so priority goals can be accelerated.`
+    else if (current.expenseRate > 80) mainInsight = `Income is recorded, but expense rate is ${Math.round(current.expenseRate)}%. Review the largest categories before adding new commitments.`
+    else mainInsight = `This month is fairly stable. Keep saving rate healthy and continue funding your priority goals.`
   }
 
   return {
@@ -244,6 +308,8 @@ export function buildAdvisorSummary(params: {
     },
     risks,
     priorities,
+    goalInsights,
+    focusGoals,
     milestone,
   }
 }

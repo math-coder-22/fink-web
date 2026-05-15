@@ -147,6 +147,9 @@ function normalizeGoal(goal: SavingsGoal): SavingsGoal {
   return {
     ...goal,
     history: goal.history || [],
+    focus: Boolean(goal.focus),
+    priorityMode: goal.priorityMode || 'auto',
+    manualPriority: goal.manualPriority || 'medium',
     createdAt: goal.createdAt || new Date().toISOString(),
     updatedAt: goal.updatedAt || new Date().toISOString(),
   };

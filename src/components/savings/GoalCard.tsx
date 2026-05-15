@@ -8,20 +8,43 @@ import type {
   GoalTransaction,
 } from "@/types/savings";
 import { AppIcon } from "@/components/ui/design";
+import { buildGoalAdvisorItem, goalTypeLabel } from "@/lib/finance/goals";
 
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
 
-const TYPE_LABEL: Record<string, string> = {
-  darurat: "Emergency Fund",
-  darurat_lanjutan: "Extended Emergency",
-  rumah: "House",
-  kendaraan: "Vehicle",
-  pendidikan: "Education",
-  pensiun: "Retirement",
-  investasi: "Investment",
-  biasa: "General Saving",
-};
+
+
+function PriorityBadge({ label, priority, mode }: { label: string; priority: string; mode: string }) {
+  const map: Record<string, { bg: string; color: string; border: string }> = {
+    critical: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
+    high: { bg: "#fff7ed", color: "#9a3412", border: "#fed7aa" },
+    medium: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
+    low: { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
+    maintain: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
+    paused: { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" },
+  };
+  const t = map[priority] || map.medium;
+  return (
+    <span
+      title={`${mode === "manual" ? "Manual" : "Auto"} priority`}
+      style={{
+        fontSize: "9.5px",
+        fontWeight: 800,
+        padding: "2px 7px",
+        borderRadius: "99px",
+        background: t.bg,
+        color: t.color,
+        border: `1px solid ${t.border}`,
+        textTransform: "uppercase" as const,
+        letterSpacing: ".3px",
+        whiteSpace: "nowrap" as const,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
   const map = {
@@ -196,11 +219,11 @@ function KebabMenu({
             }}
           >
             {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="income" size={14} />Setor Dana</span>, "#1a5c42", onTopup)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="income" size={14} />Top Up</span>, "#1a5c42", onTopup)}
             {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="expense" size={14} />Tarik Dana</span>, "#b45309", onWithdraw)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="expense" size={14} />Withdraw</span>, "#b45309", onWithdraw)}
             {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="scale" size={14} />Reconcile Saldo</span>, "#92400e", onReconcile)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="scale" size={14} />Reconcile Balance</span>, "#92400e", onReconcile)}
             {goal.status === "active" && (
               <div
                 style={{
@@ -233,7 +256,7 @@ function KebabMenu({
             <div
               style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
             />
-            {item("Hapus", "#b91c1c", onDelete)}
+            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="trash" size={14} />Delete</span>, "#b91c1c", onDelete)}
           </div>,
           document.body,
         )}
@@ -258,9 +281,9 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
           justifyContent: "space-between",
         }}
       >
-        <span>Riwayat Transaksi</span>
+        <span>Transaction History</span>
         <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 400 }}>
-          {history.length} entri · klik card untuk tutup
+          {history.length} entries · click card to close
         </span>
       </div>
       {history.length === 0 ? (
@@ -272,7 +295,7 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
             textAlign: "center" as const,
           }}
         >
-          Belum ada riwayat. Gunakan menu ⋮ untuk setor atau tarik dana.
+          No history yet. Use the menu to top up or withdraw funds.
         </div>
       ) : (
         <div style={{ maxHeight: "200px", overflowY: "auto" as const }}>
@@ -355,6 +378,7 @@ interface Props {
   onReconcile: (id: string) => void;
   onStatus: (id: string, s: SavingsGoal["status"]) => void;
   onDelete: (id: string) => void;
+  allGoals?: SavingsGoal[];
 }
 
 export default function GoalCard({
@@ -366,9 +390,11 @@ export default function GoalCard({
   onReconcile,
   onStatus,
   onDelete,
+  allGoals = [],
 }: Props) {
   const [showHistory, setShowHistory] = useState(false);
   const pct = Math.round(calc.progress * 100);
+  const advisor = buildGoalAdvisorItem(goal, calc, allGoals.length ? allGoals : [goal]);
   const progColor =
     calc.trackStatus === "behind"
       ? "#b91c1c"
@@ -386,9 +412,11 @@ export default function GoalCard({
           <div className="savings-goal-title-row">
             <div className="savings-goal-title">{goal.name}</div>
             <TrackBadge status={calc.trackStatus} />
+            <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
           </div>
           <div className="savings-goal-subtitle">
-            {TYPE_LABEL[goal.type]}
+            {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
+            {advisor.typeLabel || goalTypeLabel(goal.type)}
             {goal.deadline &&
               ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
           </div>
@@ -404,6 +432,12 @@ export default function GoalCard({
             <span className="savings-goal-pct" style={{ color: progColor }}>
               {pct}%
             </span>
+          </div>
+          <div className="savings-goal-status-note" style={{ color:'#475569', lineHeight:1.45 }}>
+            {advisor.healthLabel} · {advisor.recommendation}
+          </div>
+          <div className="savings-goal-status-note" style={{ color:'#94a3b8', fontWeight:600, marginTop:4, lineHeight:1.45 }}>
+            {advisor.mode === 'manual' ? 'Manual priority' : 'Auto priority'} · {advisor.reason}
           </div>
           {goal.type === "darurat" && calc.coverage !== undefined && (
             <div
@@ -430,7 +464,7 @@ export default function GoalCard({
 
         <div className="savings-goal-middle">
           <div className="savings-goal-stat primary">
-            <div className="savings-label">Terkumpul</div>
+            <div className="savings-label">Saved</div>
             <div className="savings-value" style={{ color: progColor }}>
               {fmt(goal.current)}
             </div>
@@ -440,7 +474,7 @@ export default function GoalCard({
             <div className="savings-value small">{fmt(calc.targetNow)}</div>
           </div>
           <div className="savings-goal-stat">
-            <div className="savings-label">Sisa</div>
+            <div className="savings-label">Gap</div>
             <div className="savings-value small" style={{ color: "#9ca3af" }}>
               {fmt(calc.sisa)}
             </div>
@@ -449,7 +483,7 @@ export default function GoalCard({
 
         <div className="savings-goal-right">
           <div className="savings-goal-rec">
-            <div className="savings-label">Rekomendasi/Bln</div>
+            <div className="savings-label">Recommended/Month</div>
             <div className="savings-rec-value">{fmt(calc.monthlyNeeded)}</div>
             {goal.monthly > 0 && (
               <div
@@ -460,11 +494,11 @@ export default function GoalCard({
                   fontFamily: "var(--font-mono), monospace",
                 }}
               >
-                Aktual: {fmt(goal.monthly)}
+                Actual: {fmt(goal.monthly)}
               </div>
             )}
             {calc.months > 0 && goal.deadline && (
-              <div className="savings-rec-meta">{calc.months} bln tersisa</div>
+              <div className="savings-rec-meta">{calc.months} months left</div>
             )}
             {goal.useInvest && (
               <div className="savings-rec-meta" style={{ color: "#6b7280" }}>
@@ -473,8 +507,8 @@ export default function GoalCard({
             )}
             <div className="savings-history-hint">
               {showHistory
-                ? "▲ tutup riwayat"
-                : `▼ ${goal.history?.length || 0} riwayat`}
+                ? "Hide history"
+                : `${goal.history?.length || 0} history`}
             </div>
           </div>
 
@@ -490,7 +524,7 @@ export default function GoalCard({
               onEdit={() => onEdit(goal)}
               onStatus={(s) => onStatus(goal.id, s)}
               onDelete={() => {
-                if (confirm("Hapus goal ini?")) onDelete(goal.id);
+                if (confirm("Delete this goal?")) onDelete(goal.id);
               }}
             />
           </div>

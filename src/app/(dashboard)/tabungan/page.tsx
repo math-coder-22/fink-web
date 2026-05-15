@@ -10,10 +10,11 @@ import {
   WithdrawModal,
   ReconcileModal,
 } from "@/components/savings/SavingsModals";
-import { AppButton, EmptyState, PageHeader } from "@/components/ui/design";
+import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FREE_PLAN_LIMITS, upgradeMessage } from "@/lib/subscription/limits";
 import type { SavingsGoal } from "@/types/savings";
+import { buildGoalAdvisorItem, sortGoalsByAdvisor } from "@/lib/finance/goals";
 
 type TabKey = "active" | "pending" | "complete" | "archived";
 
@@ -47,28 +48,31 @@ export default function TabunganPage() {
   const { isPremium } = useSubscription();
 
   const filtered = goals.filter((g) => g.status === tab);
-  const goalPriority = (g: SavingsGoal) => {
-    const order: Record<string, number> = {
-      darurat: 1,
-      rumah: 2,
-      pendidikan: 3,
-      pensiun: 4,
-      investasi: 5,
-      kendaraan: 6,
-      darurat_lanjutan: 7,
-      biasa: 8,
-    };
-    return order[g.type] ?? 99;
-  };
-
-  const sortedGoals = [...filtered].sort((a, b) => {
-    if (a.focus && !b.focus) return -1;
-    if (!a.focus && b.focus) return 1;
-    return goalPriority(a) - goalPriority(b);
-  });
-
-  const focusGoals = sortedGoals.filter((g) => g.focus);
+  const sortedGoals = sortGoalsByAdvisor(filtered, calcGoal);
+  const goalAdvisor = (g: SavingsGoal) => buildGoalAdvisorItem(g, calcGoal(g), goals);
+  const focusGoals = sortedGoals.filter((g) => g.focus && g.status === tab);
   const regularGoals = sortedGoals.filter((g) => !g.focus);
+  const priorityGoals = tab === "active"
+    ? regularGoals.filter((g) => {
+        const a = goalAdvisor(g);
+        return a.priority === "critical" || a.priority === "high";
+      })
+    : [];
+  const longTermGoals = tab === "active"
+    ? regularGoals.filter((g) => {
+        const a = goalAdvisor(g);
+        return !priorityGoals.some((p) => p.id === g.id) && (
+          g.type === "pensiun" ||
+          g.type === "investasi" ||
+          g.type === "darurat_lanjutan" ||
+          a.priority === "low" ||
+          a.priority === "maintain"
+        );
+      })
+    : [];
+  const otherGoals = tab === "active"
+    ? regularGoals.filter((g) => !priorityGoals.some((p) => p.id === g.id) && !longTermGoals.some((p) => p.id === g.id))
+    : regularGoals;
 
   const topupGoalObj = topupId
     ? (goals.find((g) => g.id === topupId) ?? null)
@@ -79,6 +83,63 @@ export default function TabunganPage() {
   const rcGoalObj = reconcileId
     ? (goals.find((g) => g.id === reconcileId) ?? null)
     : null;
+
+
+  function renderGoal(goal: SavingsGoal) {
+    return (
+      <GoalCard
+        key={goal.id}
+        goal={goal}
+        calc={calcGoal(goal)}
+        onEdit={setEditGoal}
+        onTopup={setTopupId}
+        onWithdraw={setWithdrawId}
+        onReconcile={setReconcileId}
+        onStatus={changeStatus}
+        onDelete={deleteGoal}
+        allGoals={goals}
+      />
+    );
+  }
+
+  function GoalSection({
+    title,
+    subtitle,
+    items,
+    tone = "neutral",
+  }: {
+    title: string;
+    subtitle?: string;
+    items: SavingsGoal[];
+    tone?: "focus" | "priority" | "neutral" | "muted";
+  }) {
+    if (items.length === 0) return null;
+    const colors = {
+      focus: { bg: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
+      priority: { bg: "#fff7ed", border: "#fed7aa", color: "#9a3412" },
+      neutral: { bg: "#f8fafc", border: "#e2e8f0", color: "#475569" },
+      muted: { bg: "#fafaf9", border: "#e7e5e4", color: "#78716c" },
+    }[tone];
+
+    return (
+      <section style={{ marginBottom: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: "10px" }}>
+          <div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color, borderRadius: 999, padding: "5px 10px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".45px" }}>
+              {title}
+              <span style={{ opacity: .72 }}>({items.length})</span>
+            </div>
+            {subtitle && (
+              <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: 6, lineHeight: 1.45 }}>
+                {subtitle}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="savings-goal-list">{items.map(renderGoal)}</div>
+      </section>
+    );
+  }
 
   function openNewGoal() {
     if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
@@ -108,10 +169,10 @@ export default function TabunganPage() {
     <div className="savings-page">
       <PageHeader
         title="Goals"
-        subtitle="Perencanaan tabungan goal-based · Rekomendasi otomatis"
+        subtitle="Goal-based planning with auto priority, focus goals, and Advisor recommendations"
         action={
           <AppButton onClick={openNewGoal}>
-            + Tambah Tabungan
+            + Add Goal
           </AppButton>
         }
       />
@@ -152,68 +213,55 @@ export default function TabunganPage() {
         </div>
         <div className="savings-tabs-action">
           <AppButton variant="secondary" onClick={openNewGoal}>
-            + Goal Baru
+            + New Goal
           </AppButton>
         </div>
       </div>
 
       
-      {focusGoals.length > 0 && (
-        <div style={{ marginBottom: "18px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748b", marginBottom: "10px", textTransform: "uppercase", letterSpacing: ".4px" }}>
-            Focus Goals
-          </div>
-          <div className="goals-grid">
-            {focusGoals.map((goal) => {
-              const calc = calcGoal(goal);
-              return (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  calc={calc}
-                  onTopup={() => setTopupId(goal.id)}
-                  onWithdraw={() => setWithdrawId(goal.id)}
-                  onReconcile={() => setReconcileId(goal.id)}
-                  onEdit={() => setEditGoal(goal)}
-                  onStatus={changeStatus}
-                  onDelete={deleteGoal}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-{sortedGoals.length === 0 ? (
+      {sortedGoals.length === 0 ? (
         <EmptyState
           icon={<AppIcon name="saving" size={24} />}
-          title="Belum ada goal di kategori ini"
+          title="No goals in this category yet"
           action={
             tab === "active" ? (
               <AppButton onClick={openNewGoal}>
-                + Tambah Goal Pertama
+                + Add First Goal
               </AppButton>
             ) : undefined
           }
         >
-          Goal tabungan akan muncul di sini sesuai status yang dipilih.
+          Your goals will appear here based on the selected status.
         </EmptyState>
+      ) : tab === "active" ? (
+        <>
+          <GoalSection
+            title="Focus Goals"
+            subtitle="Your 1–3 main planning priorities. These goals are surfaced in Advisor first."
+            items={focusGoals}
+            tone="focus"
+          />
+          <GoalSection
+            title="Priority Goals"
+            subtitle="Auto-prioritized by FiNK because they are urgent, foundational, or behind schedule."
+            items={priorityGoals}
+            tone="priority"
+          />
+          <GoalSection
+            title="Active Goals"
+            subtitle="Goals that are still active but not currently marked as focus or high priority."
+            items={otherGoals}
+            tone="neutral"
+          />
+          <GoalSection
+            title="Long-Term / Maintain"
+            subtitle="Background goals that should continue steadily without taking over your monthly focus."
+            items={longTermGoals}
+            tone="muted"
+          />
+        </>
       ) : (
-        <div className="savings-goal-list">
-          {filtered.map((g) => (
-            <GoalCard
-              key={g.id}
-              goal={g}
-              calc={calcGoal(g)}
-              onEdit={setEditGoal}
-              onTopup={setTopupId}
-              onWithdraw={setWithdrawId}
-              onReconcile={setReconcileId}
-              onStatus={changeStatus}
-              onDelete={deleteGoal}
-            />
-          ))}
-        </div>
+        <div className="savings-goal-list">{otherGoals.map(renderGoal)}</div>
       )}
 
       {showNew && (

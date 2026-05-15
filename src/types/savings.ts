@@ -2,6 +2,8 @@
 
 export type GoalType   = 'darurat' | 'darurat_lanjutan' | 'rumah' | 'kendaraan' | 'pendidikan' | 'pensiun' | 'investasi' | 'biasa'
 export type GoalStatus = 'active' | 'pending' | 'complete' | 'archived'
+export type GoalPriorityLevel = 'critical' | 'high' | 'medium' | 'low' | 'maintain' | 'paused'
+export type GoalHealthStatus = 'ontrack' | 'behind' | 'atrisk' | 'complete'
 export type TxType     = 'topup' | 'withdraw'
 
 export interface GoalTransaction {
@@ -32,7 +34,7 @@ export interface SavingsGoal {
   history:     GoalTransaction[]
   focus?:      boolean
   priorityMode?: 'auto' | 'manual'
-  manualPriority?: 'high' | 'medium' | 'low'
+  manualPriority?: GoalPriorityLevel
   createdAt:   string
   updatedAt:   string
 }
