@@ -269,6 +269,7 @@ type FinancialPositionProps = {
   totalDebtPayment: number
   monthlySurplus: number
   emergencyMonths: number | null
+  emergencyNote: string
   savingRate: number
   expenseRate: number
   activeGoalCount: number
@@ -282,6 +283,7 @@ function FinancialPositionHero({
   totalDebtPayment,
   monthlySurplus,
   emergencyMonths,
+  emergencyNote,
   savingRate,
   expenseRate,
   activeGoalCount,
@@ -349,7 +351,7 @@ function FinancialPositionHero({
           {smallCard('Cash Bulan Ini', fmt(currentCash), currentCash > 0 ? 'Sisa uang yang belum dialokasikan' : 'Belum ada sisa positif', currentCash >= 0 ? '#15803d' : '#b91c1c', currentCash >= 0 ? '#f0fdf4' : '#fef2f2')}
           {smallCard('Monthly Surplus', `${monthlySurplus >= 0 ? '+' : '-'}${fmt(monthlySurplus)}`, 'Income - expenses - saving', monthlySurplus >= 0 ? '#15803d' : '#b91c1c', monthlySurplus >= 0 ? '#f0fdf4' : '#fef2f2')}
           {smallCard('Debt Payment', fmt(totalDebtPayment), 'Cicilan/kewajiban bulan ini', '#b7791f', '#fffbeb')}
-          {smallCard('Emergency Cover', emergencyMonths === null ? '—' : `${emergencyMonths.toFixed(1).replace('.', ',')} bln`, 'Berdasarkan goal dana darurat', emergencyMonths !== null && emergencyMonths >= 6 ? '#15803d' : '#b7791f', '#f8fafc')}
+          {smallCard('Emergency Cover', emergencyMonths === null ? 'Not Set' : `${emergencyMonths.toFixed(1).replace('.', ',')} bln`, emergencyNote, emergencyMonths !== null && emergencyMonths >= 6 ? '#15803d' : emergencyMonths !== null ? '#b7791f' : '#64748b', '#f8fafc')}
           {smallCard('Saving Rate', pct(savingRate), 'Persentase tabungan bulan ini', savingRate >= 20 ? '#15803d' : '#1d4ed8', '#f8fafc')}
         </div>
       </div>
@@ -450,7 +452,19 @@ const { curMonth, curYear } = useMonthContext()
   const totalAssets = trackedSavings + currentCash
   const netWorthEstimate = totalAssets - totalDebtPayment
   const emergencyGoal = goals.find(g => g.type === 'darurat' && g.status !== 'archived' && (g.current || 0) > 0)
-  const emergencyMonths = emergencyGoal?.expense && emergencyGoal.expense > 0 ? (emergencyGoal.current || 0) / emergencyGoal.expense : null
+  const emergencyMonthlyExpense =
+    emergencyGoal?.expense && emergencyGoal.expense > 0
+      ? emergencyGoal.expense
+      : totalExpense + totalDebtPayment
+  const emergencyMonths =
+    emergencyGoal && emergencyMonthlyExpense > 0
+      ? (emergencyGoal.current || 0) / emergencyMonthlyExpense
+      : null
+  const emergencyNote = emergencyGoal
+    ? (emergencyGoal.expense && emergencyGoal.expense > 0
+        ? 'Berdasarkan target dana darurat'
+        : 'Estimasi dari expenses + debt bulan ini')
+    : 'Buat goal dana darurat dulu'
   const activeTrackedGoals = goals.filter(g => g.status !== 'archived').length
 
   const topCategories = useMemo(() => {
@@ -501,6 +515,7 @@ const { curMonth, curYear } = useMonthContext()
         totalDebtPayment={totalDebtPayment}
         monthlySurplus={rawSisa}
         emergencyMonths={emergencyMonths}
+        emergencyNote={emergencyNote}
         savingRate={savingRate}
         expenseRate={expenseRate}
         activeGoalCount={activeTrackedGoals}
