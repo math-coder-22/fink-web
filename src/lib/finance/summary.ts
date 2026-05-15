@@ -1,6 +1,6 @@
 import type { BudgetCategory, DebtRow, IncomeCategory, MonthKey, SavingRow, Transaction } from '@/types/database'
 import type { SavingsGoal, GoalCalcResult } from '@/types/savings'
-import { buildGoalAdvisorItem, sortGoalsByAdvisor, type GoalAdvisorItem } from '@/lib/finance/goals'
+import { applyIncomeAwareGoalPlan, buildGoalAdvisorItem, sortGoalsByAdvisor, type GoalAdvisorItem, type GoalPlanSummary } from '@/lib/finance/goals'
 
 export const MONTHS_ORDER: MonthKey[] = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 export const MONTH_LABELS: Record<MonthKey, string> = {
@@ -62,6 +62,8 @@ export type AdvisorSummary = {
   priorities: AdvisorPriority[]
   goalInsights: GoalAdvisorItem[]
   focusGoals: GoalAdvisorItem[]
+  goalPlan: GoalPlanSummary
+  tradeoffs: { title: string; detail: string; tone: 'good' | 'warning' | 'danger' | 'neutral' }[]
   milestone: {
     title: string
     current: number
@@ -183,7 +185,7 @@ function calcGoalForAdvisor(g: SavingsGoal): GoalCalcResult {
 function buildGoalInsights(goals: SavingsGoal[]) {
   const active = (goals || []).filter(g => g.status === 'active')
   const sorted = sortGoalsByAdvisor(active, calcGoalForAdvisor)
-  return sorted.map(g => buildGoalAdvisorItem(g, calcGoalForAdvisor(g), goals)).slice(0, 6)
+  return sorted.map(g => buildGoalAdvisorItem(g, calcGoalForAdvisor(g), goals))
 }
 
 function scoreFromSummary(current: MonthlyTrendItem, debtRatio: number, milestoneProgress: number) {
@@ -233,6 +235,43 @@ function pickMilestone(goals: SavingsGoal[]) {
   }
 }
 
+function safeGoalAllocationCapacity(current: MonthlyTrendItem, currentPlan?: RawPlan | null) {
+  const debt = sumPlanDebt(currentPlan)
+  const minimumBuffer = Math.max(0, current.income * 0.05)
+  // Use actual saving when available, but protect cashflow and mandatory debt first.
+  const capacityFromBudget = Math.max(0, current.income - current.expense - debt - minimumBuffer)
+  const actualSaving = Math.max(0, current.saving || 0)
+  if (actualSaving > 0) return Math.min(Math.max(actualSaving, capacityFromBudget * 0.65), capacityFromBudget || actualSaving)
+  return capacityFromBudget
+}
+
+function buildTradeoffs(goalInsights: GoalAdvisorItem[], goalPlan: GoalPlanSummary): AdvisorSummary['tradeoffs'] {
+  const tradeoffs: AdvisorSummary['tradeoffs'] = []
+  const unrealistic = goalInsights.filter(g => g.feasibility === 'unrealistic').slice(0, 2)
+  if (goalPlan.status === 'overloaded') {
+    tradeoffs.push({
+      tone: 'warning',
+      title: 'Goals may need more income or more time',
+      detail: `Ideal monthly allocation is around Rp ${Math.round(goalPlan.totalIdealMonthly).toLocaleString('id-ID')}, while realistic capacity is around Rp ${Math.round(goalPlan.safeCapacity).toLocaleString('id-ID')}.`,
+    })
+  }
+  unrealistic.forEach(goal => {
+    tradeoffs.push({
+      tone: 'warning',
+      title: `${goal.name} needs a softer timeline`,
+      detail: 'This does not mean the goal is impossible. It means the current timeline may need additional income, a longer deadline, or a lower target.',
+    })
+  })
+  const highCount = goalInsights.filter(g => g.priority === 'critical' || g.priority === 'high').length
+  if (highCount > 3) {
+    tradeoffs.push({ tone: 'warning', title: 'Too many high-priority goals', detail: 'Focus on 1–3 important goals first so monthly allocation does not become too thin.' })
+  }
+  if (tradeoffs.length === 0) {
+    tradeoffs.push({ tone: 'good', title: 'Goal structure is manageable', detail: 'Current goals look reasonable. Keep reviewing them when income, expenses, or deadlines change.' })
+  }
+  return tradeoffs.slice(0, 3)
+}
+
 export function buildAdvisorSummary(params: {
   currentMonth: MonthKey
   currentYear: number
@@ -244,10 +283,16 @@ export function buildAdvisorSummary(params: {
   const previous = params.trend.length >= 2 ? params.trend[params.trend.length - 2] : undefined
   const recent3 = params.trend.slice(-3)
   const avg = (key: keyof MonthlyTrendItem) => recent3.length ? recent3.reduce((s, m) => s + Number(m[key] || 0), 0) / recent3.length : 0
-  const debtRatio = current.income > 0 ? (sumPlanDebt(params.currentPlan) / current.income) * 100 : 0
-  const goalInsights = buildGoalInsights(params.goals || [])
+  const debt = sumPlanDebt(params.currentPlan)
+  const debtRatio = current.income > 0 ? (debt / current.income) * 100 : 0
+  const baseGoalInsights = buildGoalInsights(params.goals || [])
+  const capacity = safeGoalAllocationCapacity(current, params.currentPlan)
+  const plannedGoals = applyIncomeAwareGoalPlan(baseGoalInsights, capacity)
+  const goalInsights = plannedGoals.items.slice(0, 8)
+  const goalPlan = plannedGoals.plan
   const focusGoals = goalInsights.filter(g => g.focus || g.priority === 'critical' || g.priority === 'high').slice(0, 3)
   const milestone = pickMilestone(params.goals || [])
+  const tradeoffs = buildTradeoffs(goalInsights, goalPlan)
   const milestoneProgress = milestone?.progress || 0
   const score = scoreFromSummary(current, debtRatio, milestoneProgress)
   const status = score >= 75 ? 'good' : score >= 50 ? 'warning' : 'danger'
@@ -259,21 +304,25 @@ export function buildAdvisorSummary(params: {
   if (current.savingRate < 10 && current.income > 0) risks.push({ tone:'warning', title:'Saving rate rendah', detail:`Saving rate baru ${Math.round(current.savingRate)}%. Target awal yang sehat minimal 10%.` })
   if (debtRatio > 35) risks.push({ tone:'danger', title:'Rasio cicilan tinggi', detail:`Rasio cicilan sekitar ${Math.round(debtRatio)}% dari income.` })
   if (previous && current.expense > previous.expense * 1.15) risks.push({ tone:'warning', title:'Expense naik dari bulan lalu', detail:`Pengeluaran naik sekitar ${Math.round(pctChange(current.expense, previous.expense) || 0)}%.` })
+  if (goalPlan.status === 'overloaded') risks.push({ tone:'warning', title:'Goal timeline terlalu agresif', detail:'Beberapa tujuan mungkin membutuhkan tambahan pemasukan, deadline lebih panjang, atau prioritas yang lebih sedikit.' })
   if (risks.length === 0) risks.push({ tone:'good', title:'Tidak ada sinyal besar', detail:'Belum ada risiko besar dari data bulan ini.' })
 
   const priorities: AdvisorPriority[] = []
   if (current.cashflow < 0) priorities.push({ level:'high', title:'Pulihkan cashflow dulu', detail:'Tahan belanja non-prioritas sampai cashflow kembali positif.' })
   if (current.savingRate < 10 && current.income > 0) priorities.push({ level:'medium', title:'Naikkan saving rate bertahap', detail:`Mulai dari 10% income, sekitar Rp ${Math.round(current.income * 0.1).toLocaleString('id-ID')}.` })
   if (debtRatio > 25) priorities.push({ level: debtRatio > 35 ? 'high' : 'medium', title:'Jaga beban cicilan', detail:'Hindari cicilan baru dan prioritaskan pelunasan utang berbunga tinggi.' })
+  if (goalPlan.status === 'overloaded') priorities.push({ level:'high', title:'Review income or timeline', detail:'Your goals need more allocation than current safe capacity. Consider increasing income, extending deadlines, or reducing active focus goals.' })
   focusGoals.slice(0, 2).forEach((g) => {
-    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Focus on ${g.name}`, detail: `${g.recommendation} Reason: ${g.reason}` })
+    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Focus on ${g.name}`, detail: `${g.recommendation} ${g.realisticEtaLabel !== 'No ETA yet' ? `Realistic ETA: ${g.realisticEtaLabel}.` : ''}` })
   })
   if (milestone) priorities.push({ level:'low', title:`Percepat ${milestone.title}`, detail: milestone.monthly > 0 ? `Pertahankan alokasi Rp ${Math.round(milestone.monthly).toLocaleString('id-ID')} per bulan.` : milestone.detail })
   if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Cashflow, saving, dan risiko utama masih terkendali.' })
 
   let mainInsight = 'FiNK does not have enough data yet to read your monthly pattern.'
   const topGoal = focusGoals[0]
-  if (topGoal && (topGoal.priority === 'critical' || topGoal.priority === 'high')) {
+  if (goalPlan.status === 'overloaded') {
+    mainInsight = `Your goals are meaningful, but the current timeline may need more income or more time. FiNK will prioritize the most important goals first.`
+  } else if (topGoal && (topGoal.priority === 'critical' || topGoal.priority === 'high')) {
     mainInsight = `${topGoal.name} should be the main focus now. ${topGoal.recommendation}`
   } else if (current.income > 0) {
     if (current.cashflow < 0) mainInsight = `This month needs attention: cashflow is negative by Rp ${Math.abs(Math.round(current.cashflow)).toLocaleString('id-ID')}. Prioritize stabilizing spending before adding new goals.`
@@ -310,6 +359,8 @@ export function buildAdvisorSummary(params: {
     priorities,
     goalInsights,
     focusGoals,
+    goalPlan,
+    tradeoffs,
     milestone,
   }
 }

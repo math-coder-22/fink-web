@@ -73,6 +73,35 @@ function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
   );
 }
 
+function FeasibilityBadge({ status, label }: { status: string; label: string }) {
+  const map: Record<string, { bg: string; color: string; border: string }> = {
+    realistic: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
+    aggressive: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
+    unrealistic: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
+    unknown: { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
+    complete: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
+  };
+  const t = map[status] || map.unknown;
+  return (
+    <span
+      style={{
+        fontSize: "9.5px",
+        fontWeight: 800,
+        padding: "2px 7px",
+        borderRadius: "99px",
+        background: t.bg,
+        color: t.color,
+        border: `1px solid ${t.border}`,
+        textTransform: "uppercase" as const,
+        letterSpacing: ".3px",
+        whiteSpace: "nowrap" as const,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 /* ─── KEBAB MENU (fixed-position dropdown, tidak terpotong) ─── */
 function KebabMenu({
   goal,
@@ -413,6 +442,7 @@ export default function GoalCard({
             <div className="savings-goal-title">{goal.name}</div>
             <TrackBadge status={calc.trackStatus} />
             <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
+            <FeasibilityBadge status={advisor.feasibility} label={advisor.feasibilityLabel} />
           </div>
           <div className="savings-goal-subtitle">
             {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
@@ -434,10 +464,13 @@ export default function GoalCard({
             </span>
           </div>
           <div className="savings-goal-status-note" style={{ color:'#475569', lineHeight:1.45 }}>
-            {advisor.healthLabel} · {advisor.recommendation}
+            {advisor.healthLabel} · {advisor.feasibilityMessage}
           </div>
           <div className="savings-goal-status-note" style={{ color:'#94a3b8', fontWeight:600, marginTop:4, lineHeight:1.45 }}>
             {advisor.mode === 'manual' ? 'Manual priority' : 'Auto priority'} · {advisor.reason}
+          </div>
+          <div className="savings-goal-status-note" style={{ color:'#64748b', fontWeight:700, marginTop:4, lineHeight:1.45 }}>
+            ETA by current allocation: {advisor.etaLabel} · Ideal/month: {fmt(advisor.idealMonthly)}
           </div>
           {goal.type === "darurat" && calc.coverage !== undefined && (
             <div

@@ -21,8 +21,15 @@ type GoalPlannerItem = {
   target: number
   monthly?: number
   monthlyNeeded?: number
+  idealMonthly?: number
+  suggestedMonthly?: number
   gap?: number
   monthsLeft?: number
+  etaLabel?: string
+  realisticEtaLabel?: string
+  feasibilityLabel?: string
+  feasibilityMessage?: string
+  allocationGap?: number
   typeLabel?: string
   focus: boolean
   mode: 'auto' | 'manual'
@@ -71,6 +78,16 @@ type AdvisorSummary = {
   priorities: { level: Priority; title: string; detail: string }[]
   goalInsights: GoalPlannerItem[]
   focusGoals: GoalPlannerItem[]
+  goalPlan: {
+    safeCapacity: number
+    totalIdealMonthly: number
+    allocatedMonthly: number
+    capacityGap: number
+    status: 'healthy' | 'stretched' | 'overloaded' | 'no_capacity'
+    statusLabel: string
+    message: string
+  }
+  tradeoffs: { tone: Tone; title: string; detail: string }[]
   milestone: {
     title: string
     current: number
@@ -252,6 +269,22 @@ export default function FinancialDoctorPage() {
             <MetricCard label="Debt Ratio" value={pct(data.ratios.debtRatio)} tone={data.ratios.debtRatio <= 25 ? 'good' : data.ratios.debtRatio <= 35 ? 'warning' : 'danger'} note="Debt payment ratio against income" />
           </div>
 
+          <Card style={{ marginBottom:14 }}>
+            <SectionHead
+              title="Realistic Goal Plan"
+              subtitle="Income-aware allocation so recommendations stay sustainable, not forced."
+              right={<Badge tone={data.goalPlan.status === 'healthy' ? 'good' : data.goalPlan.status === 'stretched' ? 'warning' : 'danger'}>{data.goalPlan.statusLabel}</Badge>}
+            />
+            <div style={{ padding:14, display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:10 }} className="advisor-plan-grid">
+              <MetricCard label="Safe Capacity" value={fmt(data.goalPlan.safeCapacity)} tone={data.goalPlan.safeCapacity > 0 ? 'good' : 'danger'} note="Estimated monthly allocation room" />
+              <MetricCard label="Ideal Need" value={fmt(data.goalPlan.totalIdealMonthly)} tone={data.goalPlan.totalIdealMonthly <= data.goalPlan.safeCapacity ? 'good' : 'warning'} note="To keep selected timelines" />
+              <MetricCard label="Gap" value={fmt(data.goalPlan.capacityGap)} tone={data.goalPlan.capacityGap <= 0 ? 'good' : 'danger'} note="Extra income, time, or target adjustment needed" />
+            </div>
+            <div style={{ padding:'0 14px 14px', color:'#4b5563', fontSize:12.4, lineHeight:1.55 }}>
+              {data.goalPlan.message}
+            </div>
+          </Card>
+
           <div className="advisor-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0,1.08fr) minmax(320px,.92fr)', gap:14 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <Card>
@@ -287,6 +320,21 @@ export default function FinancialDoctorPage() {
                   })}
                 </div>
               </Card>
+
+              <Card>
+                <SectionHead title="Trade-off Analysis" subtitle="Realistic notes about income, timelines, and focus choices." />
+                <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
+                  {data.tradeoffs.map((item, idx) => {
+                    const t = toneMap[item.tone]
+                    return (
+                      <div key={idx} style={{ border:`1px solid ${t.border}`, background:t.bg, borderRadius:13, padding:'12px 13px' }}>
+                        <div style={{ fontSize:12.5, fontWeight:950, color:t.color }}>{item.title}</div>
+                        <div style={{ marginTop:6, fontSize:12, color:'#4b5563', lineHeight:1.55 }}>{item.detail}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -307,6 +355,17 @@ export default function FinancialDoctorPage() {
                         </div>
                         <div style={{ marginTop:9 }}><ProgressBar value={goal.progress} color={t.color} /></div>
                         <div style={{ marginTop:8, fontSize:11.8, color:'#4b5563', lineHeight:1.5 }}>{goal.recommendation}</div>
+                        <div style={{ marginTop:8, display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                          <div style={{ background:'#fff', border:'1px solid rgba(148,163,184,.22)', borderRadius:10, padding:'8px 9px' }}>
+                            <div style={{ fontSize:10, color:'#94a3b8', fontWeight:900, textTransform:'uppercase', letterSpacing:'.5px' }}>Suggested</div>
+                            <div style={{ marginTop:3, fontSize:12, color:'#111827', fontWeight:950, fontFamily:'var(--font-mono), monospace' }}>{fmt(goal.suggestedMonthly || 0)}</div>
+                          </div>
+                          <div style={{ background:'#fff', border:'1px solid rgba(148,163,184,.22)', borderRadius:10, padding:'8px 9px' }}>
+                            <div style={{ fontSize:10, color:'#94a3b8', fontWeight:900, textTransform:'uppercase', letterSpacing:'.5px' }}>Realistic ETA</div>
+                            <div style={{ marginTop:3, fontSize:12, color:'#111827', fontWeight:950 }}>{goal.realisticEtaLabel || 'No ETA yet'}</div>
+                          </div>
+                        </div>
+                        <div style={{ marginTop:8, fontSize:11.3, color:t.color, fontWeight:850 }}>{goal.feasibilityLabel || 'Realistic check'}</div>
                       </div>
                     )
                   }) : (
@@ -326,7 +385,7 @@ export default function FinancialDoctorPage() {
                         <div style={{ width:22, height:22, borderRadius:999, background:t.soft, color:t.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:950 }}>{idx + 1}</div>
                         <div style={{ minWidth:0 }}>
                           <div style={{ fontSize:12.5, color:'#111827', fontWeight:950, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{goal.name}</div>
-                          <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{goal.typeLabel || 'Goal'} · {goal.healthLabel} · {goal.mode === 'manual' ? 'Manual' : 'Auto'}</div>
+                          <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{goal.typeLabel || 'Goal'} · {goal.healthLabel} · {goal.feasibilityLabel || 'Planning'}</div>
                         </div>
                         <Badge tone={tone}>{goal.priorityLabel}</Badge>
                       </div>
@@ -408,12 +467,14 @@ export default function FinancialDoctorPage() {
           .advisor-page .advisor-main-grid {
             grid-template-columns: 1fr !important;
           }
-          .advisor-page .advisor-metric-grid {
+          .advisor-page .advisor-metric-grid,
+          .advisor-page .advisor-plan-grid {
             grid-template-columns: 1fr 1fr !important;
           }
         }
         @media (max-width: 560px) {
-          .advisor-page .advisor-metric-grid {
+          .advisor-page .advisor-metric-grid,
+          .advisor-page .advisor-plan-grid {
             grid-template-columns: 1fr !important;
           }
         }
