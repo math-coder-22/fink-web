@@ -52,7 +52,7 @@ const trendLabel = (value: number | null, goodWhenUp = true) => {
 }
 
 function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
-  const chartData = data.filter(d => d.income > 0 || d.expense > 0 || d.saving > 0)
+  const chartData = data.filter(d => d.income > 0 || d.expense > 0 || d.saving > 0).slice(-3)
   const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.expense, d.saving]))
   const current = data[data.length - 1]
   const previous = data[data.length - 2]
@@ -63,8 +63,8 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
     <Card style={{ marginBottom:'14px' }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
-        subtitle="Perbandingan income, expense, dan saving beberapa bulan terakhir"
-        right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>6 bulan</span>}
+        subtitle="Compare your last 3 months performance"
+        right={<span style={{ fontSize:11, color:'#9ca3af', fontWeight:700 }}>3 months</span>}
       />
       <div style={{ padding:'15px 16px' }}>
         {chartData.length === 0 ? (
@@ -162,6 +162,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
           }
           .dash-summary-grid > div:nth-child(-n+2) {
             border-bottom: 1px solid #e7ebf0 !important;
+          }
+          .overview-chart-layout {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
@@ -343,9 +346,14 @@ const { curMonth, curYear } = useMonthContext()
         isMobile={isMobile}
       />
 
-      <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
-
-      <MonthlyComparisonChart data={monthlyTrend} />
+      <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'stretch', marginBottom:'14px' }}>
+        <div style={{ minWidth:0 }}>
+          <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
+        </div>
+        <div style={{ minWidth:0 }}>
+          <MonthlyComparisonChart data={monthlyTrend} />
+        </div>
+      </div>
 
       {/* Insight */}
       <Card style={{ marginBottom:'14px' }}>
