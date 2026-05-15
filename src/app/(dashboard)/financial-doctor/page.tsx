@@ -385,7 +385,7 @@ export default function FinancialDoctorPage() {
                 <SectionHead title="My Guide" subtitle="A simple flow to keep FiNK acting like a planner." />
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:9 }}>
                   {[
-                    ['Record this month's transactions', data.monthly.transactionCount > 0],
+                    ["Record this month’s transactions", data.monthly.transactionCount > 0],
                     ['Keep cashflow positive', data.monthly.cashflow >= 0],
                     ['Reach at least 10% saving rate', data.ratios.savingRate >= 10],
                     ['Review focus goals in Advisor', !!(data.focusGoals && data.focusGoals.length)],
