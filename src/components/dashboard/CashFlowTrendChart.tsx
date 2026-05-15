@@ -133,7 +133,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const today = Math.max(1, curDay || new Date().getDate())
   const totalDays = daysInMonth || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
   const visibleUntilDay = Math.min(today, totalDays)
-  const xDomainDays = Math.max(2, visibleUntilDay)
+  const xDomainDays = Math.max(2, totalDays)
 
   const fallbackIncome = sumIncome(income)
   const fallbackSaving = sumSaving(saving)
@@ -150,8 +150,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
   const totalCashOut = points[points.length - 1]?.cashOut || 0
 
   const width = 980
-  const height = 300
-  const pad = { l: 70, r: 28, t: 24, b: 42 }
+  const height = 400
+  const pad = { l: 70, r: 28, t: 10, b: 38 }
   const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
   const scale = makeScale(maxValue, width, height, pad)
 
@@ -216,7 +216,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
         </div>
       </div>
 
-      <div className="fink-cashflow-body" style={{ padding: '12px 16px 14px', flex: 1, display: 'flex', minHeight: 0 }}>
+      <div className="fink-cashflow-body" style={{ padding: '8px 16px 12px', flex: 1, display: 'flex', minHeight: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
@@ -224,7 +224,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           onMouseMove={handleMove}
           onMouseLeave={() => setHoverDay(null)}
           className="fink-cashflow-svg"
-          style={{ width:'100%', height:'100%', minHeight:'330px', display:'block', cursor:'crosshair', flex: 1 }}
+          style={{ width:'100%', height:'100%', minHeight:'360px', display:'block', cursor:'crosshair', flex: 1 }}
         >
           {yTicks.map((tick, idx) => {
             const y = scale.y(tick)
@@ -352,8 +352,8 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
             padding: 8px 8px 10px !important;
           }
           .fink-cashflow-svg {
-            height: 240px !important;
-            min-height: 240px !important;
+            height: 280px !important;
+            min-height: 280px !important;
           }
           .fink-cashflow-legend {
             font-size: 10.5px !important;

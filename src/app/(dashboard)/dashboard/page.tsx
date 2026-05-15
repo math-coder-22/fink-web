@@ -302,6 +302,13 @@ const { curMonth, curYear } = useMonthContext()
   const activeGoals = useMemo(() => goals.filter(g => g.status === 'active').slice(0,4), [goals])
   const insight = getInsight(totalIncome, totalExpense, totalSaving, rawSisa)
 
+  const now = new Date()
+  const daysInActiveMonth = new Date(curYear, curMonth + 1, 0).getDate()
+  const chartVisibleDay =
+    now.getFullYear() === curYear && now.getMonth() === curMonth
+      ? Math.min(now.getDate(), daysInActiveMonth)
+      : daysInActiveMonth
+
   return (
     <div className="fink-dashboard-page">
       {/* Header */}
@@ -330,7 +337,7 @@ const { curMonth, curYear } = useMonthContext()
 
       <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'stretch', marginBottom:'14px' }}>
         <div style={{ minWidth:0, display:'flex' }}>
-          <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
+          <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} curDay={chartVisibleDay} daysInMonth={daysInActiveMonth} />
         </div>
         <div style={{ minWidth:0, display:'flex' }}>
           <MonthlyComparisonChart data={monthlyTrend} />
