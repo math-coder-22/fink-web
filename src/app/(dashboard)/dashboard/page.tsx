@@ -54,13 +54,8 @@ const trendLabel = (value: number | null, goodWhenUp = true) => {
 function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
   const chartData = data.filter(d => d.income > 0 || d.expense > 0 || d.saving > 0).slice(-3)
   const maxVal = Math.max(1, ...chartData.flatMap(d => [d.income, d.expense, d.saving]))
-  const current = data[data.length - 1]
-  const previous = data[data.length - 2]
-  const savingTrend = trendLabel(trendPct(current?.savingRate, previous?.savingRate), true)
-  const expenseTrend = trendLabel(trendPct(current?.expense, previous?.expense), false)
-
   return (
-    <Card style={{ marginBottom:'14px' }}>
+    <Card style={{ marginBottom:'14px', height:'100%' }}>
       <CardHead
         title="Monthly Comparison" icon={<AppIcon name="chart" size={16} />}
         subtitle="Compare your last 3 months performance"
@@ -71,38 +66,20 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
           <div style={{ fontSize:12, color:'#9ca3af' }}>Belum ada data historis untuk ditampilkan.</div>
         ) : (
           <>
-            <div className="monthly-trend-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:9, marginBottom:14 }}>
-              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
-                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Saving Rate</div>
-                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{pct(current?.savingRate || 0)}</div>
-                <div style={{ marginTop:4, fontSize:10.5, color:savingTrend.color }}>{savingTrend.text}</div>
-              </div>
-              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
-                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Expense</div>
-                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(current?.expense || 0)}</div>
-                <div style={{ marginTop:4, fontSize:10.5, color:expenseTrend.color }}>{expenseTrend.text}</div>
-              </div>
-              <div style={{ border:'1px solid #e3e7ee', borderRadius:10, padding:'10px 11px', background:'#f9fafb' }}>
-                <div style={{ fontSize:10, fontWeight:900, color:'#6b7280', textTransform:'uppercase' }}>Surplus</div>
-                <div style={{ marginTop:4, fontSize:17, fontWeight:900, color:(current?.cashflow || 0) >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(current?.cashflow || 0)}</div>
-                <div style={{ marginTop:4, fontSize:10.5, color:'#9ca3af' }}>Income - expense - saving</div>
-              </div>
-            </div>
-
-            <div style={{ display:'flex', alignItems:'flex-end', gap:10, minHeight:180, padding:'8px 2px 0', overflowX:'auto' }}>
+            <div style={{ display:'flex', alignItems:'flex-end', gap:12, minHeight:320, padding:'22px 10px 0', overflowX:'auto' }}>
               {chartData.map(item => (
-                <div key={`${item.month}-${item.year}`} style={{ minWidth:78, flex:1 }}>
-                  <div style={{ height:138, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:4, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
-                    <div title={`Income ${fmt(item.income)}`} style={{ width:13, height:`${Math.max(3, (item.income / maxVal) * 128)}px`, background:'#16a34a', borderRadius:'5px 5px 0 0' }} />
-                    <div title={`Expense ${fmt(item.expense)}`} style={{ width:13, height:`${Math.max(3, (item.expense / maxVal) * 128)}px`, background:'#ef4444', borderRadius:'5px 5px 0 0' }} />
-                    <div title={`Saving ${fmt(item.saving)}`} style={{ width:13, height:`${Math.max(3, (item.saving / maxVal) * 128)}px`, background:'#2563eb', borderRadius:'5px 5px 0 0' }} />
+                <div key={`${item.month}-${item.year}`} style={{ minWidth:84, flex:1 }}>
+                  <div style={{ height:250, display:'flex', alignItems:'flex-end', justifyContent:'center', gap:8, borderBottom:'1px solid #e5e7eb', paddingBottom:0 }}>
+                    <div title={`Income ${fmt(item.income)}`} style={{ width:18, height:`${Math.max(4, (item.income / maxVal) * 192)}px`, background:'#16a34a', borderRadius:'6px 6px 0 0' }} />
+                    <div title={`Expense ${fmt(item.expense)}`} style={{ width:18, height:`${Math.max(4, (item.expense / maxVal) * 192)}px`, background:'#ef4444', borderRadius:'6px 6px 0 0' }} />
+                    <div title={`Saving ${fmt(item.saving)}`} style={{ width:18, height:`${Math.max(4, (item.saving / maxVal) * 192)}px`, background:'#2563eb', borderRadius:'6px 6px 0 0' }} />
                   </div>
-                  <div style={{ marginTop:7, textAlign:'center', fontSize:10.5, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
-                  <div style={{ marginTop:3, textAlign:'center', fontSize:10, color:item.cashflow >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(item.cashflow)}</div>
+                  <div style={{ marginTop:8, textAlign:'center', fontSize:11, color:'#6b7280', fontWeight:800 }}>{item.label}</div>
+                  <div style={{ marginTop:3, textAlign:'center', fontSize:10.5, color:item.cashflow >= 0 ? '#15803d' : '#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{fmtShort(item.cashflow)}</div>
                 </div>
               ))}
             </div>
-            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:13, fontSize:10.5, color:'#6b7280' }}>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginTop:12, fontSize:10.5, color:'#6b7280' }}>
               <span><b style={{ color:'#16a34a' }}>■</b> Income</span>
               <span><b style={{ color:'#ef4444' }}>■</b> Expense</span>
               <span><b style={{ color:'#2563eb' }}>■</b> Saving</span>
@@ -347,10 +324,10 @@ const { curMonth, curYear } = useMonthContext()
       />
 
       <div className="overview-chart-layout" style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:'14px', alignItems:'stretch', marginBottom:'14px' }}>
-        <div style={{ minWidth:0 }}>
+        <div style={{ minWidth:0, height:'100%' }}>
           <CashFlowTrendChart tx={tx} income={income} saving={saving} debt={debt} />
         </div>
-        <div style={{ minWidth:0 }}>
+        <div style={{ minWidth:0, height:'100%' }}>
           <MonthlyComparisonChart data={monthlyTrend} />
         </div>
       </div>

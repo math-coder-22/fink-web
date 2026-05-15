@@ -200,6 +200,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
       boxShadow: '0 2px 10px rgba(15,23,42,.05)',
       overflow: 'hidden',
       marginBottom: 14,
+      height: '100%',
     }}>
       <div className="fink-cashflow-head" style={{
         padding: '14px 16px 10px',
