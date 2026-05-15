@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { SavingsGoal } from "@/types/savings";
+import { AppIcon } from "@/components/ui/design";
 
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
@@ -62,10 +63,11 @@ export function TopupModal({
             alignItems: "center",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 700, color: "#1a5c42" }}>
-            ↑ Setor Dana
+          <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#1a5c42" }}>
+            <AppIcon name="income" size={15} />Setor Dana
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
             style={{
               border: "none",
@@ -74,10 +76,13 @@ export function TopupModal({
               width: "26px",
               height: "26px",
               cursor: "pointer",
-              fontSize: "15px",
+              color: "#4b5563",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ×
+            <AppIcon name="close" size={15} />
           </button>
         </div>
         <div
@@ -222,10 +227,11 @@ export function WithdrawModal({
             alignItems: "center",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 700, color: "#b45309" }}>
-            ↓ Tarik Dana
+          <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#b45309" }}>
+            <AppIcon name="expense" size={15} />Tarik Dana
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
             style={{
               border: "none",
@@ -234,10 +240,13 @@ export function WithdrawModal({
               width: "26px",
               height: "26px",
               cursor: "pointer",
-              fontSize: "15px",
+              color: "#4b5563",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ×
+            <AppIcon name="close" size={15} />
           </button>
         </div>
         <div
@@ -430,7 +439,7 @@ export function ReconcileModal({
             <div
               style={{ fontSize: "15px", fontWeight: 700, color: "#92400e" }}
             >
-              ⚖ Reconcile Saldo
+              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Saldo</span>
             </div>
             <div
               style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}
@@ -439,6 +448,7 @@ export function ReconcileModal({
             </div>
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
             style={{
               border: "none",
@@ -447,10 +457,13 @@ export function ReconcileModal({
               width: "26px",
               height: "26px",
               cursor: "pointer",
-              fontSize: "15px",
+              color: "#4b5563",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ×
+            <AppIcon name="close" size={15} />
           </button>
         </div>
         <div
@@ -672,8 +685,8 @@ export function SummaryCard({
 
       <div className="savings-summary-tip">
         {count === 0
-          ? "💡 Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
-          : `💡 Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
+          ? "Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
+          : `Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
       </div>
     </div>
   );

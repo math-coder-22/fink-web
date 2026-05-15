@@ -10,6 +10,7 @@ import CatatanHarian from '@/components/bulanan/CatatanHarian'
 import { RekonModal, TxDetailModal } from '@/components/bulanan/BulananModals'
 import type { MonthKey } from '@/types/database'
 import DebtPanel from '@/components/bulanan/DebtPanel'
+import { AppIcon } from '@/components/ui/design'
 
 type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
@@ -92,7 +93,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     )
     if (!confirmed) return
     await copyBudgetToNext()
-    alert(`✓ Budget berhasil disalin ke ${nextLabel}!`)
+    alert(`Budget berhasil disalin ke ${nextLabel}!`)
   }
 
 
@@ -151,8 +152,8 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <div style={{ textAlign:'right', whiteSpace:'nowrap' }}>PLAN / ACTUAL</div>
         ) : (
           <>
-            <div style={{ minWidth:'100px', textAlign:'right', whiteSpace:'nowrap' }}>Planned</div>
-            <div style={{ minWidth:'100px', textAlign:'right', whiteSpace:'nowrap' }}>Actual</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', whiteSpace:'nowrap' }}>Planned</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', whiteSpace:'nowrap' }}>Actual</div>
           </>
         )}
         <div style={{ width:'18px' }}/>
@@ -200,156 +201,134 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
-          {/* Reflection → Reconcile → Copy */}
+          {/* Reflection, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            🪞 Reflection
+            <AppIcon name="mirror" size={14} /> Reflection
           </button>
           <button onClick={()=>setRekonOpen(true)}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            ⚖️ Reconcile
+            <AppIcon name="scale" size={14} /> Reconcile
           </button>
           <button onClick={handleCopyBudget}
             style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
-            📋 Copy →
+            <AppIcon name="copy" size={14} /> Copy
           </button>
         </div>
       </div>
 
       {/* ── REFLECTION MODAL ── */}
       {refleksiOpen && (() => {
-        const totalIncome  = incomeComputed.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
-        const totalSavings = savingComputed.reduce((s,r)=>s+(r.actual||0),0)
-        const totalExp     = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
-        const totalDebt    = debtComputed.reduce((s,r)=>s+(r.actual||0),0)
+        const incomeItems = incomeComputed.flatMap(c => c.items).filter(i => (i.actual || 0) > 0)
+        const totalIncome = incomeItems.reduce((s, i) => s + (i.actual || 0), 0)
+        const totalSavings = savingComputed.reduce((s, r) => s + (r.actual || 0), 0)
+        const totalExp = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
+        const totalDebt = debtComputed.reduce((s, r) => s + (r.actual || 0), 0)
         const totalOutflow = totalExp + totalDebt
-        const cashAfterOutflow = totalIncome - totalOutflow
-        const savingRate = totalIncome > 0 ? Math.round((totalSavings/totalIncome)*100) : 0
-        const expenseRate = totalIncome > 0 ? Math.round((totalExp/totalIncome)*100) : 0
-        const debtRate = totalIncome > 0 ? Math.round((totalDebt/totalIncome)*100) : 0
-        const finalBalance = rawSisa
+        const finalCashflow = totalIncome - totalOutflow - totalSavings
+        const planIncome = incomeComputed.flatMap(c => c.items).reduce((s, i) => s + (i.plan || 0), 0)
+        const planSavings = savingComputed.reduce((s, r) => s + (r.plan || 0), 0)
+        const planExp = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
+        const planDebt = debtComputed.reduce((s, r) => s + (r.plan || 0), 0)
+        const expensePct = planExp > 0 ? Math.round((totalExp / planExp) * 100) : 0
+        const debtPct = planDebt > 0 ? Math.round((totalDebt / planDebt) * 100) : 0
+        const savingPct = planSavings > 0 ? Math.round((totalSavings / planSavings) * 100) : 0
+        const cashflowColor = finalCashflow >= 0 ? '#15803d' : '#b91c1c'
+        const money = (n: number) => `${n < 0 ? '-' : ''}${fmt(n)}`
 
-        const miniLabel: React.CSSProperties = { fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }
-        const row: React.CSSProperties = { display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', fontSize:'12.5px' }
-        const mono: React.CSSProperties = { fontFamily:'var(--font-mono), monospace', fontWeight:700, whiteSpace:'nowrap' }
-        const softCard: React.CSSProperties = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'13px 14px' }
-        const scoreColor = finalBalance >= 0 ? '#15803d' : '#b91c1c'
+        const metricRow = (label: string, value: number, color = '#111827') => (
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
+            <span style={{ fontSize:'12.5px', color:'#64748b' }}>{label}</span>
+            <span style={{ fontSize:'12.5px', fontWeight:700, color, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(value)}</span>
+          </div>
+        )
+
+        const progressRow = (label: string, pct: number, color: string, caption: string) => (
+          <div style={{ padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px', marginBottom:'6px' }}>
+              <span style={{ fontSize:'12.5px', color:'#4b5563', fontWeight:600 }}>{label}</span>
+              <span style={{ fontSize:'11.5px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{pct || 0}%</span>
+            </div>
+            <div style={{ height:'5px', background:'#eef2f7', borderRadius:'999px', overflow:'hidden' }}>
+              <div style={{ height:'100%', width:`${Math.min(100, Math.max(0, pct || 0))}%`, background:color, borderRadius:'999px' }} />
+            </div>
+            <div style={{ fontSize:'10.5px', color:'#94a3b8', marginTop:'4px' }}>{caption}</div>
+          </div>
+        )
 
         return (
           <div onClick={e=>{ if(e.target===e.currentTarget) setRefleksiOpen(false) }}
-            style={{ position:'fixed', inset:0, background:'rgba(15,23,42,.42)', zIndex:800, display:'flex', alignItems:'stretch', justifyContent:'flex-end', padding:isMobile?'12px':'20px' }}>
+            style={{ position:'fixed', inset:0, background:'rgba(15,23,42,.42)', zIndex:800, display:'flex', alignItems:'flex-start', justifyContent:'flex-end', padding:'60px 20px 20px' }}>
             <div style={{
-              background:'#fff', borderRadius:'16px', width:'100%', maxWidth:isMobile?'100%':'460px',
-              maxHeight:'calc(100dvh - 40px)', overflowY:'auto', alignSelf:'center',
-              boxShadow:'0 24px 70px rgba(15,23,42,.24)', border:'1px solid #e3e7ee',
-              animation:'slideIn .2s ease',
+              background:'#fff', borderRadius:'14px', width:'100%', maxWidth:'430px',
+              maxHeight:'calc(100dvh - 80px)', overflowY:'auto',
+              boxShadow:'0 24px 70px rgba(15,23,42,.22)',
+              animation:'slideIn .2s ease', border:'1px solid #e3e7ee'
             }}>
-              {/* Head */}
-              <div style={{ position:'sticky', top:0, background:'rgba(255,255,255,.96)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
+              <div style={{ position:'sticky', top:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
                 <div>
-                  <div style={{ fontSize:'15px', fontWeight:800, color:'#111827' }}>Monthly Reflection</div>
-                  <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear} · Kakeibo review</div>
+                  <div style={{ fontSize:'15px', fontWeight:800, color:'#111827', display:'flex', alignItems:'center', gap:7 }}><AppIcon name="mirror" size={16} /> Monthly Reflection</div>
+                  <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear} · monthly cashflow review</div>
                 </div>
-                <button onClick={()=>setRefleksiOpen(false)} style={{ width:'30px', height:'30px', border:'1px solid #e3e7ee', background:'#f7f8fa', borderRadius:'8px', fontSize:'17px', cursor:'pointer', color:'#4b5563' }}>×</button>
+                <button aria-label="Close reflection" onClick={()=>setRefleksiOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f7f8fa', borderRadius:'8px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
               </div>
 
-              <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:'14px' }}>
-
-                {/* Summary */}
-                <div style={{ ...softCard, background:'#f8fafc' }}>
-                  <div style={{ ...miniLabel, marginBottom:'10px' }}>Ringkasan Bulan Ini</div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
-                    <div style={row}><span style={{ color:'#4b5563' }}>Total Income</span><span style={{ ...mono, color:'#15803d' }}>{fmt(totalIncome)}</span></div>
-                    <div style={row}><span style={{ color:'#4b5563' }}>Expenses</span><span style={{ ...mono, color:'#b91c1c' }}>{fmt(totalExp)}</span></div>
-                    <div style={row}><span style={{ color:'#4b5563' }}>Debt Payment</span><span style={{ ...mono, color:'#8a5f2b' }}>{fmt(totalDebt)}</span></div>
-                    <div style={{ height:'1px', background:'#e3e7ee', margin:'2px 0' }} />
-                    <div style={row}><span style={{ color:'#111827', fontWeight:700 }}>Total Outflow</span><span style={{ ...mono, color:'#4b5563' }}>{fmt(totalOutflow)}</span></div>
-                    <div style={row}><span style={{ color:'#4b5563' }}>Saving Allocation</span><span style={{ ...mono, color:'#1d4ed8' }}>{fmt(totalSavings)}</span></div>
-                    <div style={{ marginTop:'6px', background: finalBalance>=0?'#f0fdf4':'#fef2f2', border:`1px solid ${finalBalance>=0?'#bbf7d0':'#fecaca'}`, borderRadius:'9px', padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'12px' }}>
-                      <span style={{ fontSize:'12.5px', fontWeight:700, color:scoreColor }}>{finalBalance>=0?'Cashflow Akhir':'Defisit Akhir'}</span>
-                      <span style={{ ...mono, color:scoreColor }}>{finalBalance<0?'-':''}{fmt(finalBalance)}</span>
+              <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:'12px' }}>
+                <div style={{ background: finalCashflow >= 0 ? '#f0fdf4' : '#fef2f2', border:`1px solid ${finalCashflow >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius:'12px', padding:'14px 15px' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'12px' }}>
+                    <div>
+                      <div style={{ fontSize:'10px', fontWeight:800, color:cashflowColor, textTransform:'uppercase', letterSpacing:'.7px' }}>
+                        <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name={finalCashflow >= 0 ? 'check' : 'warning'} size={13} /></span>Final Cashflow
+                      </div>
+                      <div style={{ fontSize:'11.5px', color:'#64748b', marginTop:'6px', lineHeight:1.45 }}>
+                        Income minus expenses, debt payments, and saving allocations.
+                      </div>
                     </div>
+                    <div style={{ fontSize:'20px', fontWeight:800, color:cashflowColor, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(finalCashflow)}</div>
                   </div>
                 </div>
 
-                {/* Ratio cards */}
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px' }}>
-                  <div style={{ ...softCard, padding:'11px 10px' }}>
-                    <div style={miniLabel}>Expense</div>
-                    <div style={{ ...mono, color:'#b91c1c', fontSize:'16px', marginTop:'5px' }}>{expenseRate}%</div>
-                  </div>
-                  <div style={{ ...softCard, padding:'11px 10px' }}>
-                    <div style={miniLabel}>Debt</div>
-                    <div style={{ ...mono, color:'#8a5f2b', fontSize:'16px', marginTop:'5px' }}>{debtRate}%</div>
-                  </div>
-                  <div style={{ ...softCard, padding:'11px 10px' }}>
-                    <div style={miniLabel}>Saving</div>
-                    <div style={{ ...mono, color:'#1d4ed8', fontSize:'16px', marginTop:'5px' }}>{savingRate}%</div>
-                  </div>
+                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
+                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>Monthly Summary</div>
+                  {metricRow('Total Income', totalIncome, '#15803d')}
+                  {metricRow('Expenses', totalExp, '#b91c1c')}
+                  {metricRow('Debt Payment', totalDebt, '#8a5f2b')}
+                  {metricRow('Saving Allocation', totalSavings, '#1d4ed8')}
+                  {metricRow('Total Outflow', totalOutflow + totalSavings, '#7c2d12')}
                 </div>
 
-                {/* Debt as separate expense block */}
-                {totalDebt > 0 && (
-                  <div style={{ ...softCard, background:'#fffbeb', borderColor:'#fde68a' }}>
-                    <div style={{ ...miniLabel, color:'#92400e', marginBottom:'8px' }}>Debt Payment</div>
-                    <div style={{ fontSize:'12px', color:'#6b7280', lineHeight:1.55, marginBottom:'10px' }}>
-                      Debt dicatat sebagai bagian dari outflow/pengeluaran, bukan income. Bagian ini dibuat terpisah agar kewajiban bulanan terlihat jelas.
-                    </div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-                      {debtComputed.filter(r=>(r.actual||0)>0).map(r=>(
-                        <div key={r.label} style={row}>
-                          <span style={{ color:'#4b5563' }}>{r.label}</span>
-                          <span style={{ ...mono, color:'#8a5f2b' }}>{fmt(r.actual)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
+                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>Budget Discipline</div>
+                  {progressRow('Expenses', expensePct, expensePct > 100 ? '#ef4444' : '#22c55e', planExp > 0 ? `Actual ${fmt(totalExp)} of planned ${fmt(planExp)}` : 'No expense plan yet')}
+                  {progressRow('Debt Payment', debtPct, debtPct >= 100 ? '#22c55e' : '#f59e0b', planDebt > 0 ? `Actual ${fmt(totalDebt)} of planned ${fmt(planDebt)}` : 'No debt payment plan yet')}
+                  {progressRow('Saving Allocation', savingPct, savingPct >= 100 ? '#22c55e' : '#60a5fa', planSavings > 0 ? `Actual ${fmt(totalSavings)} of planned ${fmt(planSavings)}` : 'No saving allocation plan yet')}
+                </div>
 
-                {/* Expense breakdown */}
-                <div style={softCard}>
-                  <div style={{ ...miniLabel, marginBottom:'10px' }}>Distribusi Pengeluaran</div>
+                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
+                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>
+                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="expense" size={14} /></span>Expenses Breakdown
+                  </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                     {budget.map(cat => {
                       const catTotal = cat.items.reduce((s,i)=>s+(i.actual||0),0)
                       if (catTotal === 0) return null
-                      const catPct = totalOutflow > 0 ? Math.round((catTotal/totalOutflow)*100) : 0
+                      const catPct = totalExp > 0 ? Math.round((catTotal/totalExp)*100) : 0
                       return (
                         <div key={cat.label}>
-                          <div style={{ display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', marginBottom:'4px' }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px', gap:'10px' }}>
                             <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>{cat.label}</span>
-                            <span style={{ ...mono, fontSize:'12.5px', color:'#b91c1c' }}>{fmt(catTotal)}</span>
+                            <span style={{ fontSize:'12px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c' }}>{fmt(catTotal)}</span>
                           </div>
-                          <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'99px' }}>
-                            <div style={{ height:'5px', borderRadius:'99px', background:'#fca5a5', width:`${catPct}%`, transition:'width .4s' }} />
+                          <div style={{ height:'4px', background:'#f3f4f6', borderRadius:'999px', marginBottom:'5px', overflow:'hidden' }}>
+                            <div style={{ height:'100%', borderRadius:'999px', background:'#fca5a5', width:`${catPct}%` }} />
                           </div>
+                          <div style={{ fontSize:'10.5px', color:'#94a3b8' }}>{catPct}% of non-debt expenses</div>
                         </div>
                       )
                     })}
-                    {totalDebt > 0 && (
-                      <div>
-                        <div style={{ display:'flex', justifyContent:'space-between', gap:'12px', alignItems:'center', marginBottom:'4px' }}>
-                          <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>Debt Payment</span>
-                          <span style={{ ...mono, fontSize:'12.5px', color:'#8a5f2b' }}>{fmt(totalDebt)}</span>
-                        </div>
-                        <div style={{ height:'5px', background:'#f3f4f6', borderRadius:'99px' }}>
-                          <div style={{ height:'5px', borderRadius:'99px', background:'#fbbf24', width:`${totalOutflow > 0 ? Math.round((totalDebt/totalOutflow)*100) : 0}%`, transition:'width .4s' }} />
-                        </div>
-                      </div>
-                    )}
+                    {totalExp === 0 && <div style={{ fontSize:'12px', color:'#94a3b8' }}>No expenses recorded this month.</div>}
                   </div>
                 </div>
-
-                {/* Insight */}
-                <div style={{ ...softCard, background:'#f0f9ff', borderColor:'#bae6fd' }}>
-                  <div style={{ ...miniLabel, color:'#0369a1', marginBottom:'7px' }}>Insight Bulan Ini</div>
-                  <div style={{ fontSize:'12.5px', color:'#075985', lineHeight:1.6 }}>
-                    {finalBalance >= 0
-                      ? `Cashflow akhir masih positif sebesar ${fmt(finalBalance)}. Setelah expenses dan debt payment, sisa sebelum saving adalah ${fmt(cashAfterOutflow)}.`
-                      : `Cashflow akhir defisit sebesar ${fmt(finalBalance)}. Evaluasi ulang expenses, debt payment, atau alokasi saving agar bulan berikutnya lebih seimbang.`}
-                  </div>
-                </div>
-
               </div>
             </div>
             <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(18px) } to { opacity:1; transform:translateX(0) } }`}</style>

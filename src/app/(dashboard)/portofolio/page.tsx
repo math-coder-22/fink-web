@@ -1,11 +1,11 @@
-import { AppButton, AppCard, EmptyState, PageHeader } from '@/components/ui/design'
+import { AppButton, AppCard, AppIcon, EmptyState, PageHeader } from '@/components/ui/design'
 
 export default function PortofolioPage() {
   return (
     <div>
       <PageHeader
         title="Investment Portfolio"
-        subtitle="Mutual Funds · Stocks · Gold · Bonds"
+        subtitle="Mutual Funds • Stocks • Gold • Bonds"
         action={<AppButton variant="secondary">+ Tambah Aset</AppButton>}
       />
 
@@ -26,7 +26,7 @@ export default function PortofolioPage() {
         </div>
       </AppCard>
 
-      <EmptyState icon="📈" title="Portfolio Coming Soon">
+      <EmptyState icon={<AppIcon name="trendUp" size={24} />} title="Portfolio Coming Soon">
         Halaman portofolio sedang disiapkan dengan gaya visual yang sama seperti Overview dan Goals.
       </EmptyState>
     </div>

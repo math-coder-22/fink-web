@@ -5,6 +5,7 @@ import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { IncomeCategory } from '@/types/database'
+import { AppIcon } from '@/components/ui/design'
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
 const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
@@ -100,7 +101,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                   if (!ok) return
                   onIncomeChange(income.filter((_,ci2)=>ci2!==ci))
                 }}
-              >×</button>
+               aria-label="Remove"><AppIcon name="trash" size={13} /></button>
             </div>
 
             {/* Progress bar */}
@@ -170,7 +171,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                         if (!ok) return
                         onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
                       }}
-                    >×</button>
+                     aria-label="Remove"><AppIcon name="trash" size={13} /></button>
                   </div>
                 )
               })}

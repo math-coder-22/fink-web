@@ -136,7 +136,7 @@ export default function TabunganPage() {
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon="🏦"
+          icon={<AppIcon name="saving" size={24} />}
           title="Belum ada goal di kategori ini"
           action={
             tab === "active" ? (

@@ -7,6 +7,7 @@ import type {
   GoalCalcResult,
   GoalTransaction,
 } from "@/types/savings";
+import { AppIcon } from "@/components/ui/design";
 
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
@@ -117,9 +118,9 @@ function KebabMenu({
     setOpen(true);
   }
 
-  const item = (label: string, color: string, onClick: () => void) => (
+  const item = (label: React.ReactNode, color: string, onClick: () => void) => (
     <button
-      key={label}
+      key={typeof label === "string" ? label : String(color)}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
@@ -191,11 +192,11 @@ function KebabMenu({
             }}
           >
             {goal.status === "active" &&
-              item("↑ Setor Dana", "#1a5c42", onTopup)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="income" size={14} />Setor Dana</span>, "#1a5c42", onTopup)}
             {goal.status === "active" &&
-              item("↓ Tarik Dana", "#b45309", onWithdraw)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="expense" size={14} />Tarik Dana</span>, "#b45309", onWithdraw)}
             {goal.status === "active" &&
-              item("⚖ Reconcile Saldo", "#92400e", onReconcile)}
+              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="scale" size={14} />Reconcile Saldo</span>, "#92400e", onReconcile)}
             {goal.status === "active" && (
               <div
                 style={{
@@ -205,7 +206,7 @@ function KebabMenu({
                 }}
               />
             )}
-            {item("✏ Edit", "#374151", onEdit)}
+            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="edit" size={14} />Edit</span>, "#374151", onEdit)}
             <div
               style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
             />
@@ -220,7 +221,7 @@ function KebabMenu({
               .filter((s) => s !== goal.status)
               .map((s) =>
                 item(
-                  `→ ${s.charAt(0).toUpperCase() + s.slice(1)}`,
+                  `${s.charAt(0).toUpperCase() + s.slice(1)}`,
                   "#6b7280",
                   () => onStatus(s),
                 ),
@@ -294,7 +295,7 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
                     minWidth: "16px",
                   }}
                 >
-                  {h.type === "topup" ? "↑" : "↓"}
+                  {h.type === "topup" ? "" : ""}
                 </span>
                 <div>
                   <div
@@ -463,7 +464,7 @@ export default function GoalCard({
             )}
             {goal.useInvest && (
               <div className="savings-rec-meta" style={{ color: "#6b7280" }}>
-                ⚡ {goal.returnRate}%/thn
+                 {goal.returnRate}%/thn
               </div>
             )}
             <div className="savings-history-hint">

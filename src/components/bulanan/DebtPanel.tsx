@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import type { DebtRow } from '@/types/database'
+import { AppIcon } from '@/components/ui/design'
 
 type Props = {
   debt?: DebtRow[]
@@ -11,7 +12,7 @@ type Props = {
 }
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
-const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
+const delBtn: React.CSSProperties = { width:'18px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
 
 const fmt = (n:number) => 'Rp ' + Math.round(Math.abs(n||0)).toLocaleString('id-ID')
 const fmtNum = (n:number) => Math.round(n||0).toLocaleString('id-ID')
@@ -19,7 +20,7 @@ const pNum = (v:string) => Number(String(v).replace(/\D/g,'')) || 0
 
 function DragHandle() {
   return (
-    <span style={{ width:'6px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center', touchAction:'none' }} />
+    <span style={{ width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center', touchAction:'none' }} />
   )
 }
 
@@ -75,11 +76,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
     onDebtChange(rows.filter((_,i2)=>i2!==i))
   }
 
-  const amountCell: React.CSSProperties = { width:'116px', minWidth:'116px', maxWidth:'116px', boxSizing:'border-box', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }
-  const amountInput: React.CSSProperties = { ...inp, ...amountCell, fontSize:'12px', fontWeight:500, color:'#4b5563' }
-  const amountDisplay: React.CSSProperties = { ...amountCell, fontSize:'12px', fontWeight:500 }
-  const totalAmountCell: React.CSSProperties = { ...amountCell, fontSize:'11.5px' }
-  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
 
   return (
     <div>
@@ -112,18 +109,18 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
               </div>
             ) : (
               <>
-                <input style={amountInput}
+                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
                   onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
                   onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
-                <div style={{ ...amountDisplay, color:(r.actual||0)>0?'#8a5f2b':'#9ca3af' }}>
+                <div style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(r.actual||0)>0?'#8a5f2b':'#9ca3af', whiteSpace:'nowrap' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </>
             )}
             <button style={{ ...delBtn, opacity: hovRow===dk?1:0 }} onMouseDown={e=>e.stopPropagation()}
-              onClick={()=>removeRow(i)}>×</button>
+              onClick={()=>removeRow(i)} aria-label="Remove"><AppIcon name="trash" size={13} /></button>
           </div>
         )
       })}
@@ -140,8 +137,8 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
           </div>
         ) : (
           <>
-            <div style={{ ...totalAmountCell, color:'#9ca3af' }}>{fmt(totDebtP)}</div>
-            <div style={{ ...totalAmountCell, fontWeight:700, color:'#8a5f2b' }}>{fmt(totDebtA)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
           </>
         )}
         <div style={{ width:'18px' }}/>

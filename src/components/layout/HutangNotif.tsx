@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { Transaction } from '@/types/database'
+import { AppIcon } from '@/components/ui/design'
 
 const MONTH_NAMES: Record<string, string> = {
   jan:'Jan', feb:'Feb', mar:'Mar', apr:'Apr',
@@ -112,15 +113,15 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
           }}>
             {/* Head */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e3e7ee' }}>
-              <div style={{ fontSize: '15px', fontWeight: 700 }}>⚠️ Unpaid Expenses</div>
-              <button onClick={() => setOpen(false)} style={{ width: '28px', height: '28px', border: 'none', background: '#f7f8fa', borderRadius: '6px', fontSize: '16px', cursor: 'pointer', color: '#4b5563' }}>×</button>
+              <div style={{ display:'flex', alignItems:'center', gap:7, fontSize: '15px', fontWeight: 700 }}><AppIcon name="warning" size={16} />Unpaid Expenses</div>
+              <button aria-label="Close" onClick={() => setOpen(false)} style={{ width: '28px', height: '28px', border: 'none', background: '#f7f8fa', borderRadius: '6px', cursor: 'pointer', color: '#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
             </div>
 
             {/* Body */}
             <div style={{ padding: '16px 20px', maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {unpaidTx.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '8px' }}>✅</div>
+                  <div style={{ display:'flex', justifyContent:'center', marginBottom: '8px' }}><AppIcon name="check" size={28} /></div>
                   No unpaid expenses!
                 </div>
               )}
@@ -141,7 +142,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                     onClick={() => settleUnpaid(d.id, true)}
                     style={{ width: '100%', padding: '7px', borderRadius: '6px', border: 'none', background: saving === d.id ? '#9ca3af' : '#d1eadd', color: '#1a5c42', fontSize: '12.5px', fontWeight: 600, cursor: saving === d.id ? 'not-allowed' : 'pointer', marginBottom: '8px' }}
                   >
-                    {saving === d.id ? 'Saving...' : '✓ Mark as Settled'}
+                    {saving === d.id ? 'Saving...' : 'Mark as Settled'}
                   </button>
 
                   {/* Bayar sebagian */}

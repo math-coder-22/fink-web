@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { SavingsGoal, GoalType } from '@/types/savings'
 import { futureValue } from '@/hooks/useSavings'
+import { AppIcon } from '@/components/ui/design'
 
 const inp: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1.5px solid #e4e1d9', borderRadius:'8px',
@@ -93,8 +94,8 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
         {/* Header */}
         <div style={{ padding:'18px 22px', borderBottom:'1px solid #e4e1d9', display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
-          <div style={{ fontSize:'16px', fontWeight:700 }}>{isEdit ? '✏ Edit Goal' : '+ Tambah Goal Baru'}</div>
-          <button onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'6px', fontSize:'16px', cursor:'pointer', color:'#4b5563' }}>×</button>
+          <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Goal' : 'Tambah Goal Baru'}</span></div>
+          <button aria-label="Close" onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'6px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:'14px' }}>
@@ -111,10 +112,10 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
             <div>
               <label style={lbl}>Jenis Goal</label>
               <select style={sel} value={form.type} onChange={e => handleTypeChange(e.target.value as GoalType)}>
-                <option value="biasa">💰 Tabungan Biasa</option>
-                <option value="darurat">🛡️ Dana Darurat</option>
-                <option value="pendidikan">🎓 Pendidikan Anak</option>
-                <option value="pensiun">🌅 Dana Pensiun</option>
+                <option value="biasa">Tabungan Biasa</option>
+                <option value="darurat">Dana Darurat</option>
+                <option value="pendidikan">Pendidikan Anak</option>
+                <option value="pensiun">Dana Pensiun</option>
               </select>
             </div>
             <div>
@@ -131,7 +132,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {/* Dana Darurat fields */}
           {form.type === 'darurat' && (
             <div style={{ background:'#f0fdf4', borderRadius:'10px', padding:'12px', display:'flex', flexDirection:'column', gap:'10px' }}>
-              <div style={{ fontSize:'12px', fontWeight:600, color:'#15803d' }}>🛡️ Konfigurasi Dana Darurat</div>
+              <div style={{ fontSize:'12px', fontWeight:600, color:'#15803d' }}><span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="saving" size={14} /></span>Konfigurasi Dana Darurat</div>
               <div style={row}>
                 <div>
                   <label style={lbl}>Pengeluaran/Bulan (Rp)</label>
@@ -153,7 +154,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {/* Pendidikan fields */}
           {form.type === 'pendidikan' && (
             <div style={{ background:'#fef9c3', borderRadius:'10px', padding:'12px', display:'flex', flexDirection:'column', gap:'10px' }}>
-              <div style={{ fontSize:'12px', fontWeight:600, color:'#854d0e' }}>🎓 Konfigurasi Dana Pendidikan</div>
+              <div style={{ fontSize:'12px', fontWeight:600, color:'#854d0e' }}><span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="goals" size={14} /></span>Konfigurasi Dana Pendidikan</div>
               <div style={row}>
                 <div>
                   <label style={lbl}>Biaya Pendidikan Saat Ini (Rp)</label>
@@ -173,7 +174,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {/* Pensiun fields */}
           {form.type === 'pensiun' && (
             <div style={{ background:'#fff7ed', borderRadius:'10px', padding:'12px', display:'flex', flexDirection:'column', gap:'10px' }}>
-              <div style={{ fontSize:'12px', fontWeight:600, color:'#9a3412' }}>🌅 Konfigurasi Dana Pensiun</div>
+              <div style={{ fontSize:'12px', fontWeight:600, color:'#9a3412' }}><span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="profile" size={14} /></span>Konfigurasi Dana Pensiun</div>
               <div style={row}>
                 <div>
                   <label style={lbl}>Pengeluaran/Bulan Saat Ini (Rp)</label>
