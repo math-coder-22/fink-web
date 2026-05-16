@@ -100,7 +100,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
 
   const blockReadOnly = useCallback(() => {
     alert('Mode Monitoring bersifat read-only. Keluar dari monitoring untuk mengubah data.')
-  }, [readOnly, blockReadOnly])
+  }, [])
 
   useEffect(() => {
     let alive = true
@@ -116,7 +116,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     }
     loadMonitoringStatus()
     return () => { alive = false }
-  }, [readOnly, blockReadOnly])
+  }, [])
 
   const loadData = useCallback(async () => {
     setLoading(true)
