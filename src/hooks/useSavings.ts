@@ -229,6 +229,29 @@ export function useSavings() {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
+
+  const blockReadOnly = useCallback(() => {
+    alert('Mode Monitoring bersifat read-only. Keluar dari monitoring untuk mengubah data.');
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadMonitoringStatus() {
+      try {
+        const res = await fetch('/api/admin/monitoring/status', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive) setReadOnly(Boolean(json.monitoring));
+      } catch {
+        // optional
+      }
+    }
+    loadMonitoringStatus();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const loadForCurrentUser = useCallback(async (uidUser: string) => {
     setLoaded(false);
@@ -239,7 +262,7 @@ export function useSavings() {
 
       // Migrasi satu kali dari localStorage lama ke Supabase.
       // Setelah itu Supabase menjadi single source of truth.
-      if (remoteGoals.length === 0 && !hasMigrated(uidUser)) {
+      if (!readOnly && remoteGoals.length === 0 && !hasMigrated(uidUser)) {
         const legacyGoals = loadLegacyGoalsForUser(uidUser);
         if (legacyGoals.length > 0) {
           await saveGoalsToServer(legacyGoals);
@@ -307,6 +330,7 @@ export function useSavings() {
   const persistAll = useCallback(
     async (next: SavingsGoal[]) => {
       if (!userId) return;
+      if (readOnly) { blockReadOnly(); return; }
       const normalized = next.map(normalizeGoal);
       setGoals(normalized);
       try {
@@ -315,12 +339,13 @@ export function useSavings() {
         setError(e instanceof Error ? e.message : "Gagal menyimpan Smart Saving");
       }
     },
-    [userId],
+    [userId, readOnly, blockReadOnly],
   );
 
   const addGoal = useCallback(
     async (data: Omit<SavingsGoal, "id" | "createdAt" | "updatedAt" | "history">) => {
       if (!userId) return;
+      if (readOnly) { blockReadOnly(); return; }
       const now = new Date().toISOString();
       const goal: SavingsGoal = normalizeGoal({
         ...data,
@@ -338,7 +363,7 @@ export function useSavings() {
         setError(e instanceof Error ? e.message : "Gagal menambah Smart Saving");
       }
     },
-    [userId],
+    [userId, readOnly, blockReadOnly],
   );
 
   const updateGoal = useCallback(
@@ -356,6 +381,7 @@ export function useSavings() {
   const deleteGoal = useCallback(
     async (id: string) => {
       if (!userId) return;
+      if (readOnly) { blockReadOnly(); return; }
       const previous = goals;
       setGoals(goals.filter((g) => g.id !== id));
       try {
@@ -365,7 +391,7 @@ export function useSavings() {
         setError(e instanceof Error ? e.message : "Gagal menghapus Smart Saving");
       }
     },
-    [goals, userId],
+    [goals, userId, readOnly, blockReadOnly],
   );
 
   const topupGoal = useCallback(
@@ -487,6 +513,7 @@ export function useSavings() {
     goals,
     loaded,
     error,
+    readOnly,
     summary,
     addGoal,
     updateGoal,

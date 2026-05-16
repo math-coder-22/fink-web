@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser, monitoringWriteBlocked } from '@/lib/auth/effective-user'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/bulanan?month=apr&year=2026
 export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const { supabase, effectiveUserId } = ctx
 
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month')
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from('monthly_plans')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .eq('month', month)
     .eq('year', parseInt(year))
     .single()
@@ -29,9 +29,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/bulanan — upsert monthly plan (income + saving + budget)
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const body = await request.json()
   const { month, year, income, saving, debt, budget } = body
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('monthly_plans')
     .upsert(
-      { user_id: user.id, month, year: parseInt(year), income, saving, debt, budget },
+      { user_id: effectiveUserId, month, year: parseInt(year), income, saving, debt, budget },
       { onConflict: 'user_id,month,year' }
     )
     .select()

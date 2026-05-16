@@ -83,6 +83,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
   const [isMobile,       setIsMobile]       = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [monitoring, setMonitoring] = useState<{ monitoring: boolean; targetUser?: { email?: string; full_name?: string | null } | null }>({ monitoring: false })
 
   // Ref untuk detect klik di luar dropdown — tidak pakai overlay terpisah
   const ddRef = useRef<HTMLDivElement>(null)
@@ -122,6 +123,30 @@ export default function DashboardShell({ user, children }: { user: User; childre
     loadSubscription()
     return () => { alive = false }
   }, [])
+
+  useEffect(() => {
+    let alive = true
+    async function loadMonitoringStatus() {
+      try {
+        const res = await fetch('/api/admin/monitoring/status', { cache:'no-store' })
+        if (!res.ok) return
+        const json = await res.json()
+        if (alive) setMonitoring({ monitoring: Boolean(json.monitoring), targetUser: json.targetUser || null })
+      } catch {
+        // Monitoring status optional; app tetap berjalan normal.
+      }
+    }
+    loadMonitoringStatus()
+    return () => { alive = false }
+  }, [])
+
+  async function stopMonitoring() {
+    await fetch('/api/admin/monitoring/stop', { method:'POST' })
+    setMonitoring({ monitoring: false, targetUser: null })
+    router.refresh()
+    window.location.href = '/admin'
+  }
+
 
   const navItems = isAdmin ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM] : BASE_NAV_ITEMS
 
@@ -280,6 +305,44 @@ export default function DashboardShell({ user, children }: { user: User; childre
               </div>
             </div>
           </>
+        )}
+
+
+        {monitoring.monitoring && (
+          <div style={{
+            background:'#fffbeb',
+            borderBottom:'1px solid #fde68a',
+            color:'#92400e',
+            padding: isMobile ? '9px 12px' : '10px 18px',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'space-between',
+            gap:12,
+            flexWrap:'wrap',
+            fontSize: isMobile ? 11.5 : 12.5,
+            fontWeight:800,
+            zIndex:150,
+          }}>
+            <div>
+              Mode Monitoring: Anda sedang melihat akun{' '}
+              <span style={{ fontWeight:950 }}>{monitoring.targetUser?.email || 'user'}</span>
+            </div>
+            <button
+              onClick={stopMonitoring}
+              style={{
+                border:'1px solid #92400e',
+                background:'#fff',
+                color:'#92400e',
+                borderRadius:10,
+                padding:'7px 10px',
+                fontSize:11.5,
+                fontWeight:900,
+                cursor:'pointer',
+              }}
+            >
+              Keluar dari Monitoring
+            </button>
+          </div>
         )}
 
         {/* ── BODY ── */}

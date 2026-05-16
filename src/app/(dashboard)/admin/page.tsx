@@ -65,6 +65,7 @@ function getUserStatus(user: AdminUser) {
 export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [currentAdminRole, setCurrentAdminRole] = useState<Role>('user')
+  const [currentAdminId, setCurrentAdminId] = useState('')
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -83,6 +84,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(json.message || json.error || 'Failed to load admin data')
       setUsers(json.users || [])
       setCurrentAdminRole(json.currentAdmin?.role || 'user')
+      setCurrentAdminId(json.currentAdmin?.id || '')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -139,6 +141,38 @@ export default function AdminPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Failed to hard delete user')
       await loadUsers()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setSavingId(null)
+    }
+  }
+
+
+  async function monitorUser(user: AdminUser) {
+    setOpenMenu(null)
+    if (!isSuperAdmin) {
+      alert('Monitoring Mode hanya tersedia untuk super admin.')
+      return
+    }
+    if (user.id === currentAdminId) {
+      alert('Tidak perlu memonitor akun sendiri.')
+      return
+    }
+    const ok = confirm(`Masuk ke Mode Monitoring untuk ${user.email}?\n\nMode ini read-only. Anda dapat melihat data user, tetapi tidak dapat mengubah apa pun.`)
+    if (!ok) return
+
+    setSavingId(user.id)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/monitoring/start', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ user_id: user.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.message || json.error || 'Gagal memulai Monitoring Mode')
+      window.location.href = '/dashboard'
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -348,6 +382,8 @@ export default function AdminPage() {
             savingId={savingId}
             onPatch={adminPatch}
             onHardDelete={hardDelete}
+            onMonitor={monitorUser}
+            currentAdminId={currentAdminId}
           />
         </>
       )}
@@ -368,12 +404,16 @@ function ActionFloatingMenu({
   savingId,
   onPatch,
   onHardDelete,
+  onMonitor,
+  currentAdminId,
 }: {
   menu: Exclude<MenuState, null>
   isSuperAdmin: boolean
   savingId: string | null
   onPatch: (userId: string, body: Record<string, unknown>) => void
   onHardDelete: (user: AdminUser) => void
+  onMonitor: (user: AdminUser) => void
+  currentAdminId: string
 }) {
   const user = menu.user
   const disabled = savingId === user.id
@@ -442,6 +482,10 @@ function ActionFloatingMenu({
         <div style={{ fontSize:12.5, fontWeight:900, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</div>
         <div style={{ fontSize:10.5, color:'#9ca3af', marginTop:2 }}>Action menu</div>
       </div>
+
+      {isSuperAdmin && item('Monitor User', () => onMonitor(user), 'blue', !!user.deleted_at || user.suspended || user.id === currentAdminId)}
+
+      <div style={{ height:1, background:'#eef2f7', margin:'6px 0' }} />
 
       {item('Premium 3 Tahun', () => onPatch(user.id, { action:'grant_duration', duration_amount:3, duration_unit:'years' }), 'blue', !!user.deleted_at)}
       {item('Lifetime Premium', () => onPatch(user.id, { action:'lifetime' }), 'purple', !!user.deleted_at)}

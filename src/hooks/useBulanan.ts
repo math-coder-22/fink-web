@@ -95,7 +95,28 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   const [tx,      setTx]      = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)  // true = tampilkan loading saat pertama
   const [saving,  setSaving]  = useState(false)
+  const [readOnly, setReadOnly] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const blockReadOnly = useCallback(() => {
+    alert('Mode Monitoring bersifat read-only. Keluar dari monitoring untuk mengubah data.')
+  }, [readOnly, blockReadOnly])
+
+  useEffect(() => {
+    let alive = true
+    async function loadMonitoringStatus() {
+      try {
+        const res = await fetch('/api/admin/monitoring/status', { cache:'no-store' })
+        if (!res.ok) return
+        const json = await res.json()
+        if (alive) setReadOnly(Boolean(json.monitoring))
+      } catch {
+        // optional
+      }
+    }
+    loadMonitoringStatus()
+    return () => { alive = false }
+  }, [readOnly, blockReadOnly])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -120,11 +141,12 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     } finally {
       setLoading(false)
     }
-  }, [curMonth, curYear])
+  }, [curMonth, curYear, readOnly, blockReadOnly])
 
   useEffect(() => { loadData() }, [loadData])
 
   const savePlan = useCallback((newPlan: MonthPlan) => {
+    if (readOnly) { blockReadOnly(); return }
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaving(true)
     saveTimer.current = setTimeout(async () => {
@@ -136,15 +158,16 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
         })
       } finally { setSaving(false) }
     }, 1500)
-  }, [curMonth, curYear])
+  }, [curMonth, curYear, readOnly, blockReadOnly])
 
   const updatePlan = useCallback((updater: (prev: MonthPlan) => MonthPlan) => {
+    if (readOnly) { blockReadOnly(); return }
     setPlan(prev => {
       const next = normalizeMonthPlan(updater(normalizeMonthPlan(prev)))
       savePlan(next)
       return next
     })
-  }, [savePlan])
+  }, [savePlan, readOnly, blockReadOnly])
 
   // Budget actual dari tx.out
   const computedBudget = useCallback((): BudgetCategory[] => {
@@ -195,6 +218,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
 
   // Rename cat di semua tx jika label budget/income/saving berubah
   const renameTxCat = useCallback(async (oldLabel: string, newLabel: string) => {
+    if (readOnly) { blockReadOnly(); return }
     if (!oldLabel || oldLabel === newLabel) return
     const affected = tx.filter(t => t.cat === oldLabel)
     await Promise.all(affected.map(t =>
@@ -205,9 +229,10 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       })
     ))
     setTx(prev => prev.map(t => t.cat === oldLabel ? { ...t, cat: newLabel } : t))
-  }, [tx])
+  }, [tx, readOnly, blockReadOnly])
 
   const addTx = useCallback(async (newTx: Omit<Transaction, 'id'|'month'|'year'>) => {
+    if (readOnly) { blockReadOnly(); return }
     const res  = await fetch('/api/transaksi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -216,9 +241,10 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     const json = await res.json()
     if (json.data) setTx(prev => [json.data, ...prev])
     return json.data
-  }, [curMonth, curYear])
+  }, [curMonth, curYear, readOnly, blockReadOnly])
 
   const updateTx = useCallback(async (id: string, updates: Partial<Transaction>) => {
+    if (readOnly) { blockReadOnly(); return }
     const res  = await fetch('/api/transaksi', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -229,15 +255,17 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       setTx(prev => prev.map(t => t.id === id ? json.data : t))
       window.dispatchEvent(new Event('hutang-refresh'))
     }
-  }, [])
+  }, [readOnly, blockReadOnly])
 
   const deleteTx = useCallback(async (id: string) => {
+    if (readOnly) { blockReadOnly(); return }
     await fetch(`/api/transaksi?id=${id}`, { method: 'DELETE' })
     setTx(prev => prev.filter(t => t.id !== id))
     window.dispatchEvent(new Event('hutang-refresh'))
-  }, [])
+  }, [readOnly, blockReadOnly])
 
   const copyBudgetToNext = useCallback(async () => {
+    if (readOnly) { blockReadOnly(); return '' }
     const idx   = MONTHS_ORDER.indexOf(curMonth)
     const nextM = MONTHS_ORDER[(idx + 1) % 12]
     const nextY = idx === 11 ? curYear + 1 : curYear
@@ -253,7 +281,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       }),
     })
     return `${MONTH_NAMES[nextM]} ${nextY}`
-  }, [curMonth, curYear, plan])
+  }, [curMonth, curYear, plan, readOnly, blockReadOnly])
 
   return {
     plan, updatePlan, loading, saving,
@@ -261,6 +289,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     computedBudget, computedIncome, computedSaving, computedDebt,
     renameTxCat,
     copyBudgetToNext,
+    readOnly,
     rawSisa: tx.reduce((s, t) => {
       if (t.debt && !t.settled) return s
       if (t.type === 'inn')  return s + t.amt

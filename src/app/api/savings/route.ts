@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser, monitoringWriteBlocked } from '@/lib/auth/effective-user'
 import type { SavingsGoal } from '@/types/savings'
 
 function err(message: string, status = 500) {
   return NextResponse.json({ error: message }, { status })
 }
 
-async function getUser() {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return { supabase, user: null }
-  return { supabase, user }
+async function getContext() {
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx
+  return ctx
 }
 
 export async function GET() {
-  const { supabase, user } = await getUser()
-  if (!user) return err('Unauthorized', 401)
+  const ctx = await getContext()
+  if (ctx.ok === false) return ctx.response
+  const { supabase, effectiveUserId } = ctx
 
   const { data, error } = await supabase
     .from('savings_goals')
     .select('id, goal, updated_at')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .order('updated_at', { ascending: false })
 
   if (error) return err(error.message, 500)
@@ -35,8 +35,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { supabase, user } = await getUser()
-  if (!user) return err('Unauthorized', 401)
+  const ctx = await getContext()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const body = await request.json()
   const goal = body.goal as SavingsGoal | undefined
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
     .upsert(
       {
         id: cleanGoal.id,
-        user_id: user.id,
+        user_id: effectiveUserId,
         goal: cleanGoal,
         updated_at: cleanGoal.updatedAt,
       },
@@ -67,8 +70,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const { supabase, user } = await getUser()
-  if (!user) return err('Unauthorized', 401)
+  const ctx = await getContext()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const body = await request.json()
   const goals = (body.goals || []) as SavingsGoal[]
@@ -80,7 +86,7 @@ export async function PUT(request: NextRequest) {
     .filter(g => g.id)
     .map(g => ({
       id: g.id,
-      user_id: user.id,
+      user_id: effectiveUserId,
       goal: {
         ...g,
         history: g.history || [],
@@ -101,8 +107,11 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { supabase, user } = await getUser()
-  if (!user) return err('Unauthorized', 401)
+  const ctx = await getContext()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -112,7 +121,7 @@ export async function DELETE(request: NextRequest) {
     .from('savings_goals')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
 
   if (error) return err(error.message, 500)
   return NextResponse.json({ ok: true })

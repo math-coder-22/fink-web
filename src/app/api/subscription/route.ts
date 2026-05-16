@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { getEffectiveUser } from '@/lib/auth/effective-user'
 
 const DEFAULT_PLAN = 'free'
 
@@ -11,54 +11,50 @@ function isExpired(subscription: any) {
 }
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
 
-  const email = user.email || ''
+  const { supabase, effectiveUserId, isMonitoring } = ctx
 
-  const { data: existingProfile, error: profileReadError } = await supabase
-    .from('profiles')
-    .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at')
-    .eq('id', user.id)
-    .maybeSingle()
+  let profile = ctx.effectiveProfile
 
-  if (profileReadError) {
-    return NextResponse.json({
-      error: profileReadError.message,
-      setup_required: true,
-      message: 'Jalankan SQL user_management_subscription_schema.sql di Supabase SQL Editor.',
-    }, { status: 500 })
-  }
-
-  let profile = existingProfile
-  if (!profile) {
+  if (!profile && !isMonitoring) {
     const { data: insertedProfile, error: insertProfileError } = await supabase
       .from('profiles')
-      .insert({ id: user.id, email, full_name: null, role: 'user', suspended: false, deleted_at: null })
+      .insert({
+        id: effectiveUserId,
+        email: ctx.actualProfile?.email || '',
+        full_name: null,
+        role: 'user',
+        suspended: false,
+        deleted_at: null,
+      })
       .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at')
       .single()
 
     if (insertProfileError) {
       return NextResponse.json({ error: insertProfileError.message }, { status: 500 })
     }
+
     profile = insertedProfile
   }
 
+  if (!profile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  }
+
   if (profile.deleted_at) {
-    await supabase.auth.signOut()
     return NextResponse.json({ error: 'Account deleted', code: 'deleted' }, { status: 403 })
   }
 
   if (profile.suspended) {
-    await supabase.auth.signOut()
     return NextResponse.json({ error: 'Account suspended', code: 'suspended' }, { status: 403 })
   }
 
   const { data: existingSub, error: subReadError } = await supabase
     .from('subscriptions')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .maybeSingle()
 
   if (subReadError) {
@@ -70,10 +66,11 @@ export async function GET() {
   }
 
   let subscription = existingSub
-  if (!subscription) {
+
+  if (!subscription && !isMonitoring) {
     const { data: insertedSub, error: insertSubError } = await supabase
       .from('subscriptions')
-      .insert({ user_id: user.id, plan: DEFAULT_PLAN, status: 'active', is_lifetime: false })
+      .insert({ user_id: effectiveUserId, plan: DEFAULT_PLAN, status: 'active', is_lifetime: false })
       .select('*')
       .single()
 
@@ -83,7 +80,7 @@ export async function GET() {
     subscription = insertedSub
   }
 
-  if (isExpired(subscription) && subscription.plan !== 'free') {
+  if (isExpired(subscription) && subscription.plan !== 'free' && !isMonitoring) {
     const { data: downgraded } = await supabase
       .from('subscriptions')
       .update({
@@ -92,7 +89,7 @@ export async function GET() {
         is_lifetime: false,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', user.id)
+      .eq('user_id', effectiveUserId)
       .select('*')
       .single()
 
@@ -106,12 +103,19 @@ export async function GET() {
       ? 'premium'
       : 'free'
 
+  const actualRole = ctx.actualProfile?.role
+  const isActualAdmin = actualRole === 'admin' || actualRole === 'super_admin'
+  const isActualSuperAdmin = actualRole === 'super_admin'
+
   return NextResponse.json({
     profile,
     subscription,
     effectivePlan,
     isPremium: effectivePlan === 'premium',
-    isAdmin: profile.role === 'admin' || profile.role === 'super_admin',
-    isSuperAdmin: profile.role === 'super_admin',
+    isAdmin: isActualAdmin || profile.role === 'admin' || profile.role === 'super_admin',
+    isSuperAdmin: isActualSuperAdmin,
+    monitoring: ctx.isMonitoring,
+    actualProfile: ctx.actualProfile,
+    effectiveProfile: ctx.effectiveProfile,
   })
 }

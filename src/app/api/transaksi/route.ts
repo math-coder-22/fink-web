@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser, monitoringWriteBlocked } from '@/lib/auth/effective-user'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/transaksi?month=apr&year=2026
 export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const { supabase, effectiveUserId } = ctx
 
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month')
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .eq('month', month)
     .eq('year', parseInt(year))
     .order('date', { ascending: false })
@@ -28,9 +28,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/transaksi — tambah transaksi baru
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const body = await request.json()
   const { month, year, date, type, cat, note, amt, debt, settled } = body
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('transactions')
     .insert({
-      user_id: user.id,
+      user_id: effectiveUserId,
       month, year: parseInt(year),
       date, type, cat, note,
       amt: parsedAmt,
@@ -58,9 +60,11 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/transaksi — edit transaksi
 export async function PATCH(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const body = await request.json()
   const { id, ...updates } = body
@@ -77,7 +81,7 @@ export async function PATCH(request: NextRequest) {
     .from('transactions')
     .update(updates)
     .eq('id', id)
-    .eq('user_id', user.id) // pastikan hanya bisa edit milik sendiri
+    .eq('user_id', effectiveUserId) // pastikan hanya bisa edit milik sendiri
     .select()
     .single()
 
@@ -88,9 +92,11 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/transaksi?id=xxx
 export async function DELETE(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const blocked = monitoringWriteBlocked(ctx)
+  if (blocked) return blocked
+  const { supabase, effectiveUserId } = ctx
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -100,7 +106,7 @@ export async function DELETE(request: NextRequest) {
     .from('transactions')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

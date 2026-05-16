@@ -1,16 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser } from '@/lib/auth/effective-user'
 import { NextResponse } from 'next/server'
 
 // GET /api/hutang — ambil semua pengeluaran unpaid / tertunda milik user (lintas bulan)
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const { supabase, effectiveUserId } = ctx
 
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .eq('debt', true)
     .eq('settled', false)
     .order('year',  { ascending: false })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser } from '@/lib/auth/effective-user'
 import { aggregateMonth, buildAdvisorSummary, recentMonths } from '@/lib/finance/summary'
 import type { MonthKey, Transaction } from '@/types/database'
 import type { SavingsGoal } from '@/types/savings'
@@ -7,9 +7,9 @@ import type { SavingsGoal } from '@/types/savings'
 const MONTH_SET = new Set(['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'])
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await getEffectiveUser()
+  if (ctx.ok === false) return ctx.response
+  const { supabase, effectiveUserId } = ctx
 
   const { searchParams } = new URL(request.url)
   const month = searchParams.get('month') as MonthKey | null
@@ -28,19 +28,19 @@ export async function GET(request: NextRequest) {
     supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', effectiveUserId)
       .in('year', years)
       .in('month', monthKeys),
     supabase
       .from('monthly_plans')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', effectiveUserId)
       .in('year', years)
       .in('month', monthKeys),
     supabase
       .from('savings_goals')
       .select('id, goal, updated_at')
-      .eq('user_id', user.id)
+      .eq('user_id', effectiveUserId)
       .order('updated_at', { ascending: false }),
   ])
 
