@@ -107,3 +107,339 @@ export function EmptyState({ icon, title, children, action }: { icon: ReactNode;
     </AppCard>
   )
 }
+
+type Tone = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium'
+
+const toneStyles: Record<Tone, { bg: string; border: string; color: string; soft: string }> = {
+  default: { bg: '#f7f8fa', border: colors.border, color: colors.text, soft: '#f3f4f6' },
+  success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#166534', soft: '#dcfce7' },
+  warning: { bg: '#fffbeb', border: '#fde68a', color: '#92400e', soft: '#fef3c7' },
+  danger: { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', soft: '#fee2e2' },
+  info: { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', soft: '#dbeafe' },
+  premium: { bg: colors.greenSoft, border: '#bbf7d0', color: colors.green, soft: '#dcfce7' },
+}
+
+export function SectionCard({
+  children,
+  title,
+  subtitle,
+  right,
+  icon,
+  className = '',
+  style,
+  bodyStyle,
+}: {
+  children: ReactNode
+  title?: string
+  subtitle?: string
+  right?: ReactNode
+  icon?: ReactNode
+  className?: string
+  style?: CSSProperties
+  bodyStyle?: CSSProperties
+}) {
+  return (
+    <AppCard className={className} style={{ overflow: 'hidden', ...style }}>
+      {(title || subtitle || right) && (
+        <SectionHeader title={title || ''} subtitle={subtitle} right={right} icon={icon} />
+      )}
+      <div style={{ padding: 16, ...bodyStyle }}>
+        {children}
+      </div>
+    </AppCard>
+  )
+}
+
+export function SectionHeader({
+  title,
+  subtitle,
+  right,
+  icon,
+  style,
+}: {
+  title: string
+  subtitle?: string
+  right?: ReactNode
+  icon?: ReactNode
+  style?: CSSProperties
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '14px 16px',
+        borderBottom: `1px solid ${colors.border}`,
+        ...style,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {icon && (
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 10,
+                background: colors.greenSoft,
+                color: colors.green,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {icon}
+            </div>
+          )}
+          <div style={{ fontSize: 14, fontWeight: 900, color: colors.text, lineHeight: 1.25 }}>
+            {title}
+          </div>
+        </div>
+        {subtitle && (
+          <div style={{ marginTop: 4, fontSize: 12, color: colors.muted, lineHeight: 1.5 }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
+      {right && <div style={{ flexShrink: 0 }}>{right}</div>}
+    </div>
+  )
+}
+
+export function MetricCard({
+  label,
+  value,
+  note,
+  tone = 'default',
+  icon,
+  style,
+}: {
+  label: string
+  value: string | number
+  note?: string
+  tone?: Tone
+  icon?: ReactNode
+  style?: CSSProperties
+}) {
+  const t = toneStyles[tone]
+
+  return (
+    <div
+      style={{
+        background: t.bg,
+        border: `1px solid ${t.border}`,
+        borderRadius: 14,
+        padding: '14px 15px',
+        ...style,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 900, color: colors.muted, textTransform: 'uppercase', letterSpacing: '.7px' }}>
+          {label}
+        </div>
+        {icon && <div style={{ color: t.color, display: 'flex', alignItems: 'center' }}>{icon}</div>}
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 22,
+          fontWeight: 950,
+          color: t.color,
+          fontFamily: 'var(--font-mono), monospace',
+          letterSpacing: '-.6px',
+          lineHeight: 1.1,
+        }}
+      >
+        {value}
+      </div>
+      {note && (
+        <div style={{ marginTop: 8, color: '#6b7280', fontSize: 11.5, lineHeight: 1.45 }}>
+          {note}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function StatusBadge({
+  children,
+  tone = 'default',
+  size = 'sm',
+  style,
+}: {
+  children: ReactNode
+  tone?: Tone
+  size?: 'xs' | 'sm' | 'md'
+  style?: CSSProperties
+}) {
+  const t = toneStyles[tone]
+  const padding = size === 'xs' ? '3px 7px' : size === 'md' ? '6px 11px' : '4px 9px'
+  const fontSize = size === 'xs' ? 10 : size === 'md' ? 12 : 11
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: `1px solid ${t.border}`,
+        background: t.bg,
+        color: t.color,
+        borderRadius: 999,
+        padding,
+        fontSize,
+        fontWeight: 900,
+        lineHeight: 1,
+        textTransform: 'uppercase',
+        letterSpacing: '.35px',
+        whiteSpace: 'nowrap',
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+export function PremiumBanner({
+  title = 'Unlock FiNK Premium',
+  subtitle = 'Buka fitur premium untuk analytics, forecasting, unlimited items, dan advisor penuh.',
+  href = '/upgrade',
+  actionLabel = 'Upgrade Premium',
+  right,
+  style,
+}: {
+  title?: string
+  subtitle?: string
+  href?: string
+  actionLabel?: string
+  right?: ReactNode
+  style?: CSSProperties
+}) {
+  return (
+    <AppCard
+      style={{
+        overflow: 'hidden',
+        border: '1px solid rgba(16,185,129,.22)',
+        background: 'linear-gradient(135deg,#0f172a 0%,#064e3b 100%)',
+        ...style,
+      }}
+    >
+      <div
+        style={{
+          padding: 22,
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 18,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ minWidth: 240, flex: 1 }}>
+          <StatusBadge tone="premium" style={{ background: 'rgba(16,185,129,.12)', borderColor: 'rgba(110,231,183,.25)', color: '#6ee7b7' }}>
+            FiNK Premium
+          </StatusBadge>
+          <div style={{ marginTop: 11, fontSize: 28, fontWeight: 950, letterSpacing: '-.8px', lineHeight: 1.15 }}>
+            {title}
+          </div>
+          {subtitle && (
+            <div style={{ marginTop: 9, maxWidth: 760, color: 'rgba(255,255,255,.72)', fontSize: 12.5, lineHeight: 1.7 }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {right}
+          <AppButton href={href} style={{ background: '#10b981', color: '#052e16' }}>
+            {actionLabel}
+          </AppButton>
+        </div>
+      </div>
+    </AppCard>
+  )
+}
+
+export function PremiumLockCard({
+  title = 'Fitur ini hanya untuk Premium',
+  subtitle = 'Upgrade untuk membuka fitur lanjutan FiNK.',
+  href = '/upgrade',
+  actionLabel = 'Upgrade Premium',
+  items,
+  style,
+}: {
+  title?: string
+  subtitle?: string
+  href?: string
+  actionLabel?: string
+  items?: string[]
+  style?: CSSProperties
+}) {
+  return (
+    <AppCard
+      style={{
+        overflow: 'hidden',
+        background: '#0f172a',
+        border: '1px solid rgba(16,185,129,.18)',
+        ...style,
+      }}
+    >
+      <div style={{ padding: 22, color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 240, flex: 1 }}>
+            <StatusBadge tone="premium" style={{ background: 'rgba(16,185,129,.12)', borderColor: 'rgba(110,231,183,.25)', color: '#6ee7b7' }}>
+              🔒 Premium
+            </StatusBadge>
+            <div style={{ marginTop: 12, fontSize: 26, lineHeight: 1.16, fontWeight: 950, letterSpacing: '-.8px' }}>
+              {title}
+            </div>
+            {subtitle && (
+              <div style={{ marginTop: 9, maxWidth: 760, color: 'rgba(255,255,255,.70)', fontSize: 12.5, lineHeight: 1.7 }}>
+                {subtitle}
+              </div>
+            )}
+          </div>
+
+          <AppButton href={href} style={{ background: '#10b981', color: '#052e16' }}>
+            {actionLabel}
+          </AppButton>
+        </div>
+
+        {items && items.length > 0 && (
+          <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 10 }}>
+            {items.map((item) => (
+              <div
+                key={item}
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  minHeight: 78,
+                  borderRadius: 16,
+                  background: 'rgba(255,255,255,.055)',
+                  border: '1px solid rgba(255,255,255,.07)',
+                  padding: 14,
+                }}
+              >
+                <div style={{ filter: 'blur(3px)', opacity: .65 }}>
+                  <div style={{ height: 10, width: '70%', borderRadius: 999, background: 'rgba(255,255,255,.18)' }} />
+                  <div style={{ marginTop: 10, height: 10, width: '42%', borderRadius: 999, background: 'rgba(255,255,255,.14)' }} />
+                  <div style={{ marginTop: 12, height: 18, borderRadius: 10, background: 'rgba(255,255,255,.1)' }} />
+                </div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 10 }}>
+                  <div style={{ fontSize: 12.3, lineHeight: 1.4, fontWeight: 900, color: '#6ee7b7' }}>
+                    {item}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </AppCard>
+  )
+}
+

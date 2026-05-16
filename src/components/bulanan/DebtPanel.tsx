@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { DebtRow } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
 
@@ -27,13 +29,15 @@ function DragHandle() {
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const [hover,setHover]=useState(false)
   return (
-    <button style={{ width:'100%', padding:'8px 10px', border:'1.5px dashed #cbd5e1', borderRadius:'6px', background:hover?'#f7f8fa':'none', color:hover?'#4b5563':'#9ca3af', fontSize:'12px', fontWeight:500, cursor:'pointer', marginTop:'6px', transition:'all .13s', textAlign:'left' }}
+    <button style={{ width:'100%', padding:'9px 10px', border:'1.5px dashed #cbd5e1', borderRadius:'10px', background:hover?'#e8f5ef':'#fff', color:hover?'#1a5c42':'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s', textAlign:'center' }}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
       onClick={onClick}>{label}</button>
   )
 }
 
 export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Props) {
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
   const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt', plan:0, actual:0 }]
   const [hovRow, setHovRow] = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
@@ -76,7 +80,16 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
     onDebtChange(rows.filter((_,i2)=>i2!==i))
   }
 
-  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
+  function handleAddDebtItem() {
+    const debtItemCount = rows.filter(item => item.label !== 'Rekonsiliasi').length
+    if (!hasPremiumAccess && debtItemCount >= FREE_PLAN_LIMITS.debtItems) {
+      alert(upgradeMessage(`Debt item Free maksimal ${FREE_PLAN_LIMITS.debtItems}`))
+      return
+    }
+    onDebtChange([...rows,{label:'New Debt',plan:0,actual:0}])
+  }
+
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
 
   return (
     <div>
@@ -89,7 +102,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
           <div key={i} draggable onDragStart={e=>onDebtDragStart(e,i)}
             onDragOver={e=>{ e.preventDefault(); setDragOver(dk) }}
             onDrop={e=>onDebtDrop(e,i)} onDragLeave={()=>setDragOver(null)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid', borderColor: dragOver===dk?'#92400e':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
+            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===dk?'#92400e':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
             onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
@@ -125,7 +138,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
         )
       })}
 
-      <AddBtn label="+ add debt item" onClick={()=>onDebtChange([...rows,{label:'New Debt',plan:0,actual:0}])} />
+      <AddBtn label="+ add debt item" onClick={handleAddDebtItem} />
 
       <div style={totalRow}>
         <div style={{ width:'14px' }}/>

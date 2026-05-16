@@ -19,7 +19,7 @@ function DragHandle() {
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <button style={{ display:'flex', alignItems:'center', gap:'5px', width:'100%', padding:'7px 9px', borderRadius:'6px', border:'1.5px dashed', borderColor: hover?'#1a5c42':'#c9d2de', background: hover?'#e8f5ef':'none', color: hover?'#1a5c42':'#9ca3af', fontSize:'12px', fontWeight:500, cursor:'pointer', marginTop:'6px', transition:'all .13s' }}
+    <button style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', width:'100%', padding:'9px 10px', borderRadius:'10px', border:'1.5px dashed', borderColor: hover?'#1a5c42':'#c9d2de', background: hover?'#e8f5ef':'#fff', color: hover?'#1a5c42':'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s' }}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
       onClick={onClick}>{label}</button>
   )
@@ -33,7 +33,9 @@ interface Props {
 }
 
 export default function IncomePanel({ income, onIncomeChange, onRename, isMobile }: Props) {
-  const { isPremium } = useSubscription()
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
+  const incomeItemCount = income.reduce((sum, cat) => sum + cat.items.filter(item => item.label !== 'Rekonsiliasi').length, 0)
   const [hovRow,   setHovRow]   = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
   const catDragSrc  = useRef<number|null>(null)
@@ -46,17 +48,27 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
 
 
   function handleAddIncomeCategory() {
-    if (!isPremium && income.length >= FREE_PLAN_LIMITS.incomeCategories) {
-      alert(upgradeMessage(`Kategori income Free maksimal ${FREE_PLAN_LIMITS.incomeCategories}`))
+    if (!hasPremiumAccess && incomeItemCount >= FREE_PLAN_LIMITS.incomeItems) {
+      alert(upgradeMessage(`Income item Free maksimal ${FREE_PLAN_LIMITS.incomeItems}`))
       return
     }
     onIncomeChange([...income,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
   }
 
+  function handleAddIncomeItem() {
+    if (!income.length) return
+    if (!hasPremiumAccess && incomeItemCount >= FREE_PLAN_LIMITS.incomeItems) {
+      alert(upgradeMessage(`Income item Free maksimal ${FREE_PLAN_LIMITS.incomeItems}`))
+      return
+    }
+    const last = income.length - 1
+    onIncomeChange(income.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]}))
+  }
+
   const totP = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
   const totA = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
 
-  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
+  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
 
   return (
     <div>
@@ -182,12 +194,12 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
 
       {/* Bottom buttons */}
       <div style={{ display:'flex', gap:'6px', marginTop:'2px' }}>
-        <AddBtn label="+ add item to last category" onClick={()=>{ if(!income.length) return; const last=income.length-1; onIncomeChange(income.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]})) }} />
+        <AddBtn label="+ add item to last category" onClick={handleAddIncomeItem} />
         <AddBtn label="+ add category" onClick={handleAddIncomeCategory} />
       </div>
 
       {/* Total */}
-      <div style={{ display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'8px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'8px' }}>
         <div style={{ width:'14px' }}/>
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Income</div>
         {isMobile ? (

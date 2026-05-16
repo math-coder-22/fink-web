@@ -98,11 +98,12 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
 
 
 
-  const card: React.CSSProperties      = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', boxShadow:'0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.07)', marginBottom:'14px', overflow:'hidden' }
-  const cardHead: React.CSSProperties  = { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 16px', borderBottom:'1px solid #e3e7ee', gap:'10px' }
-  const cardTitle: React.CSSProperties = { fontSize:'12.5px', fontWeight:600, color:'#111827' }
-  const cardSub: React.CSSProperties   = { fontSize:'11px', color:'#9ca3af', marginTop:'2px' }
-  const colLabels: React.CSSProperties = { display:'flex', alignItems:'center', padding:'7px 16px', gap:'6px', background:'#f7f8fa', borderBottom:'1px solid #e3e7ee', fontSize:'10px', fontWeight:600, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }
+  const card: React.CSSProperties      = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'16px', boxShadow:'0 2px 12px rgba(15,23,42,.05)', marginBottom:'14px', overflow:'hidden' }
+  const cardHead: React.CSSProperties  = { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:'1px solid #e3e7ee', gap:'12px', background:'#fff' }
+  const cardTitle: React.CSSProperties = { fontSize:'14px', fontWeight:900, color:'#111827', letterSpacing:'-.2px' }
+  const cardSub: React.CSSProperties   = { fontSize:'11.5px', color:'#9ca3af', marginTop:'3px', lineHeight:1.45 }
+  const colLabels: React.CSSProperties = { display:'flex', alignItems:'center', padding:'8px 16px', gap:'6px', background:'#f7f8fa', borderBottom:'1px solid #e3e7ee', fontSize:'10px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.65px' }
+  const actionBtn: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', padding:'8px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', background:'#fff', fontSize:'12px', fontWeight:800, color:'#4b5563', cursor:'pointer', boxShadow:'0 1px 2px rgba(15,23,42,.04)' }
 
   const MOBILE_TABS: { key: MobileTab; label: string }[] = [
     { key:'transactions', label:'Transactions' },
@@ -136,9 +137,9 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <div style={cardSub}>{activePanel==='budget' ? 'Actuals are calculated automatically from daily transactions' : 'Monthly income sources'}</div>
         </div>
         {!isMobile && (
-          <div style={{ display:'flex', gap:'2px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'7px', padding:'2px' }}>
+          <div style={{ display:'flex', gap:'3px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'3px' }}>
             {(['budget','income'] as DesktopPanel[]).map(p => (
-              <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'11.5px', fontWeight:600, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#9ca3af', border:'none', padding:'4px 13px', borderRadius:'5px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
+              <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'11.5px', fontWeight:600, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#9ca3af', border:'none', padding:'6px 14px', borderRadius:'8px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
                 {p==='budget' ? 'Budget' : 'Income'}
               </button>
             ))}
@@ -189,7 +190,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   )
 
   return (
-    <div>
+    <div className="fink-journal-page">
       {/* HEADER */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
         <div>
@@ -203,15 +204,15 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
           {/* Reflection, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
+            style={actionBtn}>
             <AppIcon name="mirror" size={14} /> Reflection
           </button>
           <button onClick={()=>setRekonOpen(true)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
+            style={actionBtn}>
             <AppIcon name="scale" size={14} /> Reconcile
           </button>
           <button onClick={handleCopyBudget}
-            style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', border:'1.5px solid #e3e7ee', borderRadius:'6px', background:'transparent', fontSize:'12px', fontWeight:600, color:'#4b5563', cursor:'pointer' }}>
+            style={actionBtn}>
             <AppIcon name="copy" size={14} /> Copy
           </button>
         </div>
@@ -368,6 +369,35 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       {rekonOpen && (
         <RekonModal sisaApp={sisaApp} onClose={()=>setRekonOpen(false)} onSave={handleRekon} />
       )}
+
+      <style>{`
+        .fink-journal-page {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          padding-bottom: max(18px, env(safe-area-inset-bottom));
+        }
+
+        @media (max-width: 768px) {
+          .fink-journal-page {
+            padding-bottom: calc(72px + env(safe-area-inset-bottom));
+          }
+          .fink-journal-page input,
+          .fink-journal-page select,
+          .fink-journal-page button {
+            max-width: 100%;
+          }
+        }
+
+        @media (max-width: 560px) {
+          .fink-journal-page > div:first-child {
+            gap: 10px !important;
+          }
+          .fink-journal-page > div:first-child > div:first-child {
+            width: 100%;
+          }
+        }
+      `}</style>
     </div>
   )
 }

@@ -1,4 +1,8 @@
 export const FREE_PLAN_LIMITS = {
+  expenseItems: 7,
+  incomeItems: 1,
+  savingItems: 1,
+  debtItems: 1,
   budgetCategories: 10,
   incomeCategories: 1,
   savingGoals: 2,

@@ -19,7 +19,7 @@ function DragHandle() {
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <button style={{ display:'flex', alignItems:'center', gap:'5px', width:'100%', padding:'7px 9px', borderRadius:'6px', border:'1.5px dashed', borderColor: hover?'#1a5c42':'#c9d2de', background: hover?'#e8f5ef':'none', color: hover?'#1a5c42':'#9ca3af', fontSize:'12px', fontWeight:500, cursor:'pointer', marginTop:'6px', transition:'all .13s' }}
+    <button style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', width:'100%', padding:'9px 10px', borderRadius:'10px', border:'1.5px dashed', borderColor: hover?'#1a5c42':'#c9d2de', background: hover?'#e8f5ef':'#fff', color: hover?'#1a5c42':'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s' }}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
       onClick={onClick}>{label}</button>
   )
@@ -37,7 +37,10 @@ interface Props {
 }
 
 export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
-  const { isPremium } = useSubscription()
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
+  const expenseItemCount = budget.reduce((sum, cat) => sum + cat.items.filter(item => item.label !== 'Rekonsiliasi').length, 0)
+  const savingItemCount = saving.filter(item => item.label !== 'Rekonsiliasi').length
   const [hovRow,   setHovRow]   = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
   const catDragSrc  = useRef<number|null>(null)
@@ -54,11 +57,29 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
 
 
   function handleAddBudgetCategory() {
-    if (!isPremium && budget.length >= FREE_PLAN_LIMITS.budgetCategories) {
-      alert(upgradeMessage(`Kategori budget Free maksimal ${FREE_PLAN_LIMITS.budgetCategories}`))
+    if (!hasPremiumAccess && expenseItemCount >= FREE_PLAN_LIMITS.expenseItems) {
+      alert(upgradeMessage(`Expense item Free maksimal ${FREE_PLAN_LIMITS.expenseItems}`))
       return
     }
     onBudgetChange([...budget,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
+  }
+
+  function handleAddBudgetItem() {
+    if (!budget.length) return
+    if (!hasPremiumAccess && expenseItemCount >= FREE_PLAN_LIMITS.expenseItems) {
+      alert(upgradeMessage(`Expense item Free maksimal ${FREE_PLAN_LIMITS.expenseItems}`))
+      return
+    }
+    const last = budget.length - 1
+    onBudgetChange(budget.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]}))
+  }
+
+  function handleAddSavingItem() {
+    if (!hasPremiumAccess && savingItemCount >= FREE_PLAN_LIMITS.savingItems) {
+      alert(upgradeMessage(`Saving item Free maksimal ${FREE_PLAN_LIMITS.savingItems}`))
+      return
+    }
+    onSavingChange([...saving,{label:'New Allocation',plan:0,actual:0}])
   }
 
   const totExpP = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
@@ -67,9 +88,9 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
   const totSavA = saving.reduce((s,r)=>s+(r.actual||0),0)
 
   // ── Shared styles ──
-  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
+  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
   const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
-  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'6px', padding:'8px 9px', marginTop:'8px' }
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'8px' }
 
   return (
     <div>
@@ -225,7 +246,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
 
       {/* Bottom buttons */}
       <div style={{ display:'flex', gap:'6px', marginTop:'2px' }}>
-        <AddBtn label="+ add item to last category" onClick={()=>{ if(!budget.length) return; const last=budget.length-1; onBudgetChange(budget.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]})) }} />
+        <AddBtn label="+ add item to last category" onClick={handleAddBudgetItem} />
         <AddBtn label="+ add category" onClick={handleAddBudgetCategory} />
       </div>
 
@@ -257,7 +278,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           <div key={i} draggable onDragStart={e=>onSavDragStart(e,i)}
             onDragOver={e=>{ e.preventDefault(); setDragOver(sk) }}
             onDrop={e=>onSavDrop(e,i)} onDragLeave={()=>setDragOver(null)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'6px', padding:'7px 9px', marginBottom:'4px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
+            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
             onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
@@ -295,7 +316,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           </div>
         )
       })}
-      <AddBtn label="+ add allocation" onClick={()=>onSavingChange([...saving,{label:'New Allocation',plan:0,actual:0}])} />
+      <AddBtn label="+ add allocation" onClick={handleAddSavingItem} />
       <div style={totalRow}>
         <div style={{ width:'14px' }}/>
         <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Savings</div>

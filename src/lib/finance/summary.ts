@@ -226,12 +226,12 @@ function pickMilestone(goals: SavingsGoal[]) {
   const progress = Math.min(100, (calc.progress || 0) * 100)
   const gap = Math.max(0, calc.sisa || 0)
   return {
-    title: g.name || 'Primary goal',
+    title: g.name || 'Target utama',
     current: Number(g.current || 0),
     target: Number(calc.targetNow || g.target || 0),
     progress,
     monthly: Number(g.monthly || 0),
-    detail: gap > 0 ? `Remaining gap around Rp ${Math.round(gap).toLocaleString('id-ID')}.` : 'This goal is already completed.',
+    detail: gap > 0 ? `Remaining gap around Rp ${Math.round(gap).toLocaleString('id-ID')}.` : 'Target ini sudah selesai.',
   }
 }
 
@@ -251,23 +251,23 @@ function buildTradeoffs(goalInsights: GoalAdvisorItem[], goalPlan: GoalPlanSumma
   if (goalPlan.status === 'overloaded') {
     tradeoffs.push({
       tone: 'warning',
-      title: 'Goals may need more income or more time',
-      detail: `Ideal monthly allocation is around Rp ${Math.round(goalPlan.totalIdealMonthly).toLocaleString('id-ID')}, while realistic capacity is around Rp ${Math.round(goalPlan.safeCapacity).toLocaleString('id-ID')}.`,
+      title: 'Target mungkin membutuhkan pemasukan lebih besar atau waktu lebih panjang',
+      detail: `Alokasi bulanan ideal sekitar Rp ${Math.round(goalPlan.totalIdealMonthly).toLocaleString('id-ID')}, sedangkan kapasitas realistis saat ini sekitar Rp ${Math.round(goalPlan.safeCapacity).toLocaleString('id-ID')}.`,
     })
   }
   unrealistic.forEach(goal => {
     tradeoffs.push({
       tone: 'warning',
-      title: `${goal.name} needs a softer timeline`,
-      detail: 'This does not mean the goal is impossible. It means the current timeline may need additional income, a longer deadline, or a lower target.',
+      title: `${goal.name} membutuhkan timeline yang lebih longgar`,
+      detail: 'Ini bukan berarti target tidak mungkin dicapai. Artinya, timeline saat ini mungkin membutuhkan tambahan pemasukan, deadline yang lebih panjang, atau nilai target yang lebih realistis.',
     })
   })
   const highCount = goalInsights.filter(g => g.priority === 'critical' || g.priority === 'high').length
   if (highCount > 3) {
-    tradeoffs.push({ tone: 'warning', title: 'Too many high-priority goals', detail: 'Focus on 1–3 important goals first so monthly allocation does not become too thin.' })
+    tradeoffs.push({ tone: 'warning', title: 'Terlalu banyak target prioritas tinggi', detail: 'Fokus pada 1–3 target terpenting terlebih dahulu agar alokasi bulanan tidak terlalu tersebar.' })
   }
   if (tradeoffs.length === 0) {
-    tradeoffs.push({ tone: 'good', title: 'Goal structure is manageable', detail: 'Current goals look reasonable. Keep reviewing them when income, expenses, or deadlines change.' })
+    tradeoffs.push({ tone: 'good', title: 'Struktur target masih cukup realistis', detail: 'Target saat ini masih terlihat wajar. Tinjau kembali ketika pemasukan, pengeluaran, atau deadline berubah.' })
   }
   return tradeoffs.slice(0, 3)
 }
@@ -311,24 +311,24 @@ export function buildAdvisorSummary(params: {
   if (current.cashflow < 0) priorities.push({ level:'high', title:'Pulihkan cashflow dulu', detail:'Tahan belanja non-prioritas sampai cashflow kembali positif.' })
   if (current.savingRate < 10 && current.income > 0) priorities.push({ level:'medium', title:'Naikkan saving rate bertahap', detail:`Mulai dari 10% income, sekitar Rp ${Math.round(current.income * 0.1).toLocaleString('id-ID')}.` })
   if (debtRatio > 25) priorities.push({ level: debtRatio > 35 ? 'high' : 'medium', title:'Jaga beban cicilan', detail:'Hindari cicilan baru dan prioritaskan pelunasan utang berbunga tinggi.' })
-  if (goalPlan.status === 'overloaded') priorities.push({ level:'high', title:'Review income or timeline', detail:'Your goals need more allocation than current safe capacity. Consider increasing income, extending deadlines, or reducing active focus goals.' })
+  if (goalPlan.status === 'overloaded') priorities.push({ level:'high', title:'Tinjau kembali pemasukan atau timeline target', detail:'Target Anda membutuhkan alokasi lebih besar daripada kapasitas aman saat ini. Pertimbangkan untuk meningkatkan pemasukan atau memperpanjang deadline, or reducing active focus goals.' })
   focusGoals.slice(0, 2).forEach((g) => {
-    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Focus on ${g.name}`, detail: `${g.recommendation} ${g.realisticEtaLabel !== 'No ETA yet' ? `Realistic ETA: ${g.realisticEtaLabel}.` : ''}` })
+    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Fokus pada ${g.name}`, detail: `${g.recommendation} ${g.realisticEtaLabel !== 'Belum ada estimasi' ? `Estimasi realistis: ${g.realisticEtaLabel}.` : ''}` })
   })
   if (milestone) priorities.push({ level:'low', title:`Percepat ${milestone.title}`, detail: milestone.monthly > 0 ? `Pertahankan alokasi Rp ${Math.round(milestone.monthly).toLocaleString('id-ID')} per bulan.` : milestone.detail })
-  if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Cashflow, saving, dan risiko utama masih terkendali.' })
+  if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Arus kas, tabungan, dan risiko utama masih terkendali.' })
 
-  let mainInsight = 'FiNK does not have enough data yet to read your monthly pattern.'
+  let mainInsight = 'FiNK masih membutuhkan lebih banyak data untuk membaca pola keuangan bulanan Anda.'
   const topGoal = focusGoals[0]
   if (goalPlan.status === 'overloaded') {
-    mainInsight = `Your goals are meaningful, but the current timeline may need more income or more time. FiNK will prioritize the most important goals first.`
+    mainInsight = `Target keuangan Anda sudah bermakna, tetapi timeline saat ini mungkin membutuhkan pemasukan lebih besar atau waktu lebih panjang. FiNK akan membantu memprioritaskan target yang paling penting terlebih dahulu.`
   } else if (topGoal && (topGoal.priority === 'critical' || topGoal.priority === 'high')) {
     mainInsight = `${topGoal.name} should be the main focus now. ${topGoal.recommendation}`
   } else if (current.income > 0) {
-    if (current.cashflow < 0) mainInsight = `This month needs attention: cashflow is negative by Rp ${Math.abs(Math.round(current.cashflow)).toLocaleString('id-ID')}. Prioritize stabilizing spending before adding new goals.`
-    else if (current.savingRate >= 20) mainInsight = `This month is strong. Saving rate is ${Math.round(current.savingRate)}% and cashflow stays positive, so priority goals can be accelerated.`
-    else if (current.expenseRate > 80) mainInsight = `Income is recorded, but expense rate is ${Math.round(current.expenseRate)}%. Review the largest categories before adding new commitments.`
-    else mainInsight = `This month is fairly stable. Keep saving rate healthy and continue funding your priority goals.`
+    if (current.cashflow < 0) mainInsight = `Bulan ini masih memerlukan perhatian: cashflow is negative by Rp ${Math.abs(Math.round(current.cashflow)).toLocaleString('id-ID')}. Prioritize stabilizing spending before adding new goals.`
+    else if (current.savingRate >= 20) mainInsight = `Kondisi bulan ini cukup baik. Rasio tabungan berada di ${Math.round(current.savingRate)}% dan arus kas tetap positif, sehingga target prioritas dapat dipercepat secara bertahap.`
+    else if (current.expenseRate > 80) mainInsight = `Pemasukan sudah tercatat, tetapi rasio pengeluaran berada di ${Math.round(current.expenseRate)}%. Tinjau kategori pengeluaran terbesar sebelum menambah komitmen baru.`
+    else mainInsight = `Bulan ini is fairly stable. Keep saving rate healthy and continue funding your priority goals.`
   }
 
   return {

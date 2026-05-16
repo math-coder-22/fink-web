@@ -6,7 +6,8 @@ import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
-import { AppIcon } from '@/components/ui/design'
+import { AppIcon, SectionCard, SectionHeader, PremiumLockCard, MetricCard as DesignMetricCard } from '@/components/ui/design'
+import { useSubscription } from '@/hooks/useSubscription'
 import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 import type { SavingsGoal } from '@/types/savings'
 
@@ -179,55 +180,29 @@ function sumIncomePlan(income: IncomeCategory[]) {
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 1px 3px rgba(0,0,0,.06)', overflow:'hidden', ...style }}>
+    <SectionCard
+      style={{
+        marginBottom: 0,
+        borderRadius: 16,
+        overflow: 'hidden',
+        ...style,
+      }}
+      bodyStyle={{ padding: 0 }}
+    >
       {children}
-      <style>{`
-        @media (max-width: 760px) {
-          .dash-summary-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .dash-summary-grid > div {
-            padding: 9px 11px !important;
-          }
-          .dash-summary-grid > div:nth-child(2n) {
-            border-right: none !important;
-          }
-          .dash-summary-grid > div:nth-child(-n+2) {
-            border-bottom: 1px solid #e7ebf0 !important;
-          }
-          .overview-chart-layout {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
-    </div>
+    </SectionCard>
   )
 }
 
 function CardHead({ title, icon, subtitle, right }: { title: string; icon?: React.ReactNode; subtitle?: string; right?: React.ReactNode }) {
   return (
-    <div className="dash-card-head" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', padding:'14px 16px', borderBottom:'1px solid #e3e7ee' }}>
-      <div>
-        <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'13px', fontWeight:700, color:'#111827' }}>{icon}{title}</div>
-        {subtitle && <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{subtitle}</div>}
-      </div>
-      {right}
-      <style>{`
-        @media (max-width: 760px) {
-          .dash-summary-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .dash-summary-grid > div {
-            padding: 9px 11px !important;
-          }
-          .dash-summary-grid > div:nth-child(2n) {
-            border-right: none !important;
-          }
-          .dash-summary-grid > div:nth-child(-n+2) {
-            border-bottom: 1px solid #e7ebf0 !important;
-          }
-        }
-      `}</style>
+    <div className="dash-card-head">
+      <SectionHeader
+        title={title}
+        subtitle={subtitle}
+        icon={icon}
+        right={right}
+      />
     </div>
   )
 }
@@ -464,6 +439,25 @@ function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, month
   )
 }
 
+
+function DashboardPremiumLock() {
+  return (
+    <PremiumLockCard
+      title="Dashboard analytics hanya untuk Premium"
+      subtitle="Upgrade untuk membuka analytics, monthly comparison, financial position lanjutan, trend analysis, dan insight lanjutan FiNK."
+      actionLabel="Upgrade Premium"
+      href="/upgrade"
+      items={[
+        'Monthly comparison',
+        'Financial analytics',
+        'Trend analysis',
+        'Goal priority dashboard',
+      ]}
+      style={{ marginTop: 14 }}
+    />
+  )
+}
+
 function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
   if (goals.length === 0) return <div style={{ fontSize:'12px', color:'#9ca3af' }}>Belum ada target tabungan aktif.</div>
   return (
@@ -533,6 +527,8 @@ const { curMonth, curYear } = useMonthContext()
 
   const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
 
   const budget = computedBudget()
   const income = computedIncome()
@@ -634,9 +630,14 @@ const { curMonth, curYear } = useMonthContext()
 
       {/* Insight and actions */}
       <InsightPanel insight={insight} savingRate={savingRate} expenseRate={expenseRate} emergencyMonths={emergencyMonths} monthlySurplus={rawSisa} />
-      <QuickActionsSection />
 
-      <div className="dash-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(320px, .85fr)', gap:'14px', alignItems:'start' }}>
+      {!hasPremiumAccess ? (
+        <DashboardPremiumLock />
+      ) : (
+        <>
+          <QuickActionsSection />
+
+          <div className="dash-main-grid" style={{ display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(320px, .85fr)', gap:'14px', alignItems:'start' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
           {/* Cashflow overview */}
           <Card>
@@ -655,18 +656,27 @@ const { curMonth, curYear } = useMonthContext()
               </div>
 
               <div className="dash-mini-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:'10px' }}>
-                <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
-                  <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Expense Rate</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:expenseRate > 80 ? '#b91c1c' : '#111827', fontFamily:'var(--font-mono), monospace' }}>{pct(expenseRate)}</div>
-                </div>
-                <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
-                  <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Saving Rate</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:savingRate >= 20 ? '#15803d' : '#1d4ed8', fontFamily:'var(--font-mono), monospace' }}>{pct(savingRate)}</div>
-                </div>
-                <div style={{ border:'1px solid #e3e7ee', borderRadius:'9px', padding:'11px 12px' }}>
-                  <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Transactions</div>
-                  <div style={{ marginTop:'5px', fontSize:'18px', fontWeight:800, color:'#111827', fontFamily:'var(--font-mono), monospace' }}>{tx.length}</div>
-                </div>
+                <DesignMetricCard
+                  label="Expense Rate"
+                  value={pct(expenseRate)}
+                  note="Expense / income"
+                  tone={expenseRate > 80 ? 'danger' : 'default'}
+                  style={{ borderRadius: 12 }}
+                />
+                <DesignMetricCard
+                  label="Saving Rate"
+                  value={pct(savingRate)}
+                  note="Saving / income"
+                  tone={savingRate >= 20 ? 'success' : 'info'}
+                  style={{ borderRadius: 12 }}
+                />
+                <DesignMetricCard
+                  label="Transactions"
+                  value={tx.length}
+                  note="Record bulan ini"
+                  tone="default"
+                  style={{ borderRadius: 12 }}
+                />
               </div>
             </div>
           </Card>
@@ -704,14 +714,20 @@ const { curMonth, curYear } = useMonthContext()
               ) : (
                 <>
                   <div className="dash-saving-summary-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px', marginBottom:'12px' }}>
-                    <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:'9px', padding:'10px' }}>
-                      <div style={{ fontSize:'10px', color:'#1d4ed8', fontWeight:800, textTransform:'uppercase' }}>Collected</div>
-                      <div style={{ fontSize:'15px', fontFamily:'var(--font-mono), monospace', fontWeight:800, color:'#1d4ed8', marginTop:'4px' }}>{fmt(summary.totalCollected)}</div>
-                    </div>
-                    <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'9px', padding:'10px' }}>
-                      <div style={{ fontSize:'10px', color:'#15803d', fontWeight:800, textTransform:'uppercase' }}>Progress</div>
-                      <div style={{ fontSize:'15px', fontFamily:'var(--font-mono), monospace', fontWeight:800, color:'#15803d', marginTop:'4px' }}>{pct(summary.pct)}</div>
-                    </div>
+                    <DesignMetricCard
+                      label="Collected"
+                      value={fmt(summary.totalCollected)}
+                      note="Total terkumpul"
+                      tone="info"
+                      style={{ borderRadius: 12 }}
+                    />
+                    <DesignMetricCard
+                      label="Progress"
+                      value={pct(summary.pct)}
+                      note="Progress keseluruhan"
+                      tone="success"
+                      style={{ borderRadius: 12 }}
+                    />
                   </div>
                   <PriorityGoalsList goals={activeGoals} />
                 </>
@@ -746,7 +762,9 @@ const { curMonth, curYear } = useMonthContext()
             </div>
           </Card>
         </div>
-      </div>
+          </div>
+        </>
+      )}
 
       <style>{`
         .fink-dashboard-page {

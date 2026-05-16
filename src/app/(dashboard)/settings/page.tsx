@@ -1,15 +1,37 @@
 'use client'
 
-import { AppCard, AppIcon, EmptyState, PageHeader } from '@/components/ui/design'
+import {
+  AppButton,
+  MetricCard,
+  PageHeader,
+  PremiumBanner,
+  SectionCard,
+  StatusBadge,
+} from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
 
 const fmtDate = (s?: string | null) => {
   if (!s) return '-'
-  return new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' })
+  return new Date(s).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 export default function SettingsPage() {
-  const { profile, subscription, loading, error, plan, isPremium, isAdmin, isSuperAdmin, isExpired, refresh } = useSubscription()
+  const {
+    profile,
+    subscription,
+    loading,
+    error,
+    plan,
+    isPremium,
+    isAdmin,
+    isSuperAdmin,
+    isExpired,
+    refresh,
+  } = useSubscription()
 
   const periodText = subscription?.is_lifetime
     ? 'Seumur hidup'
@@ -19,6 +41,11 @@ export default function SettingsPage() {
         ? 'Tidak ada masa aktif premium'
         : '-'
 
+  const roleText = isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'
+  const subscriptionText = loading
+    ? 'Memuat subscription...'
+    : `${plan.toUpperCase()} • ${subscription?.status || 'active'}`
+
   return (
     <div>
       <PageHeader
@@ -26,62 +53,126 @@ export default function SettingsPage() {
         subtitle="Manage your account, subscription, and FiNK workspace"
       />
 
-      <AppCard style={{ marginBottom: 14 }}>
-        <div style={{ padding:'16px', display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:'12px' }}>
-          <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#f7f8fa' }}>
-            <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Profile</div>
-            <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>{profile?.email || 'Memuat profil...'}</div>
-          </div>
-          <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:isPremium?'#eff6ff':'#f0fdf4' }}>
-            <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Subscription</div>
-            <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>
-              {loading ? 'Memuat subscription...' : `${plan.toUpperCase()} • ${subscription?.status || 'active'}`}
-            </div>
-          </div>
-          <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fffdf7' }}>
-            <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Masa Aktif</div>
-            <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>
-              {periodText}{isExpired ? ' • Expired' : ''}
-            </div>
-          </div>
-          <div style={{ padding:'14px', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#f7f8fa' }}>
-            <div style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>Role</div>
-            <div style={{ fontSize:'12px', color:'#6b7280', marginTop:4, lineHeight:1.45 }}>
-              {isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'}
-            </div>
-          </div>
+      <SectionCard
+        title="Account Overview"
+        subtitle="Ringkasan akun dan status paket FiNK."
+        right={
+          <StatusBadge tone={isPremium ? 'info' : 'premium'}>
+            {isPremium ? 'Premium' : 'Free'}
+          </StatusBadge>
+        }
+        style={{ marginBottom: 14 }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+            gap: 12,
+          }}
+        >
+          <MetricCard
+            label="Profile"
+            value={profile?.email || 'Memuat...'}
+            note="Email akun FiNK"
+            tone="default"
+            style={{ overflowWrap: 'anywhere' }}
+          />
+
+          <MetricCard
+            label="Subscription"
+            value={subscriptionText}
+            note={isPremium ? 'Paket aktif' : 'Paket dasar'}
+            tone={isPremium ? 'info' : 'premium'}
+          />
+
+          <MetricCard
+            label="Masa Aktif"
+            value={periodText}
+            note={isExpired ? 'Subscription expired' : 'Status periode saat ini'}
+            tone={isExpired ? 'danger' : 'warning'}
+          />
+
+          <MetricCard
+            label="Role"
+            value={roleText}
+            note="Hak akses akun"
+            tone={isAdmin || isSuperAdmin ? 'info' : 'default'}
+          />
         </div>
-      </AppCard>
+      </SectionCard>
+
+      {!isPremium && !loading && (
+        <PremiumBanner
+          title="Buka Financial Advisor penuh"
+          subtitle="Upgrade untuk membuka unlimited budget, unlimited income, unlimited goals, forecasting, analytics, dan rekomendasi premium."
+          actionLabel="Upgrade Premium"
+          href="/upgrade"
+          style={{ marginBottom: 14 }}
+          right={
+            <div
+              style={{
+                padding: '11px 14px',
+                borderRadius: 14,
+                background: 'rgba(255,255,255,.08)',
+                border: '1px solid rgba(255,255,255,.08)',
+                color: 'rgba(255,255,255,.76)',
+                fontSize: 11.5,
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              3 bulan Rp45.000 • 1 tahun Rp149.000
+            </div>
+          }
+        />
+      )}
 
       {profile?.suspended && (
-        <AppCard style={{ marginBottom:14, borderColor:'#fecaca', background:'#fef2f2' }}>
-          <div style={{ padding:14, fontSize:12.5, color:'#991b1b', lineHeight:1.5 }}>
+        <SectionCard
+          style={{
+            marginBottom: 14,
+            borderColor: '#fecaca',
+            background: '#fef2f2',
+          }}
+          bodyStyle={{ padding: 14 }}
+        >
+          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>
             Akun ini sedang suspended. Hubungi admin FiNK.
           </div>
-        </AppCard>
+        </SectionCard>
       )}
 
       {error && (
-        <AppCard style={{ marginBottom:14, borderColor:'#fecaca', background:'#fef2f2' }}>
-          <div style={{ padding:14, fontSize:12.5, color:'#991b1b', lineHeight:1.5 }}>
-            {error}<br />Jalankan file SQL user_management_subscription_schema.sql di Supabase jika belum.
+        <SectionCard
+          style={{
+            marginBottom: 14,
+            borderColor: '#fecaca',
+            background: '#fef2f2',
+          }}
+          bodyStyle={{ padding: 14 }}
+        >
+          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>
+            Gagal membaca status subscription. Silakan refresh atau coba lagi.
           </div>
-        </AppCard>
+        </SectionCard>
       )}
 
-      <AppCard style={{ marginBottom:14 }}>
-        <div style={{ padding:'16px' }}>
-          <div style={{ fontSize:'14px', fontWeight:900, color:'#111827' }}>Plan FiNK</div>
-          <div style={{ fontSize:'12.5px', color:'#6b7280', marginTop:4, lineHeight:1.55 }}>
-            User Free memiliki batas 10 kategori budget, 1 kategori income, dan 2 akun Smart Saving. Premium dapat diberi masa aktif sampai tanggal tertentu atau lifetime melalui Admin.
-          </div>
-          <button onClick={refresh} style={{ marginTop:14, border:'1px solid #e3e7ee', background:'#fff', borderRadius:8, padding:'8px 12px', fontSize:12, fontWeight:800, color:'#4b5563', cursor:'pointer' }}>Refresh Subscription</button>
+      <SectionCard
+        title="Subscription Status"
+        subtitle="Gunakan tombol ini jika status paket belum berubah setelah pembayaran."
+        style={{ marginBottom: 14 }}
+        bodyStyle={{ padding: 16 }}
+        right={
+          <AppButton onClick={refresh} variant="secondary">
+            Refresh Subscription
+          </AppButton>
+        }
+      >
+        <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.65 }}>
+          Status paket akan menentukan fitur yang terbuka di Dashboard, Advisor, Journal, dan Goals.
         </div>
-      </AppCard>
-
-      <EmptyState icon={<AppIcon name="settings" size={24} />} title="Subscription Ready">
-        Sistem role, masa aktif, lifetime, suspend, dan pengelolaan user sudah disiapkan.
-      </EmptyState>
+      </SectionCard>
     </div>
   )
 }
