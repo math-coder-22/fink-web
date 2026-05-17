@@ -2,13 +2,13 @@
 
 import {
   AppButton,
-  MetricCard,
   PageHeader,
   PremiumBanner,
   SectionCard,
   StatusBadge,
 } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
+import type { CSSProperties, ReactNode } from 'react'
 
 const fmtDate = (s?: string | null) => {
   if (!s) return '-'
@@ -17,6 +17,78 @@ const fmtDate = (s?: string | null) => {
     month: 'long',
     year: 'numeric',
   })
+}
+
+function ProfileInfoCard({
+  label,
+  value,
+  note,
+  badge,
+  accent = '#1a5c42',
+}: {
+  label: string
+  value: ReactNode
+  note?: string
+  badge?: ReactNode
+  accent?: string
+}) {
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        border: '1px solid #e3e7ee',
+        borderRadius: 18,
+        background: '#ffffff',
+        padding: 16,
+        boxShadow: '0 1px 2px rgba(15,23,42,.04)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 900,
+            color: '#9ca3af',
+            textTransform: 'uppercase',
+            letterSpacing: '.8px',
+            lineHeight: 1.2,
+          }}
+        >
+          {label}
+        </div>
+        {badge}
+      </div>
+
+      <div
+        style={{
+          marginTop: 10,
+          minWidth: 0,
+          color: accent,
+          fontSize: 18,
+          fontWeight: 850,
+          lineHeight: 1.25,
+          letterSpacing: '-.2px',
+        }}
+      >
+        {value}
+      </div>
+
+      {note && (
+        <div style={{ marginTop: 7, color: '#6b7280', fontSize: 12.5, lineHeight: 1.45 }}>
+          {note}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ellipsisStyle: CSSProperties = {
+  display: 'block',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  color: '#111827',
 }
 
 export default function SettingsPage() {
@@ -42,9 +114,10 @@ export default function SettingsPage() {
         : '-'
 
   const roleText = isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'
+  const subscriptionStatus = subscription?.status || 'active'
   const subscriptionText = loading
-    ? 'Memuat subscription...'
-    : `${plan.toUpperCase()} • ${subscription?.status || 'active'}`
+    ? 'Memuat...'
+    : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
 
   return (
     <div>
@@ -67,37 +140,46 @@ export default function SettingsPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: 12,
+            alignItems: 'stretch',
           }}
         >
-          <MetricCard
+          <ProfileInfoCard
             label="Profile"
-            value={profile?.email || 'Memuat...'}
+            value={<span style={ellipsisStyle} title={profile?.email || ''}>{profile?.email || 'Memuat...'}</span>}
             note="Email akun FiNK"
-            tone="default"
-            style={{ overflowWrap: 'anywhere' }}
+            accent="#111827"
           />
 
-          <MetricCard
+          <ProfileInfoCard
             label="Subscription"
-            value={subscriptionText}
+            value={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span>{subscriptionText}</span>
+                {!loading && (
+                  <StatusBadge tone={isPremium ? 'info' : 'default'} size="xs">
+                    {subscriptionStatus}
+                  </StatusBadge>
+                )}
+              </span>
+            }
             note={isPremium ? 'Paket aktif' : 'Paket dasar'}
-            tone={isPremium ? 'info' : 'premium'}
+            accent={isPremium ? '#1d4ed8' : '#1a5c42'}
           />
 
-          <MetricCard
+          <ProfileInfoCard
             label="Masa Aktif"
-            value={periodText}
+            value={<span style={{ color: isExpired ? '#991b1b' : '#92400e' }}>{periodText}</span>}
             note={isExpired ? 'Subscription expired' : 'Status periode saat ini'}
-            tone={isExpired ? 'danger' : 'warning'}
+            accent={isExpired ? '#991b1b' : '#92400e'}
           />
 
-          <MetricCard
+          <ProfileInfoCard
             label="Role"
             value={roleText}
             note="Hak akses akun"
-            tone={isAdmin || isSuperAdmin ? 'info' : 'default'}
+            accent={isAdmin || isSuperAdmin ? '#1d4ed8' : '#111827'}
           />
         </div>
       </SectionCard>
