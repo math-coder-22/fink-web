@@ -39,15 +39,15 @@ function ProfileInfoCard({
         border: '1px solid #e3e7ee',
         borderRadius: 18,
         background: '#ffffff',
-        padding: 16,
+        padding: 14,
         boxShadow: '0 1px 2px rgba(15,23,42,.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div
           style={{
-            fontSize: 11,
-            fontWeight: 900,
+            fontSize: 10.5,
+            fontWeight: 800,
             color: '#9ca3af',
             textTransform: 'uppercase',
             letterSpacing: '.8px',
@@ -61,11 +61,11 @@ function ProfileInfoCard({
 
       <div
         style={{
-          marginTop: 10,
+          marginTop: 8,
           minWidth: 0,
           color: accent,
-          fontSize: 18,
-          fontWeight: 850,
+          fontSize: 15.5,
+          fontWeight: 750,
           lineHeight: 1.25,
           letterSpacing: '-.2px',
         }}
@@ -74,7 +74,7 @@ function ProfileInfoCard({
       </div>
 
       {note && (
-        <div style={{ marginTop: 7, color: '#6b7280', fontSize: 12.5, lineHeight: 1.45 }}>
+        <div style={{ marginTop: 6, color: '#6b7280', fontSize: 12, lineHeight: 1.45 }}>
           {note}
         </div>
       )}
@@ -82,13 +82,14 @@ function ProfileInfoCard({
   )
 }
 
-const ellipsisStyle: CSSProperties = {
+const emailValueStyle: CSSProperties = {
   display: 'block',
   maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  overflowWrap: 'anywhere',
+  wordBreak: 'normal',
   color: '#111827',
+  fontSize: 14,
+  lineHeight: 1.35,
 }
 
 export default function SettingsPage() {
@@ -135,19 +136,19 @@ export default function SettingsPage() {
           </StatusBadge>
         }
         style={{ marginBottom: 14 }}
-        bodyStyle={{ padding: 16 }}
+        bodyStyle={{ padding: 14 }}
       >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 12,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: 10,
             alignItems: 'stretch',
           }}
         >
           <ProfileInfoCard
             label="Profile"
-            value={<span style={ellipsisStyle} title={profile?.email || ''}>{profile?.email || 'Memuat...'}</span>}
+            value={<span style={emailValueStyle} title={profile?.email || ''}>{profile?.email || 'Memuat...'}</span>}
             note="Email akun FiNK"
             accent="#111827"
           />
@@ -155,7 +156,7 @@ export default function SettingsPage() {
           <ProfileInfoCard
             label="Subscription"
             value={
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                 <span>{subscriptionText}</span>
                 {!loading && (
                   <StatusBadge tone={isPremium ? 'info' : 'default'} size="xs">
@@ -251,7 +252,7 @@ export default function SettingsPage() {
           </AppButton>
         }
       >
-        <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.65 }}>
+        <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
           Status paket akan menentukan fitur yang terbuka di Dashboard, Advisor, Journal, dan Goals.
         </div>
       </SectionCard>
