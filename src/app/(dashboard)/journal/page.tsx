@@ -346,7 +346,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <div
             style={{
               position:'sticky',
-              top:'76px',
+              top:'0px',
               zIndex:30,
               display:'flex',
               background:'rgba(255,255,255,0.92)',
@@ -354,7 +354,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
               WebkitBackdropFilter:'blur(12px)',
               border:'1px solid rgba(227,231,238,0.9)',
               borderRadius:'16px',
-              padding:'4px',
+              padding:'6px 12px',
               marginBottom:'16px',
               boxShadow:'0 8px 24px rgba(15,23,42,.10)',
             }}
@@ -405,7 +405,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         .fink-journal-page {
           width: 100%;
           max-width: 100%;
-          overflow-x: hidden;
+          overflow-x: clip;
           padding-bottom: max(18px, env(safe-area-inset-bottom));
         }
 
