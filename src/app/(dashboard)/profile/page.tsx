@@ -8,7 +8,8 @@ import {
   StatusBadge,
 } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
-import type { CSSProperties, ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const fmtDate = (s?: string | null) => {
   if (!s) return '-'
@@ -92,6 +93,45 @@ const emailValueStyle: CSSProperties = {
   lineHeight: 1.35,
 }
 
+const securityInputStyle: CSSProperties = {
+  width: '100%',
+  border: '1px solid #dfe5ee',
+  borderRadius: 12,
+  padding: '10px 12px',
+  fontSize: 13,
+  color: '#111827',
+  outline: 'none',
+  background: '#ffffff',
+}
+
+const securityLabelStyle: CSSProperties = {
+  display: 'block',
+  marginBottom: 6,
+  fontSize: 10.5,
+  fontWeight: 800,
+  color: '#8b95a7',
+  textTransform: 'uppercase',
+  letterSpacing: '.7px',
+}
+
+function SecurityNotice({ tone, children }: { tone: 'success' | 'error'; children: ReactNode }) {
+  return (
+    <div
+      style={{
+        borderRadius: 12,
+        border: `1px solid ${tone === 'success' ? '#bbf7d0' : '#fecaca'}`,
+        background: tone === 'success' ? '#f0fdf4' : '#fef2f2',
+        color: tone === 'success' ? '#166534' : '#991b1b',
+        padding: '10px 12px',
+        fontSize: 12,
+        lineHeight: 1.45,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const {
     profile,
@@ -105,6 +145,42 @@ export default function SettingsPage() {
     isExpired,
     refresh,
   } = useSubscription()
+
+  const supabase = useMemo(() => createClient(), [])
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordMessage, setPasswordMessage] = useState('')
+
+  async function handleChangePassword(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordMessage('')
+
+    if (newPassword.length < 8) {
+      setPasswordError('Password baru minimal 8 karakter.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Konfirmasi password tidak sama.')
+      return
+    }
+
+    setPasswordLoading(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setPasswordLoading(false)
+
+    if (error) {
+      setPasswordError(error.message)
+      return
+    }
+
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordMessage('Password berhasil diperbarui.')
+  }
 
   const periodText = subscription?.is_lifetime
     ? 'Seumur hidup'
@@ -240,6 +316,81 @@ export default function SettingsPage() {
           </div>
         </SectionCard>
       )}
+
+      <SectionCard
+        title="Security"
+        subtitle="Kelola keamanan akun FiNK Anda."
+        style={{ marginBottom: 14 }}
+        bodyStyle={{ padding: 16 }}
+      >
+        <form onSubmit={handleChangePassword} style={{ display: 'grid', gap: 12, maxWidth: 620 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 12,
+            }}
+          >
+            <label style={{ minWidth: 0 }}>
+              <span style={securityLabelStyle}>New Password</span>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value)
+                  setPasswordError('')
+                  setPasswordMessage('')
+                }}
+                placeholder="Minimal 8 karakter"
+                autoComplete="new-password"
+                style={securityInputStyle}
+              />
+            </label>
+
+            <label style={{ minWidth: 0 }}>
+              <span style={securityLabelStyle}>Confirm Password</span>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  setPasswordError('')
+                  setPasswordMessage('')
+                }}
+                placeholder="Ulangi password baru"
+                autoComplete="new-password"
+                style={securityInputStyle}
+              />
+            </label>
+          </div>
+
+          {passwordError && <SecurityNotice tone="error">{passwordError}</SecurityNotice>}
+          {passwordMessage && <SecurityNotice tone="success">{passwordMessage}</SecurityNotice>}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              style={{
+                border: 0,
+                borderRadius: 12,
+                padding: '10px 14px',
+                background: passwordLoading ? '#9ca3af' : '#1a5c42',
+                color: '#ffffff',
+                fontSize: 12.5,
+                fontWeight: 800,
+                cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                boxShadow: passwordLoading ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
+              }}
+            >
+              {passwordLoading ? 'Updating...' : 'Update Password'}
+            </button>
+            <span style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
+              Password tidak disimpan di database FiNK dan diproses melalui Supabase Auth.
+            </span>
+          </div>
+        </form>
+      </SectionCard>
 
       <SectionCard
         title="Subscription Status"
