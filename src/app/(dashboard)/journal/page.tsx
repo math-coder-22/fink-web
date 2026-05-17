@@ -343,9 +343,40 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       {/* MOBILE: 3-tab */}
       {isMobile ? (
         <>
-          <div style={{ position:'sticky', top:0, zIndex:50, display:'flex', background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'3px', marginBottom:'14px', boxShadow:'0 1px 4px rgba(0,0,0,.07)' }}>
+          <div
+            style={{
+              position:'sticky',
+              top:'76px',
+              zIndex:30,
+              display:'flex',
+              background:'rgba(255,255,255,0.92)',
+              backdropFilter:'blur(12px)',
+              WebkitBackdropFilter:'blur(12px)',
+              border:'1px solid rgba(227,231,238,0.9)',
+              borderRadius:'16px',
+              padding:'4px',
+              marginBottom:'16px',
+              boxShadow:'0 8px 24px rgba(15,23,42,.10)',
+            }}
+          >
             {MOBILE_TABS.map(tab => (
-              <button key={tab.key} onClick={()=>setMobileTab(tab.key)} style={{ flex:1, padding:'8px 4px', border:'none', borderRadius:'8px', background:mobileTab===tab.key?'#1a5c42':'none', color:mobileTab===tab.key?'#fff':'#9ca3af', fontSize:'12px', fontWeight:600, cursor:'pointer', transition:'all .15s' }}>
+              <button
+                key={tab.key}
+                onClick={()=>setMobileTab(tab.key)}
+                style={{
+                  flex:1,
+                  padding:'10px 6px',
+                  border:'none',
+                  borderRadius:'12px',
+                  background:mobileTab===tab.key?'#1a5c42':'transparent',
+                  color:mobileTab===tab.key?'#fff':'#6b7280',
+                  fontSize:'12px',
+                  fontWeight:700,
+                  cursor:'pointer',
+                  transition:'all .18s ease',
+                  boxShadow:mobileTab===tab.key?'0 2px 8px rgba(26,92,66,.22)':'none',
+                }}
+              >
                 {tab.label}
               </button>
             ))}
