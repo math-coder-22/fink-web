@@ -81,7 +81,7 @@ export default function UpgradePage() {
       <PremiumBanner
         title="Buka Financial Advisor Pribadi"
         subtitle="Upgrade untuk membuka unlimited budget, unlimited income, unlimited goals, forecasting, analytics, dan rekomendasi premium agar FiNK tidak hanya mencatat uang, tetapi membantu membaca arah keuanganmu."
-        href="/settings"
+        href="/profile"
         actionLabel="Kembali ke Profile"
         style={{ marginBottom: 18 }}
       />
@@ -248,7 +248,7 @@ export default function UpgradePage() {
       </SectionCard>
 
       <div style={{ marginTop: 18 }}>
-        <AppButton href="/settings" variant="ghost">
+        <AppButton href="/profile" variant="ghost">
           ← Kembali ke Profile
         </AppButton>
       </div>

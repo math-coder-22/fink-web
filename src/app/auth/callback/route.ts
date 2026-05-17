@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const redirectTo =
     type === 'recovery'
       ? `${origin}/login?type=recovery`
-      : `${origin}/bulanan`
+      : `${origin}/journal`
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_auth_code`)

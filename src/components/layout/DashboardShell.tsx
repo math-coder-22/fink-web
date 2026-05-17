@@ -61,11 +61,11 @@ export const MonthContext = createContext<MonthContextValue>({
 export const useMonthContext = () => useContext(MonthContext)
 
 const BASE_NAV_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
-  { href:'/dashboard', label:'Overview', icon:'overview' },
-  { href:'/bulanan',   label:'Journal',  icon:'journal' },
-  { href:'/financial-doctor', label:'Advisor', icon:'advisor' },
-  { href:'/tabungan',  label:'Goals',    icon:'goals' },
-  { href:'/settings',  label:'Profile',  icon:'profile' },
+  { href:'/overview', label:'Overview', icon:'overview' },
+  { href:'/journal',   label:'Journal',  icon:'journal' },
+  { href:'/advisor', label:'Advisor', icon:'advisor' },
+  { href:'/goals',  label:'Goals',    icon:'goals' },
+  { href:'/profile',  label:'Profile',  icon:'profile' },
 ]
 
 const ADMIN_NAV_ITEM: { href: string; label: string; icon: NavIconName } = { href:'/admin', label:'Admin', icon:'admin' }

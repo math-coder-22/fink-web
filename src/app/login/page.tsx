@@ -96,7 +96,7 @@ function LoginContent() {
       return
     }
 
-    router.push('/bulanan')
+    router.push('/journal')
     router.refresh()
   }
 
@@ -135,7 +135,7 @@ function LoginContent() {
     setLoading(false)
 
     if (data.session) {
-      router.push('/bulanan')
+      router.push('/journal')
       router.refresh()
       return
     }

@@ -84,7 +84,7 @@ export async function updateSession(request: NextRequest) {
     authType !== 'recovery'
   ) {
     const url = request.nextUrl.clone()
-    url.pathname = '/bulanan'
+    url.pathname = '/journal'
     return NextResponse.redirect(url)
   }
 

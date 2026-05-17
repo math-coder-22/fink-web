@@ -242,7 +242,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
                 flexShrink:0
               }}
             >
-              <AppIcon name="chart" size={16} />
+              <AppIcon name="calculator" size={16} />
             </button>
           </div>
         </div>
@@ -328,7 +328,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
           <div style={{ width:'100%', maxWidth:'340px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
             <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
               <div>
-                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:800, color:'#111827' }}><AppIcon name="chart" size={16} />Kalkulator Pengeluaran</div>
+                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:800, color:'#111827' }}><AppIcon name="calculator" size={16} />Kalkulator Pengeluaran</div>
                 <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>Hitung lalu masukkan ke Amount</div>
               </div>
               <button type="button" aria-label="Close" onClick={()=>setCalcOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f3f4f6', borderRadius:'8px', color:'#4b5563', cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>

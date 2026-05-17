@@ -172,7 +172,7 @@ export default function AdminPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.message || json.error || 'Gagal memulai Monitoring Mode')
-      window.location.href = '/dashboard'
+      window.location.href = '/overview'
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
