@@ -8,7 +8,7 @@ import {
   StatusBadge,
 } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
-import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const fmtDate = (s?: string | null) => {
@@ -20,17 +20,88 @@ const fmtDate = (s?: string | null) => {
   })
 }
 
-function ProfileInfoCard({
+type ProfileType = 'personal' | 'family'
+type FinancialFocus = 'emergency_fund' | 'debt_free' | 'saving' | 'investing' | 'retirement'
+
+type FinancialProfileState = {
+  displayName: string
+  profileType: ProfileType
+  familyMembers: string
+  dependents: string
+  financialFocus: FinancialFocus
+}
+
+const focusLabels: Record<FinancialFocus, string> = {
+  emergency_fund: 'Emergency Fund',
+  debt_free: 'Debt Free',
+  saving: 'Saving',
+  investing: 'Investing',
+  retirement: 'Retirement',
+}
+
+const fieldStyle: CSSProperties = {
+  width: '100%',
+  border: '1px solid #dfe5ee',
+  borderRadius: 12,
+  padding: '10px 12px',
+  fontSize: 13,
+  color: '#111827',
+  outline: 'none',
+  background: '#ffffff',
+}
+
+const labelStyle: CSSProperties = {
+  display: 'block',
+  marginBottom: 6,
+  fontSize: 10.5,
+  fontWeight: 800,
+  color: '#8b95a7',
+  textTransform: 'uppercase',
+  letterSpacing: '.7px',
+}
+
+function getInitials(nameOrEmail?: string | null) {
+  const source = (nameOrEmail || 'FiNK User').trim()
+  const namePart = source.includes('@') ? source.split('@')[0] : source
+  const parts = namePart.split(/[\s._-]+/).filter(Boolean)
+  return (parts[0]?.[0] || 'F').toUpperCase() + (parts[1]?.[0] || '').toUpperCase()
+}
+
+function Notice({ tone, children }: { tone: 'success' | 'error' | 'info'; children: ReactNode }) {
+  const palette = {
+    success: { border: '#bbf7d0', bg: '#f0fdf4', text: '#166534' },
+    error: { border: '#fecaca', bg: '#fef2f2', text: '#991b1b' },
+    info: { border: '#dbeafe', bg: '#eff6ff', text: '#1d4ed8' },
+  }[tone]
+
+  return (
+    <div
+      style={{
+        borderRadius: 12,
+        border: `1px solid ${palette.border}`,
+        background: palette.bg,
+        color: palette.text,
+        padding: '10px 12px',
+        fontSize: 12,
+        lineHeight: 1.45,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function CompactInfoCard({
   label,
   value,
   note,
-  badge,
+  icon,
   accent = '#1a5c42',
 }: {
   label: string
   value: ReactNode
   note?: string
-  badge?: ReactNode
+  icon?: ReactNode
   accent?: string
 }) {
   return (
@@ -44,90 +115,83 @@ function ProfileInfoCard({
         boxShadow: '0 1px 2px rgba(15,23,42,.04)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div
           style={{
-            fontSize: 10.5,
-            fontWeight: 800,
-            color: '#9ca3af',
-            textTransform: 'uppercase',
-            letterSpacing: '.8px',
-            lineHeight: 1.2,
+            width: 34,
+            height: 34,
+            borderRadius: 12,
+            display: 'grid',
+            placeItems: 'center',
+            background: '#f0f8f4',
+            color: '#1a5c42',
+            flex: '0 0 auto',
           }}
         >
-          {label}
+          {icon || '•'}
         </div>
-        {badge}
-      </div>
-
-      <div
-        style={{
-          marginTop: 8,
-          minWidth: 0,
-          color: accent,
-          fontSize: 15.5,
-          fontWeight: 750,
-          lineHeight: 1.25,
-          letterSpacing: '-.2px',
-        }}
-      >
-        {value}
-      </div>
-
-      {note && (
-        <div style={{ marginTop: 6, color: '#6b7280', fontSize: 12, lineHeight: 1.45 }}>
-          {note}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 800,
+              color: '#9ca3af',
+              textTransform: 'uppercase',
+              letterSpacing: '.8px',
+              lineHeight: 1.2,
+            }}
+          >
+            {label}
+          </div>
+          <div
+            style={{
+              marginTop: 5,
+              minWidth: 0,
+              color: accent,
+              fontSize: 15,
+              fontWeight: 750,
+              lineHeight: 1.25,
+              letterSpacing: '-.2px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={typeof value === 'string' ? value : undefined}
+          >
+            {value}
+          </div>
         </div>
-      )}
+      </div>
+      {note && <div style={{ marginTop: 8, color: '#6b7280', fontSize: 12, lineHeight: 1.45 }}>{note}</div>}
     </div>
   )
 }
 
-const emailValueStyle: CSSProperties = {
-  display: 'block',
-  maxWidth: '100%',
-  overflowWrap: 'anywhere',
-  wordBreak: 'normal',
-  color: '#111827',
-  fontSize: 14,
-  lineHeight: 1.35,
-}
-
-const securityInputStyle: CSSProperties = {
-  width: '100%',
-  border: '1px solid #dfe5ee',
-  borderRadius: 12,
-  padding: '10px 12px',
-  fontSize: 13,
-  color: '#111827',
-  outline: 'none',
-  background: '#ffffff',
-}
-
-const securityLabelStyle: CSSProperties = {
-  display: 'block',
-  marginBottom: 6,
-  fontSize: 10.5,
-  fontWeight: 800,
-  color: '#8b95a7',
-  textTransform: 'uppercase',
-  letterSpacing: '.7px',
-}
-
-function SecurityNotice({ tone, children }: { tone: 'success' | 'error'; children: ReactNode }) {
+function SettingRow({
+  title,
+  description,
+  right,
+}: {
+  title: string
+  description?: string
+  right?: ReactNode
+}) {
   return (
     <div
       style={{
-        borderRadius: 12,
-        border: `1px solid ${tone === 'success' ? '#bbf7d0' : '#fecaca'}`,
-        background: tone === 'success' ? '#f0fdf4' : '#fef2f2',
-        color: tone === 'success' ? '#166534' : '#991b1b',
-        padding: '10px 12px',
-        fontSize: 12,
-        lineHeight: 1.45,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 14,
+        padding: '12px 0',
+        borderBottom: '1px solid #edf0f5',
       }}
     >
-      {children}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 750, color: '#111827', lineHeight: 1.25 }}>{title}</div>
+        {description && <div style={{ marginTop: 4, fontSize: 12, color: '#6b7280', lineHeight: 1.45 }}>{description}</div>}
+      </div>
+      <div style={{ flex: '0 0 auto' }}>{right}</div>
     </div>
   )
 }
@@ -147,11 +211,47 @@ export default function SettingsPage() {
   } = useSubscription()
 
   const supabase = useMemo(() => createClient(), [])
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordError, setPasswordError] = useState('')
   const [passwordMessage, setPasswordMessage] = useState('')
+  const [financialMessage, setFinancialMessage] = useState('')
+  const [financialProfile, setFinancialProfile] = useState<FinancialProfileState>({
+    displayName: '',
+    profileType: 'personal',
+    familyMembers: '1',
+    dependents: '0',
+    financialFocus: 'emergency_fund',
+  })
+
+  useEffect(() => {
+    if (!profile?.id) return
+    const key = `fink-financial-profile-${profile.id}`
+    const saved = window.localStorage.getItem(key)
+    if (saved) {
+      try {
+        setFinancialProfile((prev) => ({ ...prev, ...JSON.parse(saved) }))
+        return
+      } catch {
+        // ignore invalid local storage value
+      }
+    }
+    setFinancialProfile((prev) => ({
+      ...prev,
+      displayName: profile.full_name || profile.email?.split('@')[0] || '',
+    }))
+  }, [profile?.id, profile?.email, profile?.full_name])
+
+  function saveFinancialProfile(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!profile?.id) return
+    const key = `fink-financial-profile-${profile.id}`
+    window.localStorage.setItem(key, JSON.stringify(financialProfile))
+    setFinancialMessage('Financial profile tersimpan di perangkat ini. Data ini tidak berisi informasi sensitif.')
+    window.setTimeout(() => setFinancialMessage(''), 3500)
+  }
 
   async function handleChangePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -180,6 +280,19 @@ export default function SettingsPage() {
     setNewPassword('')
     setConfirmPassword('')
     setPasswordMessage('Password berhasil diperbarui.')
+    window.setTimeout(() => {
+      setShowPasswordModal(false)
+      setPasswordMessage('')
+    }, 900)
+  }
+
+  function closePasswordModal() {
+    if (passwordLoading) return
+    setShowPasswordModal(false)
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError('')
+    setPasswordMessage('')
   }
 
   const periodText = subscription?.is_lifetime
@@ -195,68 +308,99 @@ export default function SettingsPage() {
   const subscriptionText = loading
     ? 'Memuat...'
     : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+  const displayName = financialProfile.displayName || profile?.full_name || profile?.email?.split('@')[0] || 'FiNK User'
+  const email = profile?.email || 'Memuat...'
 
   return (
     <div>
-      <PageHeader
-        title="Profile"
-        subtitle="Manage your account, subscription, and FiNK workspace"
-      />
+      <PageHeader title="Profile" subtitle="Account, security, and financial identity settings" />
+
+      <SectionCard style={{ marginBottom: 14 }} bodyStyle={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <div
+            style={{
+              width: 54,
+              height: 54,
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, #1a5c42, #2f8f67)',
+              color: '#ffffff',
+              display: 'grid',
+              placeItems: 'center',
+              fontSize: 17,
+              fontWeight: 850,
+              boxShadow: '0 12px 26px rgba(26,92,66,.18)',
+              flex: '0 0 auto',
+            }}
+          >
+            {getInitials(displayName || email)}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0, color: '#111827', fontSize: 20, fontWeight: 800, lineHeight: 1.2 }}>
+                {displayName}
+              </h2>
+              <StatusBadge tone={isPremium ? 'info' : 'premium'} size="xs">
+                {isPremium ? 'Premium Active' : 'Free Plan'}
+              </StatusBadge>
+            </div>
+            <div
+              style={{
+                marginTop: 5,
+                color: '#6b7280',
+                fontSize: 13,
+                lineHeight: 1.4,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+              }}
+              title={email}
+            >
+              {email}
+            </div>
+          </div>
+        </div>
+      </SectionCard>
 
       <SectionCard
-        title="Account Overview"
-        subtitle="Ringkasan akun dan status paket FiNK."
-        right={
-          <StatusBadge tone={isPremium ? 'info' : 'premium'}>
-            {isPremium ? 'Premium' : 'Free'}
-          </StatusBadge>
-        }
+        title="Account"
+        subtitle="Ringkasan akun dan akses FiNK."
         style={{ marginBottom: 14 }}
         bodyStyle={{ padding: 14 }}
       >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 10,
             alignItems: 'stretch',
           }}
         >
-          <ProfileInfoCard
-            label="Profile"
-            value={<span style={emailValueStyle} title={profile?.email || ''}>{profile?.email || 'Memuat...'}</span>}
-            note="Email akun FiNK"
-            accent="#111827"
-          />
-
-          <ProfileInfoCard
+          <CompactInfoCard
             label="Subscription"
-            value={
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <span>{subscriptionText}</span>
-                {!loading && (
-                  <StatusBadge tone={isPremium ? 'info' : 'default'} size="xs">
-                    {subscriptionStatus}
-                  </StatusBadge>
-                )}
-              </span>
-            }
-            note={isPremium ? 'Paket aktif' : 'Paket dasar'}
+            value={subscriptionText}
+            note={isPremium ? 'Paket premium aktif' : 'Paket dasar'}
             accent={isPremium ? '#1d4ed8' : '#1a5c42'}
+            icon="★"
           />
-
-          <ProfileInfoCard
-            label="Masa Aktif"
-            value={<span style={{ color: isExpired ? '#991b1b' : '#92400e' }}>{periodText}</span>}
-            note={isExpired ? 'Subscription expired' : 'Status periode saat ini'}
-            accent={isExpired ? '#991b1b' : '#92400e'}
-          />
-
-          <ProfileInfoCard
+          <CompactInfoCard
             label="Role"
             value={roleText}
             note="Hak akses akun"
             accent={isAdmin || isSuperAdmin ? '#1d4ed8' : '#111827'}
+            icon="◦"
+          />
+          <CompactInfoCard
+            label="Workspace"
+            value={financialProfile.profileType === 'family' ? 'Family' : 'Personal'}
+            note="Tipe profil finansial"
+            icon="⌂"
+          />
+          <CompactInfoCard
+            label="Security"
+            value="Password"
+            note="Dikelola Supabase Auth"
+            icon="✓"
           />
         </div>
       </SectionCard>
@@ -288,125 +432,267 @@ export default function SettingsPage() {
       )}
 
       {profile?.suspended && (
-        <SectionCard
-          style={{
-            marginBottom: 14,
-            borderColor: '#fecaca',
-            background: '#fef2f2',
-          }}
-          bodyStyle={{ padding: 14 }}
-        >
-          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>
-            Akun ini sedang suspended. Hubungi admin FiNK.
-          </div>
+        <SectionCard style={{ marginBottom: 14, borderColor: '#fecaca', background: '#fef2f2' }} bodyStyle={{ padding: 14 }}>
+          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>Akun ini sedang suspended. Hubungi admin FiNK.</div>
         </SectionCard>
       )}
 
       {error && (
-        <SectionCard
-          style={{
-            marginBottom: 14,
-            borderColor: '#fecaca',
-            background: '#fef2f2',
-          }}
-          bodyStyle={{ padding: 14 }}
-        >
-          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>
-            Gagal membaca status subscription. Silakan refresh atau coba lagi.
-          </div>
+        <SectionCard style={{ marginBottom: 14, borderColor: '#fecaca', background: '#fef2f2' }} bodyStyle={{ padding: 14 }}>
+          <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5 }}>Gagal membaca status subscription. Silakan refresh atau coba lagi.</div>
         </SectionCard>
       )}
 
       <SectionCard
-        title="Security"
-        subtitle="Kelola keamanan akun FiNK Anda."
+        title="Financial Profile"
+        subtitle="Personalisasi FiNK tanpa data sensitif."
         style={{ marginBottom: 14 }}
         bodyStyle={{ padding: 16 }}
       >
-        <form onSubmit={handleChangePassword} style={{ display: 'grid', gap: 12, maxWidth: 620 }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: 12,
-            }}
-          >
+        <form onSubmit={saveFinancialProfile} style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             <label style={{ minWidth: 0 }}>
-              <span style={securityLabelStyle}>New Password</span>
+              <span style={labelStyle}>Display Name</span>
               <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value)
-                  setPasswordError('')
-                  setPasswordMessage('')
-                }}
-                placeholder="Minimal 8 karakter"
-                autoComplete="new-password"
-                style={securityInputStyle}
+                value={financialProfile.displayName}
+                onChange={(e) => setFinancialProfile((prev) => ({ ...prev, displayName: e.target.value }))}
+                placeholder="Nama yang tampil di dashboard"
+                style={fieldStyle}
               />
             </label>
-
             <label style={{ minWidth: 0 }}>
-              <span style={securityLabelStyle}>Confirm Password</span>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                  setPasswordError('')
-                  setPasswordMessage('')
-                }}
-                placeholder="Ulangi password baru"
-                autoComplete="new-password"
-                style={securityInputStyle}
-              />
+              <span style={labelStyle}>Profile Type</span>
+              <select
+                value={financialProfile.profileType}
+                onChange={(e) => setFinancialProfile((prev) => ({ ...prev, profileType: e.target.value as ProfileType }))}
+                style={fieldStyle}
+              >
+                <option value="personal">Personal</option>
+                <option value="family">Family</option>
+              </select>
+            </label>
+            <label style={{ minWidth: 0 }}>
+              <span style={labelStyle}>Financial Focus</span>
+              <select
+                value={financialProfile.financialFocus}
+                onChange={(e) => setFinancialProfile((prev) => ({ ...prev, financialFocus: e.target.value as FinancialFocus }))}
+                style={fieldStyle}
+              >
+                {Object.entries(focusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </label>
           </div>
 
-          {passwordError && <SecurityNotice tone="error">{passwordError}</SecurityNotice>}
-          {passwordMessage && <SecurityNotice tone="success">{passwordMessage}</SecurityNotice>}
+          {financialProfile.profileType === 'family' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              <label style={{ minWidth: 0 }}>
+                <span style={labelStyle}>Number of Family Members</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={financialProfile.familyMembers}
+                  onChange={(e) => setFinancialProfile((prev) => ({ ...prev, familyMembers: e.target.value }))}
+                  style={fieldStyle}
+                />
+              </label>
+              <label style={{ minWidth: 0 }}>
+                <span style={labelStyle}>Number of Dependents</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={financialProfile.dependents}
+                  onChange={(e) => setFinancialProfile((prev) => ({ ...prev, dependents: e.target.value }))}
+                  style={fieldStyle}
+                />
+              </label>
+            </div>
+          )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {financialMessage && <Notice tone="success">{financialMessage}</Notice>}
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
+              Digunakan untuk sapaan dashboard, advisor, dan rekomendasi goals yang lebih personal.
+            </div>
             <button
               type="submit"
-              disabled={passwordLoading}
               style={{
                 border: 0,
                 borderRadius: 12,
                 padding: '10px 14px',
-                background: passwordLoading ? '#9ca3af' : '#1a5c42',
+                background: '#1a5c42',
                 color: '#ffffff',
                 fontSize: 12.5,
                 fontWeight: 800,
-                cursor: passwordLoading ? 'not-allowed' : 'pointer',
-                boxShadow: passwordLoading ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
+                cursor: 'pointer',
+                boxShadow: '0 8px 18px rgba(26,92,66,.16)',
               }}
             >
-              {passwordLoading ? 'Updating...' : 'Update Password'}
+              Save Profile
             </button>
-            <span style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
-              Password tidak disimpan di database FiNK dan diproses melalui Supabase Auth.
-            </span>
           </div>
         </form>
       </SectionCard>
 
+      <SectionCard title="Security" subtitle="Kelola keamanan akun FiNK Anda." style={{ marginBottom: 14 }} bodyStyle={{ padding: 16 }}>
+        <SettingRow
+          title="Password"
+          description="Update password akun Anda melalui Supabase Auth."
+          right={
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              style={{
+                border: '1px solid #dfe5ee',
+                borderRadius: 12,
+                padding: '9px 12px',
+                background: '#ffffff',
+                color: '#1a5c42',
+                fontSize: 12.5,
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Change Password
+            </button>
+          }
+        />
+        <SettingRow title="Last updated" description="Belum tersedia" right={<span style={{ color: '#9ca3af', fontSize: 12 }}>—</span>} />
+      </SectionCard>
+
+      <SectionCard title="Preferences" subtitle="Preferensi dasar aplikasi." style={{ marginBottom: 14 }} bodyStyle={{ padding: 16 }}>
+        <SettingRow title="Currency" description="Mata uang utama aplikasi" right={<span style={{ color: '#111827', fontSize: 12.5, fontWeight: 750 }}>IDR</span>} />
+        <SettingRow title="Theme" description="Mengikuti tema FiNK saat ini" right={<span style={{ color: '#9ca3af', fontSize: 12 }}>Default</span>} />
+        <SettingRow title="Notification Preference" description="Pengaturan notifikasi akan tersedia berikutnya" right={<span style={{ color: '#9ca3af', fontSize: 12 }}>Soon</span>} />
+      </SectionCard>
+
       <SectionCard
-        title="Subscription Status"
-        subtitle="Gunakan tombol ini jika status paket belum berubah setelah pembayaran."
+        title="Subscription"
+        subtitle="Status paket dan akses fitur FiNK."
         style={{ marginBottom: 14 }}
         bodyStyle={{ padding: 16 }}
-        right={
-          <AppButton onClick={refresh} variant="secondary">
-            Refresh Subscription
-          </AppButton>
-        }
+        right={<AppButton onClick={refresh} variant="secondary">Refresh</AppButton>}
       >
-        <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
-          Status paket akan menentukan fitur yang terbuka di Dashboard, Advisor, Journal, dan Goals.
+        <div style={{ display: 'grid', gap: 10 }}>
+          <SettingRow title="Current Plan" description="Paket yang sedang digunakan" right={<StatusBadge tone={isPremium ? 'info' : 'default'}>{subscriptionText}</StatusBadge>} />
+          <SettingRow title="Status" description="Status subscription internal" right={<span style={{ color: '#111827', fontSize: 12.5, fontWeight: 750 }}>{subscriptionStatus}</span>} />
+          <SettingRow title="Expired At" description={isExpired ? 'Subscription expired' : 'Masa aktif paket'} right={<span style={{ color: isExpired ? '#991b1b' : '#111827', fontSize: 12.5, fontWeight: 750 }}>{periodText}</span>} />
         </div>
       </SectionCard>
+
+      {showPasswordModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 80,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 16,
+            background: 'rgba(15,23,42,.42)',
+            backdropFilter: 'blur(6px)',
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closePasswordModal()
+          }}
+        >
+          <div
+            style={{
+              width: 'min(440px, 100%)',
+              borderRadius: 22,
+              background: '#ffffff',
+              border: '1px solid #e3e7ee',
+              boxShadow: '0 24px 70px rgba(15,23,42,.24)',
+              padding: 18,
+            }}
+          >
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 850, color: '#111827', lineHeight: 1.2 }}>Change Password</div>
+              <div style={{ marginTop: 5, fontSize: 12.5, color: '#6b7280', lineHeight: 1.5 }}>
+                Password baru minimal 8 karakter. Jangan gunakan password yang mudah ditebak.
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} style={{ display: 'grid', gap: 12 }}>
+              <label style={{ minWidth: 0 }}>
+                <span style={labelStyle}>New Password</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value)
+                    setPasswordError('')
+                    setPasswordMessage('')
+                  }}
+                  placeholder="Minimal 8 karakter"
+                  autoComplete="new-password"
+                  style={fieldStyle}
+                />
+              </label>
+
+              <label style={{ minWidth: 0 }}>
+                <span style={labelStyle}>Confirm Password</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value)
+                    setPasswordError('')
+                    setPasswordMessage('')
+                  }}
+                  placeholder="Ulangi password baru"
+                  autoComplete="new-password"
+                  style={fieldStyle}
+                />
+              </label>
+
+              {passwordError && <Notice tone="error">{passwordError}</Notice>}
+              {passwordMessage && <Notice tone="success">{passwordMessage}</Notice>}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  disabled={passwordLoading}
+                  style={{
+                    border: '1px solid #dfe5ee',
+                    borderRadius: 12,
+                    padding: '10px 14px',
+                    background: '#ffffff',
+                    color: '#374151',
+                    fontSize: 12.5,
+                    fontWeight: 800,
+                    cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  style={{
+                    border: 0,
+                    borderRadius: 12,
+                    padding: '10px 14px',
+                    background: passwordLoading ? '#9ca3af' : '#1a5c42',
+                    color: '#ffffff',
+                    fontSize: 12.5,
+                    fontWeight: 800,
+                    cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                    boxShadow: passwordLoading ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
+                  }}
+                >
+                  {passwordLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
