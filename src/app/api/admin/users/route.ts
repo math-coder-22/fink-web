@@ -80,7 +80,7 @@ export async function GET() {
   const ids = (profiles || []).map((p: any) => p.id)
   const { data: subscriptions, error: subsError } = await admin
     .from('subscriptions')
-    .select('*')
+    .select('id,user_id,plan,status,current_period_end,is_lifetime,created_at,updated_at')
     .in('user_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000'])
 
   if (subsError) return NextResponse.json({ error: subsError.message }, { status: 500 })
@@ -251,7 +251,7 @@ export async function PATCH(request: NextRequest) {
         is_lifetime: nextLifetime,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
-      .select('*')
+      .select('id,user_id,plan,status,current_period_end,is_lifetime,created_at,updated_at')
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

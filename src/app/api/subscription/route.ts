@@ -53,7 +53,7 @@ export async function GET() {
 
   const { data: existingSub, error: subReadError } = await supabase
     .from('subscriptions')
-    .select('*')
+    .select('id,user_id,plan,status,current_period_end,is_lifetime,created_at,updated_at')
     .eq('user_id', effectiveUserId)
     .maybeSingle()
 
@@ -71,7 +71,7 @@ export async function GET() {
     const { data: insertedSub, error: insertSubError } = await supabase
       .from('subscriptions')
       .insert({ user_id: effectiveUserId, plan: DEFAULT_PLAN, status: 'active', is_lifetime: false })
-      .select('*')
+      .select('id,user_id,plan,status,current_period_end,is_lifetime,created_at,updated_at')
       .single()
 
     if (insertSubError) {
@@ -90,7 +90,7 @@ export async function GET() {
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', effectiveUserId)
-      .select('*')
+      .select('id,user_id,plan,status,current_period_end,is_lifetime,created_at,updated_at')
       .single()
 
     if (downgraded) subscription = downgraded

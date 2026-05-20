@@ -110,13 +110,37 @@ export function sumPlanDebt(plan?: RawPlan | null) {
   return (plan?.debt || []).reduce((s, d: any) => s + Number(d?.plan || d?.actual || 0), 0)
 }
 
-export function aggregateMonth(month: MonthKey, year: number, tx: Transaction[], plan?: RawPlan | null): MonthlyTrendItem {
-  const scoped = tx.filter(t => t.month === month && Number(t.year) === Number(year))
-  const incomeActual = scoped.filter(t => t.type === 'inn').reduce((s, t) => s + Number(t.amt || 0), 0)
-  const expense = scoped.filter(t => t.type === 'out' && !(t.debt && !t.settled)).reduce((s, t) => s + Number(t.amt || 0), 0)
-  const saving = scoped.filter(t => t.type === 'save').reduce((s, t) => s + Number(t.amt || 0), 0)
+export function buildTransactionMonthBuckets(tx: Transaction[]) {
+  const buckets = new Map<string, { incomeActual: number; expense: number; saving: number; transactionCount: number }>()
+
+  for (const t of tx || []) {
+    const key = `${t.month}-${Number(t.year)}`
+    const current = buckets.get(key) || { incomeActual: 0, expense: 0, saving: 0, transactionCount: 0 }
+    const amount = Number(t.amt || 0)
+
+    current.transactionCount += 1
+    if (t.type === 'inn') current.incomeActual += amount
+    else if (t.type === 'out' && !(t.debt && !t.settled)) current.expense += amount
+    else if (t.type === 'save') current.saving += amount
+
+    buckets.set(key, current)
+  }
+
+  return buckets
+}
+
+export function aggregateMonthFromBucket(
+  month: MonthKey,
+  year: number,
+  bucket?: { incomeActual: number; expense: number; saving: number; transactionCount: number },
+  plan?: RawPlan | null
+): MonthlyTrendItem {
+  const incomeActual = bucket?.incomeActual || 0
+  const expense = bucket?.expense || 0
+  const saving = bucket?.saving || 0
   const income = incomeActual || sumPlanIncome(plan)
   const cashflow = income - expense - saving
+
   return {
     month,
     year,
@@ -127,8 +151,12 @@ export function aggregateMonth(month: MonthKey, year: number, tx: Transaction[],
     cashflow,
     savingRate: income > 0 ? (saving / income) * 100 : 0,
     expenseRate: income > 0 ? (expense / income) * 100 : 0,
-    transactionCount: scoped.length,
+    transactionCount: bucket?.transactionCount || 0,
   }
+}
+
+export function aggregateMonth(month: MonthKey, year: number, tx: Transaction[], plan?: RawPlan | null): MonthlyTrendItem {
+  return aggregateMonthFromBucket(month, year, buildTransactionMonthBuckets(tx).get(`${month}-${Number(year)}`), plan)
 }
 
 

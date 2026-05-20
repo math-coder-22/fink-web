@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('monthly_plans')
-    .select('*')
+    .select('id,user_id,month,year,income,saving,debt,budget,created_at,updated_at')
     .eq('user_id', effectiveUserId)
     .eq('month', month)
     .eq('year', parseInt(year))
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       { user_id: effectiveUserId, month, year: parseInt(year), income, saving, debt, budget },
       { onConflict: 'user_id,month,year' }
     )
-    .select()
+    .select('id,user_id,month,year,income,saving,debt,budget,created_at,updated_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

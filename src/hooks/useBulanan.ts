@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { IncomeCategory, SavingRow, DebtRow, BudgetCategory, Transaction, MonthKey } from '@/types/database'
 
 export const MONTH_NAMES: Record<string, string> = {
@@ -141,7 +141,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     } finally {
       setLoading(false)
     }
-  }, [curMonth, curYear, readOnly, blockReadOnly])
+  }, [curMonth, curYear])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -169,18 +169,26 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     })
   }, [savePlan, readOnly, blockReadOnly])
 
+  const actualByTypeAndCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const t of tx) {
+      if (t.type === 'out' && t.debt && !t.settled) continue
+      const key = `${t.type}:${t.cat}`
+      map.set(key, (map.get(key) || 0) + Number(t.amt || 0))
+    }
+    return map
+  }, [tx])
+
   // Budget actual dari tx.out
   const computedBudget = useCallback((): BudgetCategory[] => {
     return plan.budget.map(cat => ({
       ...cat,
       items: cat.items.map(item => ({
         ...item,
-        actual: tx
-          .filter(t => t.type === 'out' && t.cat === item.label && !(t.debt && !t.settled))
-          .reduce((s, t) => s + t.amt, 0),
+        actual: actualByTypeAndCategory.get(`out:${item.label}`) || 0,
       })),
     }))
-  }, [plan.budget, tx])
+  }, [actualByTypeAndCategory, plan.budget])
 
   // Income actual dari tx.inn per item label
   const computedIncome = useCallback((): IncomeCategory[] => {
@@ -188,33 +196,27 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       ...cat,
       items: cat.items.map(item => ({
         ...item,
-        actual: tx
-          .filter(t => t.type === 'inn' && t.cat === item.label)
-          .reduce((s, t) => s + t.amt, 0),
+        actual: actualByTypeAndCategory.get(`inn:${item.label}`) || 0,
       })),
     }))
-  }, [plan.income, tx])
+  }, [actualByTypeAndCategory, plan.income])
 
   // Saving actual dari tx.save per label
   const computedSaving = useCallback((): SavingRow[] => {
     return plan.saving.map(row => ({
       ...row,
-      actual: tx
-        .filter(t => t.type === 'save' && t.cat === row.label)
-        .reduce((s, t) => s + t.amt, 0),
+      actual: actualByTypeAndCategory.get(`save:${row.label}`) || 0,
     }))
-  }, [plan.saving, tx])
+  }, [actualByTypeAndCategory, plan.saving])
 
   // Debt Payment actual dari tx.out per label debt
   const computedDebt = useCallback((): DebtRow[] => {
     const debtRows = Array.isArray(plan.debt) ? plan.debt : emptyMonth().debt
     return debtRows.map(row => ({
       ...row,
-      actual: tx
-        .filter(t => t.type === 'out' && t.cat === row.label && !(t.debt && !t.settled))
-        .reduce((s, t) => s + t.amt, 0),
+      actual: actualByTypeAndCategory.get(`out:${row.label}`) || 0,
     }))
-  }, [plan.debt, tx])
+  }, [actualByTypeAndCategory, plan.debt])
 
   // Rename cat di semua tx jika label budget/income/saving berubah
   const renameTxCat = useCallback(async (oldLabel: string, newLabel: string) => {

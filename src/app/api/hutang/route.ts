@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('transactions')
-    .select('*')
+    .select('id,user_id,month,year,date,type,cat,note,amt,debt,settled,created_at')
     .eq('user_id', effectiveUserId)
     .eq('debt', true)
     .eq('settled', false)

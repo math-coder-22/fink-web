@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEffectiveUser } from '@/lib/auth/effective-user'
-import { aggregateMonth, recentMonths } from '@/lib/finance/summary'
+import { aggregateMonthFromBucket, buildTransactionMonthBuckets, recentMonths } from '@/lib/finance/summary'
 import type { MonthKey, Transaction } from '@/types/database'
 
 const MONTH_SET = new Set(['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'])
@@ -26,13 +26,13 @@ export async function GET(request: NextRequest) {
   const [txRes, planRes] = await Promise.all([
     supabase
       .from('transactions')
-      .select('*')
+      .select('month,year,type,amt,debt,settled')
       .eq('user_id', effectiveUserId)
       .in('year', years)
       .in('month', monthKeys),
     supabase
       .from('monthly_plans')
-      .select('*')
+      .select('month,year,income,saving,debt,budget')
       .eq('user_id', effectiveUserId)
       .in('year', years)
       .in('month', monthKeys),
@@ -42,8 +42,11 @@ export async function GET(request: NextRequest) {
   if (planRes.error) return NextResponse.json({ error: planRes.error.message }, { status: 500 })
 
   const tx = (txRes.data || []) as Transaction[]
+  const txBuckets = buildTransactionMonthBuckets(tx)
   const plans = new Map((planRes.data || []).map((p: any) => [`${p.month}-${p.year}`, p]))
-  const trend = months.map(({ month: m, year: y }) => aggregateMonth(m, y, tx, plans.get(`${m}-${y}`)))
+  const trend = months.map(({ month: m, year: y }) =>
+    aggregateMonthFromBucket(m, y, txBuckets.get(`${m}-${y}`), plans.get(`${m}-${y}`))
+  )
 
   return NextResponse.json({ data: trend })
 }

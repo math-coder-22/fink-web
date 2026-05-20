@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('transactions')
-    .select('*')
+    .select('id,user_id,month,year,date,type,cat,note,amt,debt,settled,created_at')
     .eq('user_id', effectiveUserId)
     .eq('month', month)
     .eq('year', parseInt(year))
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       debt: !!debt,
       settled: !!settled,
     })
-    .select()
+    .select('id,user_id,month,year,date,type,cat,note,amt,debt,settled,created_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest) {
     .update(updates)
     .eq('id', id)
     .eq('user_id', effectiveUserId) // pastikan hanya bisa edit milik sendiri
-    .select()
+    .select('id,user_id,month,year,date,type,cat,note,amt,debt,settled,created_at')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -73,7 +73,7 @@ const ADMIN_NAV_ITEM: { href: string; label: string; icon: NavIconName } = { hre
 export default function DashboardShell({ user, children }: { user: User; children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const now      = new Date()
 
   const [curMonth,       setCurMonth]       = useState<MonthKey>(MONTHS_ORDER[now.getMonth()])
