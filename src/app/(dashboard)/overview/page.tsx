@@ -249,6 +249,7 @@ type FinancialPositionProps = {
   savingRate: number
   expenseRate: number
   activeGoalCount: number
+  hasFinancialData: boolean
 }
 
 function FinancialPositionHero({
@@ -263,8 +264,9 @@ function FinancialPositionHero({
   savingRate,
   expenseRate,
   activeGoalCount,
+  hasFinancialData,
 }: FinancialPositionProps) {
-  const healthScore = Math.max(0, Math.min(100,
+  const healthScore = hasFinancialData ? Math.max(0, Math.min(100,
     Math.round(
       35 +
       (monthlySurplus >= 0 ? 20 : -18) +
@@ -272,9 +274,9 @@ function FinancialPositionHero({
       (expenseRate <= 70 ? 12 : expenseRate <= 85 ? 4 : -8) +
       (emergencyMonths === null ? 0 : emergencyMonths >= 6 ? 8 : emergencyMonths >= 3 ? 4 : -6)
     )
-  ))
-  const status = healthScore >= 75 ? 'Healthy' : healthScore >= 55 ? 'Watchful' : 'Needs Attention'
-  const statusColor = healthScore >= 75 ? '#15803d' : healthScore >= 55 ? '#b7791f' : '#b91c1c'
+  )) : 0
+  const status = !hasFinancialData ? 'No Data' : healthScore >= 75 ? 'Healthy' : healthScore >= 55 ? 'Watchful' : 'Needs Attention'
+  const statusColor = !hasFinancialData ? '#64748b' : healthScore >= 75 ? '#15803d' : healthScore >= 55 ? '#b7791f' : '#b91c1c'
 
   const smallCard = (label: string, value: string, note: string, color: string, bg: string) => (
     <div style={{ background:bg, border:'1px solid rgba(148,163,184,.22)', borderRadius:16, padding:'13px 14px', minWidth:0 }}>
@@ -317,7 +319,7 @@ function FinancialPositionHero({
             </div>
             <div style={{ border:'1px solid #e2e8f0', borderRadius:14, padding:'10px 11px' }}>
               <div style={{ fontSize:10, fontWeight:900, color:'#94a3b8', textTransform:'uppercase' }}>Health Score</div>
-              <div style={{ marginTop:5, fontSize:15, fontWeight:900, color:statusColor, fontFamily:'var(--font-mono), monospace' }}>{healthScore}/100</div>
+              <div style={{ marginTop:5, fontSize:15, fontWeight:900, color:statusColor, fontFamily:'var(--font-mono), monospace' }}>{hasFinancialData ? `${healthScore}/100` : '—'}</div>
             </div>
           </div>
         </div>
@@ -541,6 +543,7 @@ const { curMonth, curYear } = useMonthContext()
   const plannedExpense = sumBudgetPlan(budget)
   const totalSaving = sumSaving(saving)
   const totalDebtPayment = sumDebt(debt)
+  const hasFinancialData = tx.length > 0 || plannedIncome > 0 || plannedExpense > 0 || totalSaving > 0 || totalDebtPayment > 0 || goals.some(g => g.status !== 'archived' && ((g.current || 0) > 0 || (g.target || 0) > 0 || Boolean(g.name)))
   const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
   const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
   const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
@@ -616,6 +619,7 @@ const { curMonth, curYear } = useMonthContext()
         savingRate={savingRate}
         expenseRate={expenseRate}
         activeGoalCount={activeTrackedGoals}
+        hasFinancialData={hasFinancialData}
       />
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:12, margin:'2px 0 10px' }}><div><div style={{ fontSize:14, fontWeight:900, color:'#0f172a' }}>Money Flow</div><div style={{ fontSize:11.5, color:'#94a3b8', marginTop:2 }}>Arus masuk, keluar, dan saving bulan berjalan</div></div></div>

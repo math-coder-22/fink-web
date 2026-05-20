@@ -106,6 +106,18 @@ export function sumPlanBudget(plan?: RawPlan | null) {
   return (plan?.budget || []).reduce((s, c: any) => s + (Array.isArray(c?.items) ? c.items.reduce((ss: number, i: any) => ss + Number(i?.plan || 0), 0) : 0), 0)
 }
 
+export function sumPlanSaving(plan?: RawPlan | null) {
+  return (plan?.saving || []).reduce((s, c: any) => s + Number(c?.plan || c?.actual || 0), 0)
+}
+
+function hasPlanData(plan?: RawPlan | null) {
+  return sumPlanIncome(plan) > 0 || sumPlanBudget(plan) > 0 || sumPlanSaving(plan) > 0 || sumPlanDebt(plan) > 0
+}
+
+function hasGoalData(goals?: SavingsGoal[]) {
+  return (goals || []).some(g => Number(g?.current || 0) > 0 || Number(g?.target || 0) > 0 || Number(g?.monthly || 0) > 0 || Boolean(g?.name))
+}
+
 export function sumPlanDebt(plan?: RawPlan | null) {
   return (plan?.debt || []).reduce((s, d: any) => s + Number(d?.plan || d?.actual || 0), 0)
 }
@@ -322,11 +334,15 @@ export function buildAdvisorSummary(params: {
   const milestone = pickMilestone(params.goals || [])
   const tradeoffs = buildTradeoffs(goalInsights, goalPlan)
   const milestoneProgress = milestone?.progress || 0
-  const score = scoreFromSummary(current, debtRatio, milestoneProgress)
+  const hasFinancialData = current.transactionCount > 0 || params.trend.some(m => m.transactionCount > 0) || hasPlanData(params.currentPlan) || hasGoalData(params.goals)
+  const score = hasFinancialData ? scoreFromSummary(current, debtRatio, milestoneProgress) : 0
   const status = score >= 75 ? 'good' : score >= 50 ? 'warning' : 'danger'
-  const statusLabel = score >= 75 ? 'Sehat' : score >= 50 ? 'Perlu dijaga' : 'Perlu perhatian'
+  const statusLabel = hasFinancialData ? (score >= 75 ? 'Sehat' : score >= 50 ? 'Perlu dijaga' : 'Perlu perhatian') : 'Belum ada data'
 
   const risks: AdvisorSummary['risks'] = []
+  if (!hasFinancialData) {
+    risks.push({ tone:'neutral', title:'Belum ada data keuangan', detail:'Tambahkan income, transaksi, budget, atau goals agar FiNK bisa mulai menghitung Financial Health.' })
+  }
   if (current.cashflow < 0) risks.push({ tone:'danger', title:'Cashflow negatif', detail:'Pengeluaran dan saving bulan ini sudah melebihi pemasukan.' })
   if (current.expenseRate > 80) risks.push({ tone:'warning', title:'Expense rate tinggi', detail:`Expense rate bulan ini ${Math.round(current.expenseRate)}% dari income.` })
   if (current.savingRate < 10 && current.income > 0) risks.push({ tone:'warning', title:'Saving rate rendah', detail:`Saving rate baru ${Math.round(current.savingRate)}%. Target awal yang sehat minimal 10%.` })
@@ -336,6 +352,9 @@ export function buildAdvisorSummary(params: {
   if (risks.length === 0) risks.push({ tone:'good', title:'Tidak ada sinyal besar', detail:'Belum ada risiko besar dari data bulan ini.' })
 
   const priorities: AdvisorPriority[] = []
+  if (!hasFinancialData) {
+    priorities.push({ level:'low', title:'Mulai dari data pertama', detail:'Catat income atau transaksi utama terlebih dahulu. Debt tidak wajib diisi jika memang tidak ada.' })
+  }
   if (current.cashflow < 0) priorities.push({ level:'high', title:'Pulihkan cashflow dulu', detail:'Tahan belanja non-prioritas sampai cashflow kembali positif.' })
   if (current.savingRate < 10 && current.income > 0) priorities.push({ level:'medium', title:'Naikkan saving rate bertahap', detail:`Mulai dari 10% income, sekitar Rp ${Math.round(current.income * 0.1).toLocaleString('id-ID')}.` })
   if (debtRatio > 25) priorities.push({ level: debtRatio > 35 ? 'high' : 'medium', title:'Jaga beban cicilan', detail:'Hindari cicilan baru dan prioritaskan pelunasan utang berbunga tinggi.' })
@@ -346,9 +365,11 @@ export function buildAdvisorSummary(params: {
   if (milestone) priorities.push({ level:'low', title:`Percepat ${milestone.title}`, detail: milestone.monthly > 0 ? `Pertahankan alokasi Rp ${Math.round(milestone.monthly).toLocaleString('id-ID')} per bulan.` : milestone.detail })
   if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Arus kas, tabungan, dan risiko utama masih terkendali.' })
 
-  let mainInsight = 'FiNK masih membutuhkan lebih banyak data untuk membaca pola keuangan bulanan Anda.'
+  let mainInsight = hasFinancialData
+    ? 'FiNK masih membutuhkan lebih banyak data untuk membaca pola keuangan bulanan Anda.'
+    : 'Belum ada data keuangan. Tambahkan income, transaksi, budget, atau goals untuk mulai menghitung Financial Health Anda.'
   const topGoal = focusGoals[0]
-  if (goalPlan.status === 'overloaded') {
+  if (hasFinancialData && goalPlan.status === 'overloaded') {
     mainInsight = `Target keuangan Anda sudah bermakna, tetapi timeline saat ini mungkin membutuhkan pemasukan lebih besar atau waktu lebih panjang. FiNK akan membantu memprioritaskan target yang paling penting terlebih dahulu.`
   } else if (topGoal && (topGoal.priority === 'critical' || topGoal.priority === 'high')) {
     mainInsight = `${topGoal.name} should be the main focus now. ${topGoal.recommendation}`

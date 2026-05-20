@@ -166,6 +166,12 @@ export function analyzeFinancialDoctor(input: {
   const totalIncome = sumByType(safeTx, 'inn')
   const totalExpense = sumByType(safeTx, 'out')
   const totalSaving = sumByType(safeTx, 'save')
+  const hasFinancialData =
+    safeTx.length > 0 ||
+    safeArray<IncomeCategory>(input.income).some((c: any) => Number(c?.plan || c?.actual || 0) > 0 || (Array.isArray(c?.items) && c.items.some((i: any) => Number(i?.plan || i?.actual || 0) > 0))) ||
+    safeArray<BudgetCategory>(input.budget).some((c: any) => Array.isArray(c?.items) && c.items.some((i: any) => Number(i?.plan || i?.actual || 0) > 0)) ||
+    safeSaving.some((s: any) => Number(s?.plan || s?.actual || 0) > 0) ||
+    safeDebt.some((d: any) => Number(d?.plan || d?.actual || 0) > 0)
   const debtPayment = sumDebtRows(safeDebt)
   const cashflow = totalIncome - totalExpense - totalSaving
   const savingRate = totalIncome > 0 ? totalSaving / totalIncome : 0
@@ -175,20 +181,23 @@ export function analyzeFinancialDoctor(input: {
   const remainingDays = Math.max(1, daysInMonth - elapsedDays + 1)
   const recommendedDailyLimit = Math.max(0, cashflow / remainingDays)
 
-  const score =
-    scoreCashflow(cashflow, totalIncome) +
-    scoreSaving(savingRate) +
-    scoreDebt(debtRatio) +
-    scoreEmergency(safeSaving, totalExpense) +
-    scoreConsistency(safeTx, elapsedDays)
+  const score = hasFinancialData
+    ? scoreCashflow(cashflow, totalIncome) +
+      scoreSaving(savingRate) +
+      scoreDebt(debtRatio) +
+      scoreEmergency(safeSaving, totalExpense) +
+      scoreConsistency(safeTx, elapsedDays)
+    : 0
 
   const statusTone =
+    !hasFinancialData ? 'neutral' :
     score >= 80 ? 'good' :
     score >= 60 ? 'warning' :
     score >= 40 ? 'warning' :
     'danger'
 
   const statusLabel =
+    !hasFinancialData ? 'Belum ada data' :
     score >= 80 ? 'Sehat' :
     score >= 60 ? 'Cukup Sehat' :
     score >= 40 ? 'Perlu Dijaga' :
@@ -226,7 +235,15 @@ export function analyzeFinancialDoctor(input: {
 
   const diagnosis: DoctorInsight[] = []
 
-  if (!observationReady) {
+  if (!hasFinancialData) {
+    diagnosis.push({
+      type: 'neutral',
+      title: 'Belum ada data keuangan',
+      detail: 'Tambahkan income, transaksi, budget, atau goals untuk mulai menghitung Financial Health Anda. Debt tidak wajib diisi jika memang tidak ada.',
+    })
+  }
+
+  if (hasFinancialData && !observationReady) {
     diagnosis.push({
       type: 'neutral',
       title: 'Data observasi belum penuh',
@@ -234,7 +251,7 @@ export function analyzeFinancialDoctor(input: {
     })
   }
 
-  if (totalIncome <= 0) {
+  if (hasFinancialData && totalIncome <= 0) {
     diagnosis.push({
       type: 'warning',
       title: 'Income belum tercatat',
@@ -293,7 +310,15 @@ export function analyzeFinancialDoctor(input: {
 
   const treatments: TreatmentItem[] = []
 
-  if (cashflow < 0) {
+  if (!hasFinancialData) {
+    treatments.push({
+      priority: 'low',
+      title: 'Mulai dari data pertama',
+      detail: 'Catat pemasukan atau transaksi utama terlebih dahulu. Setelah itu FiNK akan menghitung skor secara otomatis.',
+    })
+  }
+
+  if (hasFinancialData && cashflow < 0) {
     treatments.push({
       priority: 'high',
       title: 'Aktifkan survival budget bulan ini',
@@ -335,6 +360,14 @@ export function analyzeFinancialDoctor(input: {
   }
 
   const habits: HabitSignal[] = []
+
+  if (!hasFinancialData) {
+    habits.push({
+      tone: 'neutral',
+      title: 'Belum ada pola',
+      detail: 'FiNK belum memiliki data untuk membaca kebiasaan finansial Anda.',
+    })
+  }
 
   const firstHalf = safeTx
     .filter(t => txDay(t) <= Math.ceil(daysInMonth / 2) && t.type === 'out')
