@@ -16,6 +16,7 @@ const plans = [
     tone: 'default' as const,
     featured: false,
     button: 'Paket Saat Ini',
+    href: undefined,
     items: [
       '7 expense items',
       '1 income source',
@@ -33,6 +34,7 @@ const plans = [
     tone: 'premium' as const,
     featured: false,
     button: 'Pilih 3 Bulan',
+    href: 'https://lynk.id/smart-activity',
     items: [
       'Unlimited budget',
       'Unlimited income sources',
@@ -49,6 +51,7 @@ const plans = [
     tone: 'success' as const,
     featured: true,
     button: 'Pilih Tahunan',
+    href: 'https://lynk.id/smart-activity',
     items: [
       'Semua fitur Premium',
       'Hemat dibanding 3 bulanan',
@@ -151,22 +154,51 @@ export default function UpgradePage() {
               {plan.price}
             </div>
 
-            <button
-              style={{
-                width: '100%',
-                marginTop: 18,
-                border: 0,
-                borderRadius: 14,
-                padding: '12px 14px',
-                background: plan.featured ? '#052e16' : '#10b981',
-                color: '#fff',
-                fontWeight: 900,
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              {plan.button}
-            </button>
+            {plan.href ? (
+              <a
+                href={plan.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  marginTop: 18,
+                  border: 0,
+                  borderRadius: 14,
+                  padding: '12px 14px',
+                  background: plan.featured ? '#052e16' : '#10b981',
+                  color: '#fff',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {plan.button}
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                style={{
+                  width: '100%',
+                  marginTop: 18,
+                  border: 0,
+                  borderRadius: 14,
+                  padding: '12px 14px',
+                  background: plan.featured ? '#052e16' : '#10b981',
+                  color: '#fff',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  cursor: 'default',
+                  opacity: 0.75,
+                }}
+              >
+                {plan.button}
+              </button>
+            )}
 
             <div style={{ marginTop: 18, display: 'grid', gap: 9 }}>
               {plan.items.map((item) => (

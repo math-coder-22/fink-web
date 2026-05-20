@@ -61,3 +61,8 @@ Tes manual minimal:
 5. Goals: tambah/edit/hapus target.
 6. Profile: data tersimpan.
 7. Admin/monitoring jika akun admin digunakan.
+
+## Upgrade Link Patch
+- Tombol `Pilih 3 Bulan` pada halaman `/upgrade` diarahkan ke `https://lynk.id/smart-activity`.
+- Tombol `Pilih Tahunan` pada halaman `/upgrade` diarahkan ke `https://lynk.id/smart-activity`.
+- Paket Free tetap tidak diarahkan ke link pembelian.
