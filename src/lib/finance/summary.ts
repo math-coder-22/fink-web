@@ -115,7 +115,18 @@ function hasPlanData(plan?: RawPlan | null) {
 }
 
 function hasGoalData(goals?: SavingsGoal[]) {
-  return (goals || []).some(g => Number(g?.current || 0) > 0 || Number(g?.target || 0) > 0 || Number(g?.monthly || 0) > 0 || Boolean(g?.name))
+  // Nama/jenis target bawaan tidak cukup untuk dianggap sebagai data keuangan.
+  // User baru bisa saja memiliki draft/default goal tanpa nominal, dan itu tidak boleh
+  // membuat Financial Health langsung mendapat skor 67/68.
+  return (goals || []).some((g: any) =>
+    Number(g?.current || 0) > 0 ||
+    Number(g?.target || 0) > 0 ||
+    Number(g?.monthly || 0) > 0 ||
+    Number(g?.expense || 0) > 0 ||
+    Number(g?.coverageTarget || 0) > 0 ||
+    Number(g?.eduCurrent || 0) > 0 ||
+    Number(g?.pensionExp || 0) > 0
+  )
 }
 
 export function sumPlanDebt(plan?: RawPlan | null) {
@@ -229,6 +240,18 @@ function buildGoalInsights(goals: SavingsGoal[]) {
 }
 
 function scoreFromSummary(current: MonthlyTrendItem, debtRatio: number, milestoneProgress: number) {
+  // Guard agar kondisi benar-benar kosong atau hanya struktur/default kosong
+  // tidak menghasilkan skor bawaan tinggi seperti 67/68.
+  if (
+    current.income <= 0 &&
+    current.expense <= 0 &&
+    current.saving <= 0 &&
+    debtRatio <= 0 &&
+    milestoneProgress <= 0
+  ) {
+    return 0
+  }
+
   let score = 0
   if (current.cashflow >= current.income * 0.15) score += 30
   else if (current.cashflow >= current.income * 0.03) score += 24
