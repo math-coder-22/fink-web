@@ -73,13 +73,13 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     const nowYear  = now.getFullYear()
     if (curYear === nowYear && curMonth === nowMonth) {
       const last = new Date(nowYear, now.getMonth()+1, 0).getDate()
-      return `Day ${now.getDate()} of ${last} · ${last - now.getDate()} days remaining · Kakeibo System`
+      return `Day ${now.getDate()} of ${last} · ${last - now.getDate()} days remaining · FiNK System`
     }
     const selDate = new Date(curYear, MONTHS_ORDER.indexOf(curMonth), 1)
     const nowDate = new Date(nowYear, now.getMonth(), 1)
     return selDate < nowDate
-      ? 'This month has passed · Kakeibo System'
-      : 'This month has not started yet · Kakeibo System'
+      ? 'This month has passed · FiNK System'
+      : 'This month has not started yet · FiNK System'
   })()
 
   async function handleCopyBudget() {

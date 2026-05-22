@@ -101,7 +101,7 @@ export default function StatStrip({
     {
       label: 'SAVINGS',
       value: totalSavingActual,
-      sub: `planned ${fmt(totalSavingPlan)}`,
+      sub: `${pct(totalSavingActual, totalSavingPlan)}% · planned ${fmt(totalSavingPlan)}`,
       color: '#2b55d9',
       accent: '#4b63ff',
       bg: '#f7fbff',
