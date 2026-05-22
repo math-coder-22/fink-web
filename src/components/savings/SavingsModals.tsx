@@ -64,7 +64,7 @@ export function TopupModal({
           }}
         >
           <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#1a5c42" }}>
-            <AppIcon name="income" size={15} />Setor Dana
+            <AppIcon name="income" size={15} />Deposit
           </div>
           <button
             aria-label="Close"
@@ -109,7 +109,7 @@ export function TopupModal({
                 letterSpacing: ".5px",
               }}
             >
-              Jumlah Setor (Rp)
+              Deposit Amount (Rp)
             </label>
             <input
               autoFocus
@@ -137,7 +137,7 @@ export function TopupModal({
                 letterSpacing: ".5px",
               }}
             >
-              Keterangan (opsional)
+              Note (optional)
             </label>
             <input
               type="text"
@@ -162,7 +162,7 @@ export function TopupModal({
               cursor: "pointer",
             }}
           >
-            Setor {amt ? fmt(parseFloat(amt) || 0) : "Dana"}
+            Deposit {amt ? fmt(parseFloat(amt) || 0) : "Fund"}
           </button>
         </div>
       </div>
@@ -228,7 +228,7 @@ export function WithdrawModal({
           }}
         >
           <div style={{ display:"flex", alignItems:"center", gap:7, fontSize: "15px", fontWeight: 700, color: "#b45309" }}>
-            <AppIcon name="expense" size={15} />Tarik Dana
+            <AppIcon name="expense" size={15} />Withdraw
           </div>
           <button
             aria-label="Close"
@@ -259,7 +259,7 @@ export function WithdrawModal({
         >
           <div style={{ fontSize: "13px", fontWeight: 600 }}>{goal.name}</div>
           <div style={{ fontSize: "12px", color: "#9ca3af" }}>
-            Dana tersedia:{" "}
+            Available balance:{" "}
             <strong style={{ color: "#111827" }}>{fmt(goal.current)}</strong>
           </div>
           <label
@@ -282,7 +282,7 @@ export function WithdrawModal({
               onChange={(e) => setAll(e.target.checked)}
               style={{ accentColor: "#b45309", width: "14px", height: "14px" }}
             />
-            Tarik semua ({fmt(goal.current)})
+            Withdraw all ({fmt(goal.current)})
           </label>
           {!all && (
             <div>
@@ -297,7 +297,7 @@ export function WithdrawModal({
                   letterSpacing: ".5px",
                 }}
               >
-                Jumlah Tarik (Rp)
+                Withdraw Amount (Rp)
               </label>
               <input
                 autoFocus
@@ -321,7 +321,7 @@ export function WithdrawModal({
                     marginTop: "4px",
                   }}
                 >
-                  Melebihi dana tersedia
+                  Exceeds available balance
                 </div>
               )}
             </div>
@@ -338,7 +338,7 @@ export function WithdrawModal({
                 letterSpacing: ".5px",
               }}
             >
-              Keterangan (opsional)
+              Note (optional)
             </label>
             <input
               type="text"
@@ -369,7 +369,7 @@ export function WithdrawModal({
               cursor: actualAmt > 0 ? "pointer" : "not-allowed",
             }}
           >
-            Tarik {actualAmt > 0 ? fmt(actualAmt) : "Dana"}
+            Withdraw {actualAmt > 0 ? fmt(actualAmt) : "Fund"}
           </button>
         </div>
       </div>

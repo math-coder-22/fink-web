@@ -295,12 +295,20 @@ function KebabMenu({
 
 /* ─── COMPACT ACTION MENU FOR DETAIL MODAL ─── */
 function DetailActionMenu({
+  goal,
+  onTopup,
+  onWithdraw,
   onReconcile,
   onEdit,
+  onStatus,
   onDelete,
 }: {
+  goal: SavingsGoal;
+  onTopup: () => void;
+  onWithdraw: () => void;
   onReconcile: () => void;
   onEdit: () => void;
+  onStatus: (s: SavingsGoal["status"]) => void;
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -376,7 +384,7 @@ function DetailActionMenu({
             position: "absolute" as const,
             top: 40,
             right: 0,
-            width: 180,
+            width: 205,
             background: "#fff",
             border: "1.5px solid #e4e1d9",
             borderRadius: 12,
@@ -386,8 +394,21 @@ function DetailActionMenu({
             padding: "5px 0",
           }}
         >
-          {item(<><AppIcon name="scale" size={14} /> Reconcile</>, "#92400e", onReconcile)}
+          {goal.status === "active" && item(<><AppIcon name="income" size={14} /> Deposit</>, "#1a5c42", onTopup)}
+          {goal.status === "active" && item(<><AppIcon name="expense" size={14} /> Withdraw</>, "#b45309", onWithdraw)}
+          {goal.status === "active" && item(<><AppIcon name="scale" size={14} /> Reconcile</>, "#92400e", onReconcile)}
+          {goal.status === "active" && <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />}
           {item(<><AppIcon name="edit" size={14} /> Edit</>, "#374151", onEdit)}
+          <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />
+          {(["active", "pending", "complete", "archived"] as SavingsGoal["status"][])
+            .filter((s) => s !== goal.status)
+            .map((s) =>
+              item(
+                s === "pending" ? "Move to Pending" : s === "complete" ? "Mark as Complete" : s === "archived" ? "Archive" : "Reactivate",
+                "#6b7280",
+                () => onStatus(s),
+              ),
+            )}
           <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />
           {item(<><AppIcon name="trash" size={14} /> Delete</>, "#b91c1c", onDelete)}
         </div>
@@ -495,8 +516,11 @@ function GoalDetailModal({
   pct,
   progColor,
   onClose,
+  onTopup,
+  onWithdraw,
   onEdit,
   onReconcile,
+  onStatus,
   onDelete,
 }: {
   goal: SavingsGoal;
@@ -505,8 +529,11 @@ function GoalDetailModal({
   pct: number;
   progColor: string;
   onClose: () => void;
+  onTopup: () => void;
+  onWithdraw: () => void;
   onEdit: () => void;
   onReconcile: () => void;
+  onStatus: (s: SavingsGoal["status"]) => void;
   onDelete: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
@@ -568,7 +595,15 @@ function GoalDetailModal({
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <DetailActionMenu onReconcile={onReconcile} onEdit={onEdit} onDelete={onDelete} />
+            <DetailActionMenu
+              goal={goal}
+              onTopup={onTopup}
+              onWithdraw={onWithdraw}
+              onReconcile={onReconcile}
+              onEdit={onEdit}
+              onStatus={onStatus}
+              onDelete={onDelete}
+            />
             <button
               onClick={onClose}
               aria-label="Close goal detail"
@@ -621,6 +656,43 @@ function GoalDetailModal({
             <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 750, color: calc.coverageStatus === "Risiko Tinggi" ? "#991b1b" : calc.coverageStatus === "Aman" ? "#065f46" : "#92400e" }}>
               {calc.coverageStatus} · {calc.coverage.toFixed(1)}× pengeluaran
               {(calc.excessDana ?? 0) > 0 && <span style={{ color: "#065f46" }}> · Kelebihan {fmt(calc.excessDana!)}</span>}
+            </div>
+          )}
+
+          {goal.status === "active" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
+              <button
+                onClick={onTopup}
+                style={{
+                  border: "none",
+                  borderRadius: 12,
+                  background: "#1a5c42",
+                  color: "#fff",
+                  padding: "11px 14px",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Deposit
+              </button>
+              <button
+                onClick={onWithdraw}
+                style={{
+                  border: "1px solid #fed7aa",
+                  borderRadius: 12,
+                  background: "#fff7ed",
+                  color: "#b45309",
+                  padding: "11px 14px",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Withdraw
+              </button>
             </div>
           )}
 
@@ -710,8 +782,12 @@ export default function GoalCard({
 
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
             <DetailActionMenu
+              goal={goal}
+              onTopup={() => onTopup(goal.id)}
+              onWithdraw={() => onWithdraw(goal.id)}
               onReconcile={() => onReconcile(goal.id)}
               onEdit={() => onEdit(goal)}
+              onStatus={(s) => onStatus(goal.id, s)}
               onDelete={deleteGoalSafe}
             />
           </div>
@@ -726,9 +802,21 @@ export default function GoalCard({
           pct={pct}
           progColor={progColor}
           onClose={() => setShowDetail(false)}
+          onTopup={() => {
+            setShowDetail(false);
+            onTopup(goal.id);
+          }}
+          onWithdraw={() => {
+            setShowDetail(false);
+            onWithdraw(goal.id);
+          }}
           onReconcile={() => {
             setShowDetail(false);
             onReconcile(goal.id);
+          }}
+          onStatus={(s) => {
+            setShowDetail(false);
+            onStatus(goal.id, s);
           }}
           onEdit={() => {
             setShowDetail(false);
