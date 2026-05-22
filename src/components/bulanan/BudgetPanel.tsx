@@ -4,8 +4,10 @@ import { useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
-import type { BudgetCategory, SavingRow, DebtRow } from '@/types/database'
+import type { BudgetCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
+
+type TxType = Transaction['type']
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
 const delBtn: React.CSSProperties = { width:'18px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
@@ -31,7 +33,7 @@ interface Props {
   debt?:          DebtRow[]
   onBudgetChange: (b: BudgetCategory[]) => void
   onSavingChange: (s: SavingRow[]) => void
-  onRename:       (oldLabel: string, newLabel: string) => void
+  onRename:       (oldLabel: string, newLabel: string, type?: TxType) => void
   onItemClick?:   (label: string) => void
   isMobile?:      boolean
 }
@@ -165,7 +167,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                           <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
                             value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                             onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
+                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
                           <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
@@ -206,9 +208,9 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                       /* Desktop: side by side */
                       <>
                         <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
-                          value={item.label} onMouseDown={e=>e.stopPropagation()}
+                          value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                           onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
+                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
                         <input style={mono} defaultValue={item.plan?fmtNum(item.plan):''}
                           key={`plan-${ci}-${ii}-${item.plan}`}
                           placeholder="0" type="text"
@@ -282,9 +284,9 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
             onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
-              value={r.label} onMouseDown={e=>e.stopPropagation()}
+              value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,label:e.target.value}))}
-              onBlur={e=>{ const old=saving[i].label; if(old!==e.target.value) onRename(old,e.target.value) }} />
+              onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'save') }} />
             {isMobile ? (
               /* Mobile: flex:2 untuk angka */
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>

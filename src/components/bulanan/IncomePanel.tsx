@@ -4,8 +4,10 @@ import { useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
-import type { IncomeCategory } from '@/types/database'
+import type { IncomeCategory, Transaction } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
+
+type TxType = Transaction['type']
 
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
 const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
@@ -28,7 +30,7 @@ function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
 interface Props {
   income:         IncomeCategory[]
   onIncomeChange: (cats: IncomeCategory[]) => void
-  onRename:       (oldLabel: string, newLabel: string) => void
+  onRename:       (oldLabel: string, newLabel: string, type?: TxType) => void
   isMobile?:      boolean
 }
 
@@ -143,7 +145,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                           <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
                             value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                             onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
+                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'inn') }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
                           <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
@@ -161,9 +163,9 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                     ) : (
                       <>
                         <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
-                          value={item.label} onMouseDown={e=>e.stopPropagation()}
+                          value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value) }} />
+                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'inn') }} />
                         <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                           value={item.plan?fmtNum(item.plan):''} placeholder="0"
                           onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { IncomeCategory, SavingRow, DebtRow, BudgetCategory, Transaction, MonthKey } from '@/types/database'
 
+type TxType = Transaction['type']
+
 export const MONTH_NAMES: Record<string, string> = {
   jan:'Januari', feb:'Februari', mar:'Maret',    apr:'April',
   may:'Mei',     jun:'Juni',     jul:'Juli',      aug:'Agustus',
@@ -218,19 +220,28 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     }))
   }, [actualByTypeAndCategory, plan.debt])
 
-  // Rename cat di semua tx jika label budget/income/saving berubah
-  const renameTxCat = useCallback(async (oldLabel: string, newLabel: string) => {
+  // Rename cat di transaksi bulan ini saat label item budget/income/saving/debt berubah.
+  // type wajib dikirim agar label yang sama di jenis transaksi lain tidak ikut berubah
+  // (contoh: "Rekonsiliasi" ada di income dan expense).
+  const renameTxCat = useCallback(async (oldLabel: string, newLabel: string, type?: TxType) => {
     if (readOnly) { blockReadOnly(); return }
-    if (!oldLabel || oldLabel === newLabel) return
-    const affected = tx.filter(t => t.cat === oldLabel)
-    await Promise.all(affected.map(t =>
+    const oldCat = oldLabel
+    const newCat = newLabel
+    if (!oldCat.trim() || !newCat.trim() || oldCat === newCat) return
+
+    const affected = tx.filter(t => t.cat === oldCat && (!type || t.type === type))
+    if (!affected.length) return
+
+    const updated = await Promise.all(affected.map(t =>
       fetch('/api/transaksi', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: t.id, cat: newLabel }),
+        body: JSON.stringify({ id: t.id, cat: newCat }),
       })
     ))
-    setTx(prev => prev.map(t => t.cat === oldLabel ? { ...t, cat: newLabel } : t))
+
+    if (updated.some(res => !res.ok)) return
+    setTx(prev => prev.map(t => (t.cat === oldCat && (!type || t.type === type)) ? { ...t, cat: newCat } : t))
   }, [tx, readOnly, blockReadOnly])
 
   const addTx = useCallback(async (newTx: Omit<Transaction, 'id'|'month'|'year'>) => {

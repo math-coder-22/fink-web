@@ -3,13 +3,15 @@
 import { useRef, useState } from 'react'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
-import type { DebtRow } from '@/types/database'
+import type { DebtRow, Transaction } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
+
+type TxType = Transaction['type']
 
 type Props = {
   debt?: DebtRow[]
   onDebtChange: (rows: DebtRow[]) => void
-  onRename?: (oldLabel: string, newLabel: string) => void
+  onRename?: (oldLabel: string, newLabel: string, type?: TxType) => void
   isMobile?: boolean
 }
 
@@ -108,7 +110,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>updateRow(i,{label:e.target.value})}
-              onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value) }} />
+              onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value,'out') }} />
             {isMobile ? (
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
                 <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
