@@ -293,15 +293,118 @@ function KebabMenu({
   );
 }
 
+/* ─── COMPACT ACTION MENU FOR DETAIL MODAL ─── */
+function DetailActionMenu({
+  onReconcile,
+  onEdit,
+  onDelete,
+}: {
+  onReconcile: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const item = (label: React.ReactNode, color: string, onClick: () => void) => (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+        setOpen(false);
+      }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        width: "100%",
+        textAlign: "left" as const,
+        padding: "9px 12px",
+        border: "none",
+        background: "none",
+        fontSize: 13,
+        color,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        fontWeight: 650,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#f7f8fa")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        aria-label="Goal actions"
+        style={{
+          width: 34,
+          height: 34,
+          border: "1px solid #e4e1d9",
+          borderRadius: 10,
+          background: open ? "#f3f4f6" : "#fff",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#6b7280",
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <circle cx="8" cy="3" r="1.35" />
+          <circle cx="8" cy="8" r="1.35" />
+          <circle cx="8" cy="13" r="1.35" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute" as const,
+            top: 40,
+            right: 0,
+            width: 180,
+            background: "#fff",
+            border: "1.5px solid #e4e1d9",
+            borderRadius: 12,
+            boxShadow: "0 18px 45px rgba(15,23,42,.18)",
+            zIndex: 20,
+            overflow: "hidden",
+            padding: "5px 0",
+          }}
+        >
+          {item(<><AppIcon name="scale" size={14} /> Reconcile</>, "#92400e", onReconcile)}
+          {item(<><AppIcon name="edit" size={14} /> Edit</>, "#374151", onEdit)}
+          <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />
+          {item(<><AppIcon name="trash" size={14} /> Delete</>, "#b91c1c", onDelete)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── HISTORY PANEL ─── */
 function HistoryPanel({ history }: { history: GoalTransaction[] }) {
   return (
-    <div style={{ borderTop: "1px solid #f0f0ee", background: "#fafaf9" }}>
+    <div style={{ border: "1px solid #f0f0ee", borderRadius: 14, background: "#fafaf9", overflow: "hidden" }}>
       <div
         style={{
-          padding: "9px 14px",
+          padding: "11px 14px",
           fontSize: "10.5px",
-          fontWeight: 700,
+          fontWeight: 800,
           color: "#4b5563",
           textTransform: "uppercase" as const,
           letterSpacing: ".5px",
@@ -310,9 +413,9 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
           justifyContent: "space-between",
         }}
       >
-        <span>Transaction History</span>
-        <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 400 }}>
-          {history.length} entries · click card to close
+        <span>Saving History</span>
+        <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 600 }}>
+          {history.length} entries
         </span>
       </div>
       {history.length === 0 ? (
@@ -324,10 +427,10 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
             textAlign: "center" as const,
           }}
         >
-          No history yet. Use the menu to top up or withdraw funds.
+          No saving history yet.
         </div>
       ) : (
-        <div style={{ maxHeight: "200px", overflowY: "auto" as const }}>
+        <div style={{ maxHeight: "260px", overflowY: "auto" as const }}>
           {[...history].reverse().map((h, i) => (
             <div
               key={h.id}
@@ -335,52 +438,40 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "8px 14px",
+                gap: 12,
+                padding: "10px 14px",
                 borderBottom:
                   i < history.length - 1 ? "1px solid #f0f0ee" : "none",
               }}
             >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <span
+              <div style={{ minWidth: 0 }}>
+                <div
                   style={{
-                    fontSize: "16px",
-                    color: h.type === "topup" ? "#065f46" : "#b45309",
+                    fontSize: "12.5px",
                     fontWeight: 700,
-                    minWidth: "16px",
+                    color: "#374151",
+                    overflowWrap: "anywhere" as const,
                   }}
                 >
-                  {h.type === "topup" ? "" : ""}
-                </span>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "12.5px",
-                      fontWeight: 500,
-                      color: "#374151",
-                    }}
-                  >
-                    {h.note}
-                  </div>
-                  <div style={{ fontSize: "10.5px", color: "#9ca3af" }}>
-                    {new Date(h.date).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                    {" · "}
-                    {new Date(h.date).toLocaleTimeString("id-ID", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
+                  {h.note || (h.type === "topup" ? "Saving added" : "Saving withdrawn")}
+                </div>
+                <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: 2 }}>
+                  {new Date(h.date).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                  {" · "}
+                  {new Date(h.date).toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
               <div
                 style={{
                   fontFamily: "var(--font-mono), monospace",
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontSize: "13px",
                   color: h.type === "topup" ? "#065f46" : "#b45309",
                   whiteSpace: "nowrap" as const,
@@ -394,6 +485,152 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
         </div>
       )}
     </div>
+  );
+}
+
+function GoalDetailModal({
+  goal,
+  calc,
+  advisor,
+  pct,
+  progColor,
+  onClose,
+  onEdit,
+  onReconcile,
+  onDelete,
+}: {
+  goal: SavingsGoal;
+  calc: GoalCalcResult;
+  advisor: ReturnType<typeof buildGoalAdvisorItem>;
+  pct: number;
+  progColor: string;
+  onClose: () => void;
+  onEdit: () => void;
+  onReconcile: () => void;
+  onDelete: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      onMouseDown={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 2147483600,
+        background: "rgba(15,23,42,.35)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "18px",
+      }}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          width: "min(760px, 100%)",
+          maxHeight: "min(82vh, 760px)",
+          overflow: "auto",
+          background: "#fff",
+          borderRadius: 22,
+          boxShadow: "0 28px 90px rgba(15,23,42,.28)",
+          border: "1px solid #e4e1d9",
+        }}
+      >
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            background: "rgba(255,255,255,.92)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #f0f0ee",
+            padding: "16px 18px",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h2 style={{ margin: 0, fontSize: 20, lineHeight: 1.2, color: "#111827" }}>{goal.name}</h2>
+              <TrackBadge status={calc.trackStatus} />
+              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12.5, color: "#9ca3af", fontWeight: 600 }}>
+              {advisor.typeLabel || goalTypeLabel(goal.type)}
+              {goal.deadline &&
+                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <DetailActionMenu onReconcile={onReconcile} onEdit={onEdit} onDelete={onDelete} />
+            <button
+              onClick={onClose}
+              aria-label="Close goal detail"
+              style={{
+                width: 34,
+                height: 34,
+                border: "1px solid #e4e1d9",
+                borderRadius: 10,
+                background: "#fff",
+                cursor: "pointer",
+                color: "#6b7280",
+                fontSize: 18,
+                lineHeight: 1,
+                fontWeight: 700,
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <div className="savings-goal-progress" style={{ height: 7 }}>
+              <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: progColor, minWidth: 46, textAlign: "right" }}>{pct}%</div>
+          </div>
+
+          <div className="goal-detail-stat-grid">
+            <div className="goal-detail-stat"><div className="savings-label">Saved</div><div className="savings-value" style={{ color: progColor }}>{fmt(goal.current)}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">Target</div><div className="savings-value small">{fmt(calc.targetNow)}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">Gap</div><div className="savings-value small">{fmt(calc.sisa)}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">Recommended/Month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{fmt(calc.monthlyNeeded)}</div></div>
+          </div>
+
+          <div style={{ marginTop: 16, padding: "13px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div style={{ fontSize: 12.5, color: "#475569", fontWeight: 800, lineHeight: 1.5 }}>
+              {advisor.healthLabel} · {advisor.feasibilityMessage}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: "#64748b", fontWeight: 650, lineHeight: 1.55 }}>
+              {advisor.mode === "manual" ? "Manual priority" : "Auto priority"} · {advisor.reason}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: "#64748b", fontWeight: 750, lineHeight: 1.55 }}>
+              ETA by current allocation: {advisor.etaLabel} · Ideal/month: {fmt(advisor.idealMonthly)}
+            </div>
+          </div>
+
+          {goal.type === "darurat" && calc.coverage !== undefined && (
+            <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 750, color: calc.coverageStatus === "Risiko Tinggi" ? "#991b1b" : calc.coverageStatus === "Aman" ? "#065f46" : "#92400e" }}>
+              {calc.coverageStatus} · {calc.coverage.toFixed(1)}× pengeluaran
+              {(calc.excessDana ?? 0) > 0 && <span style={{ color: "#065f46" }}> · Kelebihan {fmt(calc.excessDana!)}</span>}
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <HistoryPanel history={goal.history || []} />
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -421,7 +658,7 @@ export default function GoalCard({
   onDelete,
   allGoals = [],
 }: Props) {
-  const [showHistory, setShowHistory] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const pct = Math.round(calc.progress * 100);
   const advisor = buildGoalAdvisorItem(goal, calc, allGoals.length ? allGoals : [goal]);
   const progColor =
@@ -431,140 +668,75 @@ export default function GoalCard({
         ? "#1d4ed8"
         : "#1a5c42";
 
+  const deleteGoalSafe = () => {
+    if (confirm("Delete this goal?")) {
+      setShowDetail(false);
+      onDelete(goal.id);
+    }
+  };
+
   return (
-    <div className="savings-goal-card">
-      <div
-        className="savings-goal-main"
-        onClick={() => setShowHistory((v) => !v)}
-      >
-        <div className="savings-goal-left">
-          <div className="savings-goal-title-row">
-            <div className="savings-goal-title">{goal.name}</div>
-            <TrackBadge status={calc.trackStatus} />
-            <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
-            <FeasibilityBadge status={advisor.feasibility} label={advisor.feasibilityLabel} />
-          </div>
-          <div className="savings-goal-subtitle">
-            {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
-            {advisor.typeLabel || goalTypeLabel(goal.type)}
-            {goal.deadline &&
-              ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
-          </div>
-          <div className="savings-goal-progress-row">
-            <div className="savings-goal-progress">
-              <div
-                style={{
-                  background: progColor,
-                  width: `${Math.min(100, pct)}%`,
-                }}
-              />
+    <>
+      <div className="savings-goal-card compact" onClick={() => setShowDetail(true)}>
+        <div className="savings-goal-compact-main">
+          <div style={{ minWidth: 0 }}>
+            <div className="savings-goal-title-row compact">
+              <div className="savings-goal-title">{goal.name}</div>
+              <TrackBadge status={calc.trackStatus} />
+              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
             </div>
-            <span className="savings-goal-pct" style={{ color: progColor }}>
-              {pct}%
-            </span>
-          </div>
-          <div className="savings-goal-status-note" style={{ color:'#475569', lineHeight:1.45 }}>
-            {advisor.healthLabel} · {advisor.feasibilityMessage}
-          </div>
-          <div className="savings-goal-status-note" style={{ color:'#94a3b8', fontWeight:600, marginTop:4, lineHeight:1.45 }}>
-            {advisor.mode === 'manual' ? 'Manual priority' : 'Auto priority'} · {advisor.reason}
-          </div>
-          <div className="savings-goal-status-note" style={{ color:'#64748b', fontWeight:700, marginTop:4, lineHeight:1.45 }}>
-            ETA by current allocation: {advisor.etaLabel} · Ideal/month: {fmt(advisor.idealMonthly)}
-          </div>
-          {goal.type === "darurat" && calc.coverage !== undefined && (
-            <div
-              className="savings-goal-status-note"
-              style={{
-                color:
-                  calc.coverageStatus === "Risiko Tinggi"
-                    ? "#991b1b"
-                    : calc.coverageStatus === "Aman"
-                      ? "#065f46"
-                      : "#92400e",
-              }}
-            >
-              {calc.coverageStatus} · {calc.coverage.toFixed(1)}× pengeluaran
-              {(calc.excessDana ?? 0) > 0 && (
-                <span style={{ color: "#065f46" }}>
-                  {" "}
-                  · Kelebihan {fmt(calc.excessDana!)}
-                </span>
-              )}
+            <div className="savings-goal-subtitle">
+              {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
+              {advisor.typeLabel || goalTypeLabel(goal.type)}
+              {goal.deadline &&
+                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
             </div>
-          )}
-        </div>
+            <div className="savings-goal-progress-row compact">
+              <div className="savings-goal-progress">
+                <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
+              </div>
+              <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
+            </div>
+            <div className="savings-goal-compact-meta">
+              {fmt(goal.current)} / {fmt(calc.targetNow)} · ETA {advisor.etaLabel}
+            </div>
+          </div>
 
-        <div className="savings-goal-middle">
-          <div className="savings-goal-stat primary">
-            <div className="savings-label">Saved</div>
-            <div className="savings-value" style={{ color: progColor }}>
-              {fmt(goal.current)}
-            </div>
-          </div>
-          <div className="savings-goal-stat">
-            <div className="savings-label">Target</div>
-            <div className="savings-value small">{fmt(calc.targetNow)}</div>
-          </div>
-          <div className="savings-goal-stat">
-            <div className="savings-label">Gap</div>
-            <div className="savings-value small" style={{ color: "#9ca3af" }}>
-              {fmt(calc.sisa)}
-            </div>
-          </div>
-        </div>
-
-        <div className="savings-goal-right">
-          <div className="savings-goal-rec">
+          <div className="savings-goal-compact-side">
             <div className="savings-label">Recommended/Month</div>
             <div className="savings-rec-value">{fmt(calc.monthlyNeeded)}</div>
-            {goal.monthly > 0 && (
-              <div
-                className="savings-rec-meta"
-                style={{
-                  color:
-                    goal.monthly >= calc.monthlyNeeded ? "#065f46" : "#9ca3af",
-                  fontFamily: "var(--font-mono), monospace",
-                }}
-              >
-                Actual: {fmt(goal.monthly)}
-              </div>
-            )}
-            {calc.months > 0 && goal.deadline && (
-              <div className="savings-rec-meta">{calc.months} months left</div>
-            )}
-            {goal.useInvest && (
-              <div className="savings-rec-meta" style={{ color: "#6b7280" }}>
-                 {goal.returnRate}%/thn
-              </div>
-            )}
-            <div className="savings-history-hint">
-              {showHistory
-                ? "Hide history"
-                : `${goal.history?.length || 0} history`}
-            </div>
+            <div className="savings-rec-meta">{goal.history?.length || 0} history</div>
           </div>
 
-          <div
-            className="savings-kebab-wrap"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <KebabMenu
-              goal={goal}
-              onTopup={() => onTopup(goal.id)}
-              onWithdraw={() => onWithdraw(goal.id)}
+          <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
+            <DetailActionMenu
               onReconcile={() => onReconcile(goal.id)}
               onEdit={() => onEdit(goal)}
-              onStatus={(s) => onStatus(goal.id, s)}
-              onDelete={() => {
-                if (confirm("Delete this goal?")) onDelete(goal.id);
-              }}
+              onDelete={deleteGoalSafe}
             />
           </div>
         </div>
       </div>
 
-      {showHistory && <HistoryPanel history={goal.history || []} />}
-    </div>
+      {showDetail && (
+        <GoalDetailModal
+          goal={goal}
+          calc={calc}
+          advisor={advisor}
+          pct={pct}
+          progColor={progColor}
+          onClose={() => setShowDetail(false)}
+          onReconcile={() => {
+            setShowDetail(false);
+            onReconcile(goal.id);
+          }}
+          onEdit={() => {
+            setShowDetail(false);
+            onEdit(goal);
+          }}
+          onDelete={deleteGoalSafe}
+        />
+      )}
+    </>
   );
 }
