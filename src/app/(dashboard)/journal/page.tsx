@@ -107,7 +107,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
 
   const MOBILE_TABS: { key: MobileTab; label: string }[] = [
     { key:'transactions', label:'Transactions' },
-    { key:'budget',       label:'Budget' },
+    { key:'budget',       label:'Expense' },
     { key:'income',       label:'Income' },
   ]
 
@@ -133,14 +133,14 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     <div style={card}>
       <div style={cardHead}>
         <div>
-          <div style={cardTitle}>{activePanel==='budget' ? 'Budget' : 'Income'}</div>
+          <div style={cardTitle}>{activePanel==='budget' ? 'Expense' : 'Income'}</div>
           <div style={cardSub}>{activePanel==='budget' ? 'Actuals are calculated automatically from daily transactions' : 'Monthly income sources'}</div>
         </div>
         {!isMobile && (
           <div style={{ display:'flex', gap:'3px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'3px' }}>
             {(['budget','income'] as DesktopPanel[]).map(p => (
               <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'11.5px', fontWeight:600, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#9ca3af', border:'none', padding:'6px 14px', borderRadius:'8px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
-                {p==='budget' ? 'Budget' : 'Income'}
+                {p==='budget' ? 'Expense' : 'Income'}
               </button>
             ))}
           </div>
@@ -153,7 +153,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <div style={{ textAlign:'right', whiteSpace:'nowrap' }}>PLAN / ACTUAL</div>
         ) : (
           <>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', whiteSpace:'nowrap' }}>Planned</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', whiteSpace:'nowrap' }}>{activePanel==='budget' ? 'Budget' : 'Target'}</div>
             <div style={{ width:'100px', flexShrink:0, textAlign:'right', whiteSpace:'nowrap' }}>Actual</div>
           </>
         )}
