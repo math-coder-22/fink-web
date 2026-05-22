@@ -93,15 +93,15 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
-      <div style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'520px', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,.18)' }}>
+      <div style={{ background:'#fff', borderRadius:'22px', width:'100%', maxWidth:'520px', maxHeight:'90vh', overflow:'hidden', boxShadow:'0 24px 64px rgba(0,0,0,.18)' }}>
 
         {/* Header */}
-        <div style={{ padding:'18px 22px', borderBottom:'1px solid #e4e1d9', display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, background:'#fff', zIndex:1 }}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid #e4e1d9', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#fff' }}>
           <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Goal' : 'Add New Goal'}</span></div>
-          <button aria-label="Close" onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'6px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
+          <button aria-label="Close" onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:'14px' }}>
+        <form onSubmit={handleSubmit} style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:'14px', maxHeight:'calc(90vh - 66px)', overflowY:'auto' }}>
 
           {/* Nama */}
           <div>
