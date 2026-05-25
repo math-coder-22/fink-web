@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useMonthContext, MONTH_NAMES, MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import StatStrip     from '@/components/bulanan/StatStrip'
@@ -26,7 +26,7 @@ const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID
 /* ─── MAIN CONTENT ─────────────────────────────────────────── */
 function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: number }) {
   const {
-    plan, updatePlan, tx, loading, saving,
+    plan, updatePlan, tx, loading, refreshing, saving,
     addTx, updateTx, deleteTx,
     computedBudget, computedIncome, computedSaving, computedDebt,
     renameTxCat,
@@ -49,10 +49,10 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     return () => mq.removeEventListener('change', h)
   }, [])
 
-  const budget         = computedBudget()
-  const incomeComputed = computedIncome()
-  const savingComputed = computedSaving()
-  const debtComputed   = typeof computedDebt === 'function' ? computedDebt() : []
+  const budget         = useMemo(() => computedBudget(), [computedBudget])
+  const incomeComputed = useMemo(() => computedIncome(), [computedIncome])
+  const savingComputed = useMemo(() => computedSaving(), [computedSaving])
+  const debtComputed   = useMemo(() => typeof computedDebt === 'function' ? computedDebt() : [], [computedDebt])
   const sisaApp        = rawSisa
 
   async function handleRekon(aktual: number, selisih: number, type: 'out'|'inn') {
@@ -201,6 +201,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
+          {!loading && refreshing && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Syncing...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
           {/* Reflection, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}

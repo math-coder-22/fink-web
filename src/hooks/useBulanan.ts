@@ -5,6 +5,16 @@ import type { IncomeCategory, SavingRow, DebtRow, BudgetCategory, Transaction, M
 
 type TxType = Transaction['type']
 
+type JournalCachePayload = {
+  plan: MonthPlan | null
+  tx: Transaction[]
+  readOnly?: boolean
+  cachedAt?: number
+}
+
+const JOURNAL_CACHE_PREFIX = 'fink-journal:v2'
+const JOURNAL_CACHE_TTL = 1000 * 60 * 60 * 12 // 12 jam: cukup segar, tetap terasa instan saat aplikasi sering dibuka.
+
 export const MONTH_NAMES: Record<string, string> = {
   jan:'Januari', feb:'Februari', mar:'Maret',    apr:'April',
   may:'Mei',     jun:'Juni',     jul:'Juli',      aug:'Agustus',
@@ -92,60 +102,171 @@ function debtLabelsFromPlan(plan: MonthPlan) {
   return new Set((Array.isArray(plan.debt) ? plan.debt : []).map(d => d.label).filter(Boolean))
 }
 
+function safeParseCache(raw: string | null): JournalCachePayload | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function getCachedJournal(cacheKey: string): JournalCachePayload | null {
+  if (typeof window === 'undefined') return null
+
+  // localStorage membuat Journal tetap terasa cepat walaupun tab/browser sempat ditutup.
+  const local = safeParseCache(window.localStorage.getItem(cacheKey))
+  if (local?.cachedAt && Date.now() - local.cachedAt <= JOURNAL_CACHE_TTL) return local
+
+  // sessionStorage tetap dipakai sebagai fallback kalau localStorage dibatasi browser.
+  const session = safeParseCache(window.sessionStorage.getItem(cacheKey))
+  if (session) return session
+
+  return null
+}
+
+function setCachedJournal(cacheKey: string, payload: JournalCachePayload) {
+  if (typeof window === 'undefined') return
+  const value = JSON.stringify({ ...payload, cachedAt: Date.now() })
+  try { window.localStorage.setItem(cacheKey, value) } catch {}
+  try { window.sessionStorage.setItem(cacheKey, value) } catch {}
+}
+
+function removeCachedJournal(cacheKey: string) {
+  if (typeof window === 'undefined') return
+  try { window.localStorage.removeItem(cacheKey) } catch {}
+  try { window.sessionStorage.removeItem(cacheKey) } catch {}
+}
+
+function sortTransactions(items: Transaction[]) {
+  return [...items].sort((a, b) => {
+    const dateDiff = String(b.date || '').localeCompare(String(a.date || ''))
+    if (dateDiff !== 0) return dateDiff
+    return String((b as any).created_at || '').localeCompare(String((a as any).created_at || ''))
+  })
+}
+
+function makeTempTx(newTx: Omit<Transaction, 'id'|'month'|'year'>, month: MonthKey, year: number): Transaction {
+  return {
+    ...newTx,
+    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    month,
+    year,
+    user_id: 'local-pending',
+    created_at: new Date().toISOString(),
+  } as Transaction
+}
+
 export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   const [plan,    setPlan]    = useState<MonthPlan>(emptyMonth())
   const [tx,      setTx]      = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)  // true = tampilkan loading saat pertama
+  const [loading, setLoading] = useState(true)  // true hanya saat belum ada data/cache yang bisa ditampilkan
+  const [refreshing, setRefreshing] = useState(false) // background refresh tanpa mengosongkan UI
   const [saving,  setSaving]  = useState(false)
   const [readOnly, setReadOnly] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestLoadKey = useRef('')
+  const hasLoadedOnce = useRef(false)
+  const loadedDataKey = useRef('')
+
+  const cacheKey = useMemo(() => `${JOURNAL_CACHE_PREFIX}:${curYear}:${curMonth}`, [curMonth, curYear])
 
   const blockReadOnly = useCallback(() => {
     alert('Mode Monitoring bersifat read-only. Keluar dari monitoring untuk mengubah data.')
   }, [])
 
-  useEffect(() => {
-    let alive = true
-    async function loadMonitoringStatus() {
-      try {
-        const res = await fetch('/api/admin/monitoring/status', { cache:'no-store' })
-        if (!res.ok) return
-        const json = await res.json()
-        if (alive) setReadOnly(Boolean(json.monitoring))
-      } catch {
-        // optional
-      }
+  const applyLoadedData = useCallback((payload: JournalCachePayload | any) => {
+    if (payload?.plan) {
+      const loaded = normalizeMonthPlan({
+        income: migrateIncome(payload.plan.income),
+        saving: payload.plan.saving,
+        debt: payload.plan.debt,
+        budget: payload.plan.budget,
+      })
+      setPlan(ensureRekonItems(normalizeMonthPlan(loaded)))
+    } else {
+      setPlan(emptyMonth())
     }
-    loadMonitoringStatus()
-    return () => { alive = false }
+
+    setTx(sortTransactions(Array.isArray(payload?.tx) ? payload.tx : []))
+    if (typeof payload?.readOnly === 'boolean') setReadOnly(payload.readOnly)
+    hasLoadedOnce.current = true
+    loadedDataKey.current = cacheKey
+  }, [cacheKey])
+
+  const prefetchAdjacentMonths = useCallback((month: MonthKey, year: number) => {
+    if (typeof window === 'undefined') return
+    const run = async () => {
+      const idx = MONTHS_ORDER.indexOf(month)
+      const targets = [
+        { month: MONTHS_ORDER[(idx + 11) % 12], year: idx === 0 ? year - 1 : year },
+        { month: MONTHS_ORDER[(idx + 1) % 12], year: idx === 11 ? year + 1 : year },
+      ]
+
+      await Promise.all(targets.map(async target => {
+        const targetKey = `${JOURNAL_CACHE_PREFIX}:${target.year}:${target.month}`
+        const cached = getCachedJournal(targetKey)
+        if (cached?.cachedAt && Date.now() - cached.cachedAt <= JOURNAL_CACHE_TTL) return
+
+        try {
+          const res = await fetch(`/api/journal?month=${target.month}&year=${target.year}`, { cache: 'no-store' })
+          if (!res.ok) return
+          const json = await res.json()
+          setCachedJournal(targetKey, json)
+        } catch {
+          // Prefetch hanya akselerator; jangan ganggu halaman utama jika gagal.
+        }
+      }))
+    }
+
+    const idle = (window as any).requestIdleCallback
+    if (typeof idle === 'function') {
+      const id = idle(run, { timeout: 2500 })
+      return () => (window as any).cancelIdleCallback?.(id)
+    }
+    const id = window.setTimeout(run, 700)
+    return () => window.clearTimeout(id)
   }, [])
 
   const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [planRes, txRes] = await Promise.all([
-        fetch(`/api/bulanan?month=${curMonth}&year=${curYear}`, { cache: 'no-store' }),
-        fetch(`/api/transaksi?month=${curMonth}&year=${curYear}`, { cache: 'no-store' }),
-      ])
-      const [pj, tj] = await Promise.all([planRes.json(), txRes.json()])
-      if (pj.data) {
-        const loaded = normalizeMonthPlan({
-          income: migrateIncome(pj.data.income),
-          saving: pj.data.saving,
-          debt: pj.data.debt,
-          budget: pj.data.budget,
-        })
-        setPlan(ensureRekonItems(normalizeMonthPlan(loaded)))
-      } else {
-        setPlan(emptyMonth())
-      }
-      setTx(tj.data || [])
-    } finally {
+    const loadKey = `${curYear}:${curMonth}:${Date.now()}`
+    latestLoadKey.current = loadKey
+
+    const cached = getCachedJournal(cacheKey)
+    if (cached) {
+      applyLoadedData(cached)
       setLoading(false)
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+      setRefreshing(false)
     }
-  }, [curMonth, curYear])
+
+    try {
+      const res = await fetch(`/api/journal?month=${curMonth}&year=${curYear}`, { cache: 'no-store' })
+      if (!res.ok) return
+      const json = await res.json()
+      if (latestLoadKey.current !== loadKey) return
+
+      applyLoadedData(json)
+      setCachedJournal(cacheKey, json)
+      prefetchAdjacentMonths(curMonth, curYear)
+    } finally {
+      if (latestLoadKey.current === loadKey) {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    }
+  }, [applyLoadedData, cacheKey, curMonth, curYear, prefetchAdjacentMonths])
 
   useEffect(() => { loadData() }, [loadData])
+
+  useEffect(() => {
+    if (!hasLoadedOnce.current || loadedDataKey.current !== cacheKey) return
+    setCachedJournal(cacheKey, { plan, tx, readOnly })
+  }, [cacheKey, plan, tx, readOnly])
 
   const savePlan = useCallback((newPlan: MonthPlan) => {
     if (readOnly) { blockReadOnly(); return }
@@ -159,7 +280,7 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
           body: JSON.stringify({ month: curMonth, year: curYear, ...newPlan }),
         })
       } finally { setSaving(false) }
-    }, 1500)
+    }, 1200)
   }, [curMonth, curYear, readOnly, blockReadOnly])
 
   const updatePlan = useCallback((updater: (prev: MonthPlan) => MonthPlan) => {
@@ -232,6 +353,9 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
     const affected = tx.filter(t => t.cat === oldCat && (!type || t.type === type))
     if (!affected.length) return
 
+    const previous = tx
+    setTx(prev => prev.map(t => (t.cat === oldCat && (!type || t.type === type)) ? { ...t, cat: newCat } : t))
+
     const updated = await Promise.all(affected.map(t =>
       fetch('/api/transaksi', {
         method: 'PATCH',
@@ -240,42 +364,62 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
       })
     ))
 
-    if (updated.some(res => !res.ok)) return
-    setTx(prev => prev.map(t => (t.cat === oldCat && (!type || t.type === type)) ? { ...t, cat: newCat } : t))
+    if (updated.some(res => !res.ok)) setTx(previous)
   }, [tx, readOnly, blockReadOnly])
 
   const addTx = useCallback(async (newTx: Omit<Transaction, 'id'|'month'|'year'>) => {
     if (readOnly) { blockReadOnly(); return }
+    const tempTx = makeTempTx(newTx, curMonth, curYear)
+    setTx(prev => sortTransactions([tempTx, ...prev]))
+
     const res  = await fetch('/api/transaksi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...newTx, month: curMonth, year: curYear }),
     })
     const json = await res.json()
-    if (json.data) setTx(prev => [json.data, ...prev])
+
+    if (!res.ok || !json.data) {
+      setTx(prev => prev.filter(t => t.id !== tempTx.id))
+      return undefined
+    }
+
+    setTx(prev => sortTransactions(prev.map(t => t.id === tempTx.id ? json.data : t)))
     return json.data
   }, [curMonth, curYear, readOnly, blockReadOnly])
 
   const updateTx = useCallback(async (id: string, updates: Partial<Transaction>) => {
     if (readOnly) { blockReadOnly(); return }
+    const previous = tx
+    setTx(prev => sortTransactions(prev.map(t => t.id === id ? { ...t, ...updates } : t)))
+
     const res  = await fetch('/api/transaksi', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...updates }),
     })
     const json = await res.json()
-    if (json.data) {
-      setTx(prev => prev.map(t => t.id === id ? json.data : t))
-      window.dispatchEvent(new Event('hutang-refresh'))
+    if (!res.ok || !json.data) {
+      setTx(previous)
+      return
     }
-  }, [readOnly, blockReadOnly])
+
+    setTx(prev => sortTransactions(prev.map(t => t.id === id ? json.data : t)))
+    window.dispatchEvent(new Event('hutang-refresh'))
+  }, [tx, readOnly, blockReadOnly])
 
   const deleteTx = useCallback(async (id: string) => {
     if (readOnly) { blockReadOnly(); return }
-    await fetch(`/api/transaksi?id=${id}`, { method: 'DELETE' })
+    const previous = tx
     setTx(prev => prev.filter(t => t.id !== id))
+
+    const res = await fetch(`/api/transaksi?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setTx(previous)
+      return
+    }
     window.dispatchEvent(new Event('hutang-refresh'))
-  }, [readOnly, blockReadOnly])
+  }, [tx, readOnly, blockReadOnly])
 
   const copyBudgetToNext = useCallback(async () => {
     if (readOnly) { blockReadOnly(); return '' }
@@ -293,22 +437,25 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
         budget: plan.budget.map(c => ({ ...c, items: c.items.map(i => ({ ...i, actual: 0 })) })),
       }),
     })
+    removeCachedJournal(`${JOURNAL_CACHE_PREFIX}:${nextY}:${nextM}`)
     return `${MONTH_NAMES[nextM]} ${nextY}`
   }, [curMonth, curYear, plan, readOnly, blockReadOnly])
 
+  const rawSisa = useMemo(() => tx.reduce((s, t) => {
+    if (t.debt && !t.settled) return s
+    if (t.type === 'inn')  return s + t.amt
+    if (t.type === 'out')  return s - t.amt
+    if (t.type === 'save') return s - t.amt
+    return s
+  }, 0), [tx])
+
   return {
-    plan, updatePlan, loading, saving,
+    plan, updatePlan, loading, refreshing, saving,
     tx, setTx, addTx, updateTx, deleteTx,
     computedBudget, computedIncome, computedSaving, computedDebt,
     renameTxCat,
     copyBudgetToNext,
     readOnly,
-    rawSisa: tx.reduce((s, t) => {
-      if (t.debt && !t.settled) return s
-      if (t.type === 'inn')  return s + t.amt
-      if (t.type === 'out')  return s - t.amt
-      if (t.type === 'save') return s - t.amt
-      return s
-    }, 0),
+    rawSisa,
   }
 }

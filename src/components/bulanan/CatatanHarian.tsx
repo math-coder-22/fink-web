@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
 import { useSavings } from '@/hooks/useSavings'
@@ -25,7 +25,7 @@ const fmtInput = (v: string) => {
 }
 const parseInputAmount = (v: string) => Number(onlyDigits(v)) || 0
 
-export default function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate, onDelete }: Props) {
+function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate, onDelete }: Props) {
   const today = (() => {
     const d = new Date()
     const y = d.getFullYear()
@@ -54,8 +54,8 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
   const [calcExpr, setCalcExpr] = useState('')
   const [calcResult, setCalcResult] = useState<number|null>(null)
 
-  // Category options grouped by category
-  const catGroups = (() => {
+  // Category options grouped by category. Memoized agar input form tidak menghitung ulang opsi setiap render.
+  const catGroups = useMemo(() => {
     if (type === 'out') {
       const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
       const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
@@ -65,7 +65,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
     }
     if (type === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
     return [{ group: 'Savings', items: saving.map(r => r.label) }]
-  })()
+  }, [type, budget, income, saving, debt])
 
   async function commitAddTransaction(goalId?: string | null) {
     setLoading(true)
@@ -121,7 +121,8 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
-  const debtCount = tx.filter(t => t.debt && !t.settled).length
+  const debtCount = useMemo(() => tx.filter(t => t.debt && !t.settled).length, [tx])
+  const sortedTx = useMemo(() => tx.slice().sort((a, b) => Number(b.date) - Number(a.date)), [tx])
 
   function formatCalcExpression(expr: string) {
     const raw = expr.replace(/\./g, '')
@@ -407,7 +408,7 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
           </div>
         )}
 
-        {tx.slice().sort((a, b) => Number(b.date) - Number(a.date)).map(t => {
+        {sortedTx.map(t => {
           const isEdit = editId === t.id
           const bc = t.type === 'inn' ? '#d1eadd' : t.type === 'save' ? '#eff6ff' : '#fee2e2'
           const tc = t.type === 'inn' ? '#1a5c42' : t.type === 'save' ? '#1e40af' : '#991b1b'
@@ -601,3 +602,5 @@ export default function CatatanHarian({ tx, budget, income, saving, debt = [], o
     </div>
   )
 }
+
+export default memo(CatatanHarian)
