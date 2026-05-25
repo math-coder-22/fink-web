@@ -129,25 +129,9 @@ function ReflectionModal({
   if (!open) return null
 
   const money = (n:number) => fmt(n)
-  const compactMoney = (n:number) => {
-    const abs = Math.abs(Math.round(n || 0))
-    if (abs >= 1_000_000) {
-      const v = abs / 1_000_000
-      return `Rp ${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1).replace('.', ',')}jt`
-    }
-    if (abs >= 1_000) return `Rp ${Math.round(abs / 1_000).toLocaleString('id-ID')}rb`
-    return `Rp ${abs.toLocaleString('id-ID')}`
-  }
   const statusText = review.budgetUsed > 100 ? 'Over Budget' : review.budgetUsed >= 80 ? 'Warning' : 'Safe'
   const statusColor = review.budgetUsed > 100 ? '#b91c1c' : review.budgetUsed >= 80 ? '#b45309' : '#15803d'
   const leftToSpendColor = rawSisa < 0 ? '#b91c1c' : rawSisa === 0 ? '#b45309' : '#15803d'
-  const metricCard = (label:string, value:string, color = '#111827', sub?:string) => (
-    <div style={{ border:'1px solid #e3e7ee', borderRadius:'14px', padding:'10px 11px', background:'#fff', minWidth:0 }}>
-      <div style={{ fontSize:'10px', color:'#64748b', fontWeight:900, textTransform:'uppercase', letterSpacing:'.45px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{label}</div>
-      <div style={{ marginTop:'4px', fontSize:'15px', fontWeight:950, color, fontFamily:value.startsWith('Rp') ? 'var(--font-mono), monospace' : undefined, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{value}</div>
-      {sub && <div style={{ marginTop:'2px', fontSize:'10.5px', color:'#94a3b8', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{sub}</div>}
-    </div>
-  )
 
   return (
     <div
@@ -168,40 +152,50 @@ function ReflectionModal({
         </div>
 
         <div style={{ padding:'14px 16px 18px', display:'flex', flexDirection:'column', gap:'12px' }}>
-          <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'12px', background:'#f8fafc' }}>
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'12px 14px', background:'#fff' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', marginBottom:'10px' }}>
               <div>
                 <div style={{ fontSize:'13px', fontWeight:950, color:'#111827' }}>Financial Snapshot</div>
-                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>Kondisi umum sebelum masuk ke breakdown kategori.</div>
+                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>Ringkasan umum sebelum mengecek detail pengeluaran.</div>
               </div>
               <div style={{ fontSize:'11px', fontWeight:950, color:statusColor, background:review.budgetUsed > 100 ? '#fef2f2' : review.budgetUsed >= 80 ? '#fffbeb' : '#ecfdf5', border:`1px solid ${review.budgetUsed > 100 ? '#fecaca' : review.budgetUsed >= 80 ? '#fde68a' : '#bbf7d0'}`, borderRadius:'999px', padding:'5px 9px', whiteSpace:'nowrap' }}>
                 {statusText}
               </div>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:'8px' }}>
-              {metricCard('Income', compactMoney(review.totalIncomeActual), '#15803d', `plan ${compactMoney(review.totalIncomePlan)}`)}
-              {metricCard('Expenses', compactMoney(review.regularExpenseActual), '#b91c1c', `${review.expenseUsed}% used`)}
-              {metricCard('Debt', compactMoney(review.totalDebtActual), '#7c3aed', `plan ${compactMoney(review.totalDebtPlan)}`)}
-              {metricCard('Saving', compactMoney(review.totalSavingActual), '#2563eb', `${review.savingRate}% rate`)}
-              {metricCard('Left', compactMoney(rawSisa), leftToSpendColor, 'available now')}
-              {metricCard('Budget Used', `${review.budgetUsed}%`, statusColor, `${review.alerts.length} alert`)}
+            <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:isMobile ? '4px' : '8px 18px' }}>
+              {[
+                ['Income', money(review.totalIncomeActual), `plan ${money(review.totalIncomePlan)}`, '#15803d'],
+                ['Expenses', money(review.regularExpenseActual), `${review.expenseUsed}% of budget`, '#b91c1c'],
+                ['Debt', money(review.totalDebtActual), `plan ${money(review.totalDebtPlan)}`, '#7c3aed'],
+                ['Saving', money(review.totalSavingActual), `${review.savingRate}% saving rate`, '#2563eb'],
+                ['Left to Spend', money(rawSisa), 'available now', leftToSpendColor],
+                ['Budget Used', `${review.budgetUsed}%`, `${review.alerts.length} category warning`, statusColor],
+              ].map(([label, value, sub, color]) => (
+                <div key={label} style={{ display:'grid', gridTemplateColumns:'112px 1fr', gap:'10px', alignItems:'baseline', padding:'7px 0', borderBottom:'1px solid #f1f5f9' }}>
+                  <div style={{ fontSize:'11.5px', color:'#64748b', fontWeight:850 }}>{label}</div>
+                  <div style={{ minWidth:0, textAlign:'right' }}>
+                    <div style={{ fontSize:'13px', color:color as string, fontWeight:950, fontFamily:String(value).startsWith('Rp') ? 'var(--font-mono), monospace' : undefined, whiteSpace:'nowrap' }}>{value}</div>
+                    <div style={{ fontSize:'10.5px', color:'#94a3b8', marginTop:'1px', whiteSpace:'nowrap' }}>{sub}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'11px 12px', background:'#fff' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', marginBottom: review.alerts.length ? '8px' : 0 }}>
-              <div style={{ fontSize:'12.5px', fontWeight:950, color:'#111827' }}>Smart Alerts</div>
-              <div style={{ fontSize:'10.5px', color:'#94a3b8' }}>maks. 3 insight</div>
-            </div>
+            <div style={{ fontSize:'12.5px', fontWeight:950, color:'#111827', marginBottom:'7px' }}>Review Insight</div>
             {review.alerts.length === 0 ? (
-              <div style={{ fontSize:'12px', color:'#64748b' }}>Belum ada kategori yang mendekati atau melewati budget.</div>
+              <div style={{ fontSize:'12px', color:'#64748b', lineHeight:1.5 }}>
+                Kondisi budget masih relatif aman. Belum ada kategori expense yang mendekati atau melewati batas budget bulan ini.
+              </div>
             ) : (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:'7px' }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
                 {review.alerts.slice(0, 3).map((cat:any) => (
-                  <div key={cat.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', fontSize:'11.5px', color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'11px', padding:'8px 9px' }}>
-                    <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat.over ? '⚠' : '•'} {cat.label}</span>
-                    <b>{cat.pct}%</b>
+                  <div key={cat.label} style={{ fontSize:'12px', color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'11px', padding:'8px 9px', lineHeight:1.45 }}>
+                    {cat.over
+                      ? `${cat.label} sudah melewati budget sebesar ${money(cat.spent - cat.planned)}. Cek item di bawah untuk melihat penyebab utamanya.`
+                      : `${cat.label} sudah memakai ${cat.pct}% dari budget. Kategori ini perlu dipantau agar tidak melewati batas.`}
                   </div>
                 ))}
               </div>
