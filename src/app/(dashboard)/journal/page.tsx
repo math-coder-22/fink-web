@@ -30,169 +30,194 @@ function ReflectionModal({
   onClose,
   budget,
   tx,
+  monthLabel,
 }: {
   open: boolean
   onClose: () => void
   budget: any[]
   tx: any[]
+  monthLabel: string
 }) {
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const [openItem, setOpenItem] = useState<string | null>(null)
 
+  const review = useMemo(() => {
+    const expenseTx = tx.filter((t:any) => t.type === 'out' && !t.debt)
+
+    const categories = budget.map((cat:any) => {
+      const items = (cat.items || []).map((item:any) => {
+        const relatedTx = expenseTx
+          .filter((t:any) => t.cat === item.label)
+          .slice()
+          .sort((a:any, b:any) => Number(b.amt || 0) - Number(a.amt || 0))
+
+        const spent = relatedTx.reduce((sum:number, t:any) => sum + Number(t.amt || 0), 0)
+        const planned = Number(item.plan || 0)
+        const pct = planned > 0 ? Math.round((spent / planned) * 100) : 0
+
+        return {
+          label: item.label,
+          planned,
+          spent,
+          pct,
+          over: planned > 0 && spent > planned,
+          near: planned > 0 && spent >= planned * 0.8 && spent <= planned,
+          transactions: relatedTx,
+        }
+      }).filter((item:any) => item.planned > 0 || item.spent > 0)
+        .sort((a:any, b:any) => (Number(b.over) - Number(a.over)) || b.spent - a.spent)
+
+      const planned = items.reduce((sum:number, item:any) => sum + item.planned, 0)
+      const spent = items.reduce((sum:number, item:any) => sum + item.spent, 0)
+      const pct = planned > 0 ? Math.round((spent / planned) * 100) : 0
+
+      return {
+        label: cat.label,
+        planned,
+        spent,
+        pct,
+        over: planned > 0 && spent > planned,
+        near: planned > 0 && spent >= planned * 0.8 && spent <= planned,
+        items,
+      }
+    }).filter((cat:any) => cat.planned > 0 || cat.spent > 0)
+      .sort((a:any, b:any) => (Number(b.over) - Number(a.over)) || b.spent - a.spent)
+
+    const totalBudget = categories.reduce((sum:number, cat:any) => sum + cat.planned, 0)
+    const totalExpense = categories.reduce((sum:number, cat:any) => sum + cat.spent, 0)
+    const budgetUsed = totalBudget > 0 ? Math.round((totalExpense / totalBudget) * 100) : 0
+    const alerts = categories.filter((cat:any) => cat.over || cat.near)
+
+    return { categories, totalBudget, totalExpense, budgetUsed, alerts }
+  }, [budget, tx])
+
   if (!open) return null
 
-  const expenseTx = tx.filter((t:any) => t.type === 'out')
-
-  const totalExpense = expenseTx.reduce((a:number, b:any) => a + Number(b.amt || 0), 0)
-  const totalBudget = budget.reduce((a:number, b:any) => a + Number(b.amount || 0), 0)
-
-  const grouped = budget.map((b:any) => {
-    const related = expenseTx.filter((t:any) => t.cat === b.label)
-    const spent = related.reduce((a:number, x:any) => a + Number(x.amt || 0), 0)
-
-    const itemMap = new Map()
-
-    related.forEach((r:any) => {
-      const key = r.note || 'Other'
-      if (!itemMap.has(key)) {
-        itemMap.set(key, {
-          label: key,
-          total: 0,
-          txs: [],
-        })
-      }
-
-      const item = itemMap.get(key)
-      item.total += Number(r.amt || 0)
-      item.txs.push(r)
-    })
-
-    const items = Array.from(itemMap.values()).sort((a:any,b:any)=>b.total-a.total)
-
-    return {
-      label: b.label,
-      budget: Number(b.amount || 0),
-      spent,
-      diff: spent - Number(b.amount || 0),
-      over: spent > Number(b.amount || 0),
-      items,
-    }
-  }).sort((a:any,b:any)=>b.spent-a.spent)
+  const money = (n:number) => fmt(n)
+  const statusText = review.budgetUsed > 100 ? 'Over Budget' : review.budgetUsed >= 80 ? 'Warning' : 'Safe'
+  const statusColor = review.budgetUsed > 100 ? '#b91c1c' : review.budgetUsed >= 80 ? '#b45309' : '#15803d'
 
   return (
-    <div className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4">
-      <div className="w-full max-w-4xl rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 my-8">
-        <div className="sticky top-0 z-10 rounded-t-3xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
+    <div
+      onClick={e => { if (e.currentTarget === e.target) onClose() }}
+      style={{ position:'fixed', inset:0, zIndex:850, background:'rgba(15,23,42,.42)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-start', justifyContent:'center', overflowY:'auto', padding:'max(18px, env(safe-area-inset-top)) 14px 18px' }}
+    >
+      <div style={{ width:'100%', maxWidth:'880px', background:'#fff', border:'1px solid #e3e7ee', borderRadius:'22px', boxShadow:'0 24px 80px rgba(15,23,42,.24)', overflow:'hidden' }}>
+        <div style={{ position:'sticky', top:0, zIndex:2, background:'rgba(255,255,255,.96)', backdropFilter:'blur(12px)', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'14px', padding:'18px 20px', borderBottom:'1px solid #e3e7ee' }}>
           <div>
-            <h2 className="text-2xl font-bold">Financial Review</h2>
-            <p className="text-sm text-zinc-500">Monthly spending reflection & investigation</p>
+            <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:'18px', fontWeight:900, color:'#111827' }}>
+              <AppIcon name="mirror" size={18} /> Financial Review
+            </div>
+            <div style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>{monthLabel} · review kondisi keuangan dan investigasi pengeluaran</div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:scale-105 transition"
-          >
-            ✕
+          <button aria-label="Close reflection" onClick={onClose} style={{ width:'34px', height:'34px', border:'none', background:'#f7f8fa', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <AppIcon name="close" size={17} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-2xl border p-4">
-              <div className="text-sm text-zinc-500">Budget Used</div>
-              <div className="text-2xl font-bold">
-                {totalBudget > 0 ? Math.round((totalExpense / totalBudget) * 100) : 0}%
-              </div>
+        <div style={{ padding:'18px 20px 22px', display:'flex', flexDirection:'column', gap:'16px' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:'12px' }}>
+            <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'14px', background:'#f8fafc' }}>
+              <div style={{ fontSize:'11px', color:'#64748b', fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px' }}>Status</div>
+              <div style={{ marginTop:'6px', fontSize:'20px', fontWeight:900, color:statusColor }}>{statusText}</div>
             </div>
-
-            <div className="rounded-2xl border p-4">
-              <div className="text-sm text-zinc-500">Total Expenses</div>
-              <div className="text-2xl font-bold">
-                Rp {Math.round(totalExpense).toLocaleString('id-ID')}
-              </div>
+            <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'14px' }}>
+              <div style={{ fontSize:'11px', color:'#64748b', fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px' }}>Budget Used</div>
+              <div style={{ marginTop:'6px', fontSize:'20px', fontWeight:900, color:'#111827' }}>{review.budgetUsed}%</div>
             </div>
-
-            <div className="rounded-2xl border p-4">
-              <div className="text-sm text-zinc-500">Budget</div>
-              <div className="text-2xl font-bold">
-                Rp {Math.round(totalBudget).toLocaleString('id-ID')}
-              </div>
+            <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'14px' }}>
+              <div style={{ fontSize:'11px', color:'#64748b', fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px' }}>Expenses</div>
+              <div style={{ marginTop:'6px', fontSize:'18px', fontWeight:900, color:'#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{money(review.totalExpense)}</div>
             </div>
-
-            <div className="rounded-2xl border p-4">
-              <div className="text-sm text-zinc-500">Alerts</div>
-              <div className="text-2xl font-bold">
-                {grouped.filter((g:any)=>g.over).length}
-              </div>
+            <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'14px' }}>
+              <div style={{ fontSize:'11px', color:'#64748b', fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px' }}>Alerts</div>
+              <div style={{ marginTop:'6px', fontSize:'20px', fontWeight:900, color:review.alerts.length ? '#b45309' : '#15803d' }}>{review.alerts.length}</div>
             </div>
           </div>
 
-          <div className="rounded-2xl border p-5">
-            <h3 className="font-semibold text-lg mb-3">Category Review</h3>
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'14px 15px', background:'#fff' }}>
+            <div style={{ fontSize:'12px', fontWeight:900, color:'#111827', marginBottom:'9px' }}>Smart Alerts</div>
+            {review.alerts.length === 0 ? (
+              <div style={{ fontSize:'12.5px', color:'#64748b' }}>Belum ada kategori yang mendekati atau melewati budget.</div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                {review.alerts.slice(0, 4).map((cat:any) => (
+                  <div key={cat.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', fontSize:'12.5px', color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'12px', padding:'9px 11px' }}>
+                    <span>{cat.over ? '⚠' : '•'} {cat.label} {cat.over ? 'melewati budget' : 'sudah mendekati budget'}</span>
+                    <b>{cat.pct}%</b>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-            <div className="space-y-3">
-              {grouped.map((cat:any, idx:number)=>(
-                <div key={idx} className="rounded-2xl border overflow-hidden">
-                  <button
-                    onClick={() => setOpenCategory(openCategory === cat.label ? null : cat.label)}
-                    className="w-full px-4 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                  >
-                    <div>
-                      <div className="font-semibold">{cat.label}</div>
-                      <div className="text-sm text-zinc-500">
-                        Rp {Math.round(cat.spent).toLocaleString('id-ID')} / Rp {Math.round(cat.budget).toLocaleString('id-ID')}
-                      </div>
-                    </div>
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', overflow:'hidden', background:'#fff' }}>
+            <div style={{ padding:'14px 15px', borderBottom:'1px solid #e3e7ee' }}>
+              <div style={{ fontSize:'14px', fontWeight:900, color:'#111827' }}>Category Review</div>
+              <div style={{ fontSize:'11.5px', color:'#94a3b8', marginTop:'2px' }}>Klik kategori untuk melihat item, lalu klik item untuk melihat transaksi terbesar.</div>
+            </div>
 
-                    <div className={`text-sm font-semibold ${cat.over ? 'text-red-500' : 'text-emerald-600'}`}>
-                      {cat.over ? 'Over Budget' : 'Safe'}
-                    </div>
-                  </button>
-
-                  {openCategory === cat.label && (
-                    <div className="border-t bg-zinc-50/50 dark:bg-zinc-900/30 p-4 space-y-3">
-                      {cat.items.map((item:any, i:number)=>(
-                        <div key={i} className="rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden">
-                          <button
-                            onClick={() => setOpenItem(openItem === `${cat.label}-${item.label}` ? null : `${cat.label}-${item.label}`)}
-                            className="w-full px-4 py-3 flex items-center justify-between text-left"
-                          >
-                            <div>
-                              <div className="font-medium">{item.label}</div>
-                              <div className="text-sm text-zinc-500">
-                                Rp {Math.round(item.total).toLocaleString('id-ID')}
-                              </div>
-                            </div>
-
-                            <div className="text-xs text-zinc-500">
-                              {item.txs.length} tx
-                            </div>
-                          </button>
-
-                          {openItem === `${cat.label}-${item.label}` && (
-                            <div className="border-t px-4 py-3 space-y-2">
-                              {item.txs
-                                .sort((a:any,b:any)=>Number(b.amt)-Number(a.amt))
-                                .map((t:any, j:number)=>(
-                                <div key={j} className="flex items-center justify-between rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2">
-                                  <div>
-                                    <div className="font-medium text-sm">{t.note || 'Transaction'}</div>
-                                    <div className="text-xs text-zinc-500">{t.date}</div>
-                                  </div>
-
-                                  <div className="font-semibold">
-                                    Rp {Math.round(Number(t.amt || 0)).toLocaleString('id-ID')}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+            <div style={{ display:'flex', flexDirection:'column' }}>
+              {review.categories.length === 0 ? (
+                <div style={{ padding:'22px 15px', color:'#94a3b8', fontSize:'13px', textAlign:'center' }}>Belum ada budget atau transaksi expense bulan ini.</div>
+              ) : review.categories.map((cat:any) => {
+                const isOpen = openCategory === cat.label
+                const color = cat.over ? '#b91c1c' : cat.near ? '#b45309' : '#15803d'
+                return (
+                  <div key={cat.label} style={{ borderBottom:'1px solid #f1f5f9' }}>
+                    <button onClick={() => { setOpenCategory(isOpen ? null : cat.label); setOpenItem(null) }} style={{ width:'100%', border:'none', background:isOpen ? '#f8fafc' : '#fff', padding:'13px 15px', display:'grid', gridTemplateColumns:'1fr auto', gap:'12px', alignItems:'center', cursor:'pointer', textAlign:'left' }}>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                          <span style={{ fontSize:'13px', fontWeight:800, color:'#111827' }}>{cat.label}</span>
+                          {(cat.over || cat.near) && <span style={{ fontSize:'10px', fontWeight:900, color, background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'999px', padding:'2px 7px' }}>{cat.over ? 'Over' : 'Near'}</span>}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                        <div style={{ marginTop:'4px', fontSize:'11.5px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{money(cat.spent)} / {money(cat.planned)}</div>
+                      </div>
+                      <div style={{ textAlign:'right', color, fontWeight:900, fontSize:'13px' }}>{cat.pct}%</div>
+                    </button>
+
+                    {isOpen && (
+                      <div style={{ padding:'0 15px 14px 15px', background:'#f8fafc' }}>
+                        <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                          {cat.items.map((item:any) => {
+                            const key = `${cat.label}::${item.label}`
+                            const itemOpen = openItem === key
+                            const itemColor = item.over ? '#b91c1c' : item.near ? '#b45309' : '#15803d'
+                            return (
+                              <div key={key} style={{ border:'1px solid #e3e7ee', borderRadius:'12px', background:'#fff', overflow:'hidden' }}>
+                                <button onClick={() => setOpenItem(itemOpen ? null : key)} style={{ width:'100%', border:'none', background:'#fff', padding:'11px 12px', display:'grid', gridTemplateColumns:'1fr auto', gap:'12px', alignItems:'center', cursor:'pointer', textAlign:'left' }}>
+                                  <div style={{ minWidth:0 }}>
+                                    <div style={{ fontSize:'12.5px', fontWeight:800, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.label}</div>
+                                    <div style={{ marginTop:'3px', fontSize:'11px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{money(item.spent)} / {money(item.planned)}</div>
+                                  </div>
+                                  <div style={{ textAlign:'right' }}>
+                                    <div style={{ color:itemColor, fontWeight:900, fontSize:'12px' }}>{item.pct}%</div>
+                                    <div style={{ color:'#94a3b8', fontSize:'10px' }}>{item.transactions.length} tx</div>
+                                  </div>
+                                </button>
+
+                                {itemOpen && (
+                                  <div style={{ borderTop:'1px solid #f1f5f9', padding:'10px 12px', display:'flex', flexDirection:'column', gap:'7px', background:'#fcfcfd' }}>
+                                    {item.transactions.length === 0 ? (
+                                      <div style={{ fontSize:'12px', color:'#94a3b8', padding:'8px 0' }}>Belum ada transaksi untuk item ini.</div>
+                                    ) : item.transactions.map((t:any) => (
+                                      <div key={t.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:'10px', alignItems:'center', padding:'8px 9px', borderRadius:'10px', background:'#fff', border:'1px solid #f1f5f9' }}>
+                                        <div style={{ fontSize:'11px', color:'#94a3b8', fontFamily:'var(--font-mono), monospace', fontWeight:700 }}>{t.date}</div>
+                                        <div style={{ fontSize:'12px', color:'#111827', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || item.label}</div>
+                                        <div style={{ fontSize:'12px', color:'#b91c1c', fontWeight:900, fontFamily:'var(--font-mono), monospace' }}>{money(Number(t.amt || 0))}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -200,7 +225,6 @@ function ReflectionModal({
     </div>
   )
 }
-
 
 /* ─── MAIN CONTENT ─────────────────────────────────────────── */
 function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: number }) {
@@ -398,125 +422,6 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </div>
       </div>
 
-      {/* ── REFLECTION MODAL ── */}
-      {refleksiOpen && (() => {
-        const incomeItems = incomeComputed.flatMap(c => c.items).filter(i => (i.actual || 0) > 0)
-        const totalIncome = incomeItems.reduce((s, i) => s + (i.actual || 0), 0)
-        const totalSavings = savingComputed.reduce((s, r) => s + (r.actual || 0), 0)
-        const totalExp = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.actual || 0), 0), 0)
-        const totalDebt = debtComputed.reduce((s, r) => s + (r.actual || 0), 0)
-        const totalOutflow = totalExp + totalDebt
-        const finalCashflow = totalIncome - totalOutflow - totalSavings
-        const planIncome = incomeComputed.flatMap(c => c.items).reduce((s, i) => s + (i.plan || 0), 0)
-        const planSavings = savingComputed.reduce((s, r) => s + (r.plan || 0), 0)
-        const planExp = budget.reduce((s, c) => s + c.items.reduce((ss, i) => ss + (i.plan || 0), 0), 0)
-        const planDebt = debtComputed.reduce((s, r) => s + (r.plan || 0), 0)
-        const expensePct = planExp > 0 ? Math.round((totalExp / planExp) * 100) : 0
-        const debtPct = planDebt > 0 ? Math.round((totalDebt / planDebt) * 100) : 0
-        const savingPct = planSavings > 0 ? Math.round((totalSavings / planSavings) * 100) : 0
-        const cashflowColor = finalCashflow >= 0 ? '#15803d' : '#b91c1c'
-        const money = (n: number) => `${n < 0 ? '-' : ''}${fmt(n)}`
-
-        const metricRow = (label: string, value: number, color = '#111827') => (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
-            <span style={{ fontSize:'12.5px', color:'#64748b' }}>{label}</span>
-            <span style={{ fontSize:'12.5px', fontWeight:700, color, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(value)}</span>
-          </div>
-        )
-
-        const progressRow = (label: string, pct: number, color: string, caption: string) => (
-          <div style={{ padding:'8px 0', borderBottom:'1px solid #f1f5f9' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px', marginBottom:'6px' }}>
-              <span style={{ fontSize:'12.5px', color:'#4b5563', fontWeight:600 }}>{label}</span>
-              <span style={{ fontSize:'11.5px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{pct || 0}%</span>
-            </div>
-            <div style={{ height:'5px', background:'#eef2f7', borderRadius:'999px', overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${Math.min(100, Math.max(0, pct || 0))}%`, background:color, borderRadius:'999px' }} />
-            </div>
-            <div style={{ fontSize:'10.5px', color:'#94a3b8', marginTop:'4px' }}>{caption}</div>
-          </div>
-        )
-
-        return (
-          <div onClick={e=>{ if(e.target===e.currentTarget) setRefleksiOpen(false) }}
-            style={{ position:'fixed', inset:0, background:'rgba(15,23,42,.42)', zIndex:800, display:'flex', alignItems:'flex-start', justifyContent:'flex-end', padding:'60px 20px 20px' }}>
-            <div style={{
-              background:'#fff', borderRadius:'14px', width:'100%', maxWidth:'430px',
-              maxHeight:'calc(100dvh - 80px)', overflowY:'auto',
-              boxShadow:'0 24px 70px rgba(15,23,42,.22)',
-              animation:'slideIn .2s ease', border:'1px solid #e3e7ee'
-            }}>
-              <div style={{ position:'sticky', top:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid #e3e7ee', zIndex:1 }}>
-                <div>
-                  <div style={{ fontSize:'15px', fontWeight:800, color:'#111827', display:'flex', alignItems:'center', gap:7 }}><AppIcon name="mirror" size={16} /> Monthly Reflection</div>
-                  <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>{MONTH_NAMES[curMonth]} {curYear} · monthly cashflow review</div>
-                </div>
-                <button aria-label="Close reflection" onClick={()=>setRefleksiOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f7f8fa', borderRadius:'8px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
-              </div>
-
-              <div style={{ padding:'18px', display:'flex', flexDirection:'column', gap:'12px' }}>
-                <div style={{ background: finalCashflow >= 0 ? '#f0fdf4' : '#fef2f2', border:`1px solid ${finalCashflow >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius:'12px', padding:'14px 15px' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'12px' }}>
-                    <div>
-                      <div style={{ fontSize:'10px', fontWeight:800, color:cashflowColor, textTransform:'uppercase', letterSpacing:'.7px' }}>
-                        <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name={finalCashflow >= 0 ? 'check' : 'warning'} size={13} /></span>Final Cashflow
-                      </div>
-                      <div style={{ fontSize:'11.5px', color:'#64748b', marginTop:'6px', lineHeight:1.45 }}>
-                        Income minus expenses, debt payments, and saving allocations.
-                      </div>
-                    </div>
-                    <div style={{ fontSize:'20px', fontWeight:800, color:cashflowColor, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(finalCashflow)}</div>
-                  </div>
-                </div>
-
-                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>Monthly Summary</div>
-                  {metricRow('Total Income', totalIncome, '#15803d')}
-                  {metricRow('Expenses', totalExp, '#b91c1c')}
-                  {metricRow('Debt Payment', totalDebt, '#8a5f2b')}
-                  {metricRow('Saving Allocation', totalSavings, '#1d4ed8')}
-                  {metricRow('Total Outflow', totalOutflow + totalSavings, '#7c2d12')}
-                </div>
-
-                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'7px' }}>Budget Discipline</div>
-                  {progressRow('Expenses', expensePct, expensePct > 100 ? '#ef4444' : '#22c55e', planExp > 0 ? `Actual ${fmt(totalExp)} of planned ${fmt(planExp)}` : 'No expense plan yet')}
-                  {progressRow('Debt Payment', debtPct, debtPct >= 100 ? '#22c55e' : '#f59e0b', planDebt > 0 ? `Actual ${fmt(totalDebt)} of planned ${fmt(planDebt)}` : 'No debt payment plan yet')}
-                  {progressRow('Saving Allocation', savingPct, savingPct >= 100 ? '#22c55e' : '#60a5fa', planSavings > 0 ? `Actual ${fmt(totalSavings)} of planned ${fmt(planSavings)}` : 'No saving allocation plan yet')}
-                </div>
-
-                <div style={{ background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', padding:'14px 15px' }}>
-                  <div style={{ fontSize:'10px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>
-                    <span style={{ display:'inline-flex', verticalAlign:'middle', marginRight:6 }}><AppIcon name="expense" size={14} /></span>Expenses Breakdown
-                  </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                    {budget.map(cat => {
-                      const catTotal = cat.items.reduce((s,i)=>s+(i.actual||0),0)
-                      if (catTotal === 0) return null
-                      const catPct = totalExp > 0 ? Math.round((catTotal/totalExp)*100) : 0
-                      return (
-                        <div key={cat.label}>
-                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px', gap:'10px' }}>
-                            <span style={{ fontSize:'12.5px', fontWeight:700, color:'#111827' }}>{cat.label}</span>
-                            <span style={{ fontSize:'12px', fontWeight:700, fontFamily:'var(--font-mono), monospace', color:'#b91c1c' }}>{fmt(catTotal)}</span>
-                          </div>
-                          <div style={{ height:'4px', background:'#f3f4f6', borderRadius:'999px', marginBottom:'5px', overflow:'hidden' }}>
-                            <div style={{ height:'100%', borderRadius:'999px', background:'#fca5a5', width:`${catPct}%` }} />
-                          </div>
-                          <div style={{ fontSize:'10.5px', color:'#94a3b8' }}>{catPct}% of non-debt expenses</div>
-                        </div>
-                      )
-                    })}
-                    {totalExp === 0 && <div style={{ fontSize:'12px', color:'#94a3b8' }}>No expenses recorded this month.</div>}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(18px) } to { opacity:1; transform:translateX(0) } }`}</style>
-          </div>
-        )
-      })()}
-
       {/* STAT STRIP */}
       <StatStrip income={incomeComputed} saving={savingComputed} debt={debtComputed} budget={budget} isMobile={isMobile} rawSisa={sisaApp} />
 
@@ -571,17 +476,17 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </div>
       )}
 
-      {/* TX DETAIL MODAL */}
-      {txDetailLabel && (
-  
       <ReflectionModal
         open={refleksiOpen}
         onClose={() => setRefleksiOpen(false)}
         budget={budget}
         tx={tx}
+        monthLabel={`${MONTH_NAMES[curMonth]} ${curYear}`}
       />
 
-      <TxDetailModal label={txDetailLabel} tx={tx} onClose={()=>setTxDetailLabel(null)} />
+      {/* TX DETAIL MODAL */}
+      {txDetailLabel && (
+        <TxDetailModal label={txDetailLabel} tx={tx} onClose={()=>setTxDetailLabel(null)} />
       )}
 
       {/* RECONCILIATION MODAL */}
