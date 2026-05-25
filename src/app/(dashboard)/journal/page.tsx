@@ -146,7 +146,7 @@ function ReviewModal({
             <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:'17px', fontWeight:950, color:'#111827' }}>
               <AppIcon name="mirror" size={18} /> Financial Review
             </div>
-            <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'2px' }}>{monthLabel} · ringkasan kondisi + investigasi pengeluaran</div>
+            <div style={{ fontSize:'12px', color:'#64748b', fontWeight:650, marginTop:'3px', lineHeight:1.4 }}>{monthLabel} · ringkasan kondisi + investigasi pengeluaran</div>
           </div>
           <button aria-label="Close review" onClick={onClose} style={{ width:'32px', height:'32px', border:'none', background:'#f7f8fa', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <AppIcon name="close" size={16} />
@@ -158,7 +158,7 @@ function ReviewModal({
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', marginBottom:'10px' }}>
               <div>
                 <div style={{ fontSize:'13px', fontWeight:950, color:'#111827' }}>Financial Snapshot</div>
-                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>Ringkasan umum sebelum mengecek detail pengeluaran.</div>
+                <div style={{ fontSize:'12px', color:'#64748b', fontWeight:600, marginTop:'3px', lineHeight:1.45 }}>Ringkasan umum sebelum mengecek detail pengeluaran.</div>
               </div>
               <div style={{ fontSize:'11px', fontWeight:950, color:statusColor, background:review.budgetUsed > 100 ? '#fef2f2' : review.budgetUsed >= 80 ? '#fffbeb' : '#ecfdf5', border:`1px solid ${review.budgetUsed > 100 ? '#fecaca' : review.budgetUsed >= 80 ? '#fde68a' : '#bbf7d0'}`, borderRadius:'999px', padding:'5px 9px', whiteSpace:'nowrap' }}>
                 {statusText}
@@ -175,10 +175,10 @@ function ReviewModal({
                 ['Budget Used', `${review.budgetUsed}%`, `${review.alerts.length} category warning`, statusColor],
               ].map(([label, value, sub, color]) => (
                 <div key={label} style={{ display:'grid', gridTemplateColumns:'112px 1fr', gap:'10px', alignItems:'baseline', padding:'7px 0', borderBottom:'1px solid #f1f5f9' }}>
-                  <div style={{ fontSize:'11.5px', color:'#64748b', fontWeight:850 }}>{label}</div>
+                  <div style={{ fontSize:'12px', color:'#475569', fontWeight:850 }}>{label}</div>
                   <div style={{ minWidth:0, textAlign:'right' }}>
                     <div style={{ fontSize:'13px', color:color as string, fontWeight:950, fontFamily:String(value).startsWith('Rp') ? 'var(--font-mono), monospace' : undefined, whiteSpace:'nowrap' }}>{value}</div>
-                    <div style={{ fontSize:'10.5px', color:'#94a3b8', marginTop:'1px', whiteSpace:'nowrap' }}>{sub}</div>
+                    <div style={{ fontSize:'11px', color:'#64748b', fontWeight:650, marginTop:'2px', whiteSpace:'nowrap' }}>{sub}</div>
                   </div>
                 </div>
               ))}
@@ -186,15 +186,15 @@ function ReviewModal({
           </div>
 
           <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'11px 12px', background:'#fff' }}>
-            <div style={{ fontSize:'12.5px', fontWeight:950, color:'#111827', marginBottom:'7px' }}>Review Insight</div>
+            <div style={{ fontSize:'13px', fontWeight:950, color:'#111827', marginBottom:'8px' }}>Review Insight</div>
             {review.alerts.length === 0 ? (
-              <div style={{ fontSize:'12px', color:'#64748b', lineHeight:1.5 }}>
+              <div style={{ fontSize:'12.5px', color:'#475569', fontWeight:600, lineHeight:1.55 }}>
                 Kondisi budget masih relatif aman. Belum ada kategori expense yang mendekati atau melewati batas budget bulan ini.
               </div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
                 {review.alerts.slice(0, 3).map((cat:any) => (
-                  <div key={cat.label} style={{ fontSize:'12px', color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'11px', padding:'8px 9px', lineHeight:1.45 }}>
+                  <div key={cat.label} style={{ fontSize:'12.5px', fontWeight:650, color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'11px', padding:'8px 9px', lineHeight:1.45 }}>
                     {cat.over
                       ? `${cat.label} sudah melewati budget sebesar ${money(cat.spent - cat.planned)}. Cek item di bawah untuk melihat penyebab utamanya.`
                       : `${cat.label} sudah memakai ${cat.pct}% dari budget. Kategori ini perlu dipantau agar tidak melewati batas.`}
@@ -208,9 +208,9 @@ function ReviewModal({
             <div style={{ padding:'11px 12px', borderBottom:'1px solid #e3e7ee', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px' }}>
               <div>
                 <div style={{ fontSize:'13px', fontWeight:950, color:'#111827' }}>Expense Breakdown</div>
-                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'1px' }}>Klik kategori → item → transaksi terbesar.</div>
+                <div style={{ fontSize:'12px', color:'#64748b', fontWeight:600, marginTop:'2px' }}>Klik kategori → item → transaksi terbesar.</div>
               </div>
-              <div style={{ fontSize:'11px', color:'#64748b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(review.regularExpenseActual)}</div>
+              <div style={{ fontSize:'12px', color:'#475569', fontWeight:800, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(review.regularExpenseActual)}</div>
             </div>
 
             <div style={{ display:'flex', flexDirection:'column' }}>
@@ -227,7 +227,7 @@ function ReviewModal({
                           <span style={{ fontSize:'12.5px', fontWeight:850, color:'#111827' }}>{cat.label}</span>
                           {(cat.over || cat.near) && <span style={{ fontSize:'9.5px', fontWeight:950, color, background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'999px', padding:'1px 6px' }}>{cat.over ? 'Over' : 'Near'}</span>}
                         </div>
-                        <div style={{ marginTop:'3px', fontSize:'11px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{money(cat.spent)} / {money(cat.planned)}</div>
+                        <div style={{ marginTop:'4px', fontSize:'11.5px', color:'#475569', fontWeight:700, fontFamily:'var(--font-mono), monospace' }}>{money(cat.spent)} / {money(cat.planned)}</div>
                       </div>
                       <div style={{ textAlign:'right', color, fontWeight:950, fontSize:'12.5px' }}>{cat.pct}%</div>
                     </button>
@@ -244,21 +244,21 @@ function ReviewModal({
                                 <button onClick={() => setOpenItem(itemOpen ? null : key)} style={{ width:'100%', border:'none', background:'#fff', padding:'9px 10px', display:'grid', gridTemplateColumns:'1fr auto', gap:'10px', alignItems:'center', cursor:'pointer', textAlign:'left' }}>
                                   <div style={{ minWidth:0 }}>
                                     <div style={{ fontSize:'12px', fontWeight:850, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.label}</div>
-                                    <div style={{ marginTop:'2px', fontSize:'10.5px', color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>{money(item.spent)} / {money(item.planned)}</div>
+                                    <div style={{ marginTop:'3px', fontSize:'11px', color:'#475569', fontWeight:700, fontFamily:'var(--font-mono), monospace' }}>{money(item.spent)} / {money(item.planned)}</div>
                                   </div>
                                   <div style={{ textAlign:'right' }}>
                                     <div style={{ color:itemColor, fontWeight:950, fontSize:'11.5px' }}>{item.pct}%</div>
-                                    <div style={{ color:'#94a3b8', fontSize:'9.5px' }}>{item.transactions.length} tx</div>
+                                    <div style={{ color:'#64748b', fontWeight:700, fontSize:'10.5px' }}>{item.transactions.length} tx</div>
                                   </div>
                                 </button>
 
                                 {itemOpen && (
                                   <div style={{ borderTop:'1px solid #f1f5f9', padding:'8px 10px', display:'flex', flexDirection:'column', gap:'6px', background:'#fcfcfd' }}>
                                     {item.transactions.length === 0 ? (
-                                      <div style={{ fontSize:'11.5px', color:'#94a3b8', padding:'6px 0' }}>Belum ada transaksi untuk item ini.</div>
+                                      <div style={{ fontSize:'12px', color:'#64748b', fontWeight:600, padding:'6px 0' }}>Belum ada transaksi untuk item ini.</div>
                                     ) : item.transactions.map((t:any) => (
                                       <div key={t.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:'8px', alignItems:'center', padding:'7px 8px', borderRadius:'9px', background:'#fff', border:'1px solid #f1f5f9' }}>
-                                        <div style={{ fontSize:'10.5px', color:'#94a3b8', fontFamily:'var(--font-mono), monospace', fontWeight:750 }}>{t.date}</div>
+                                        <div style={{ fontSize:'11px', color:'#64748b', fontFamily:'var(--font-mono), monospace', fontWeight:750 }}>{t.date}</div>
                                         <div style={{ fontSize:'11.5px', color:'#111827', fontWeight:650, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || item.label}</div>
                                         <div style={{ fontSize:'11.5px', color:'#b91c1c', fontWeight:950, fontFamily:'var(--font-mono), monospace' }}>{money(Number(t.amt || 0))}</div>
                                       </div>
@@ -360,8 +360,8 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const card: React.CSSProperties      = { background:'#fff', border:'1px solid #e3e7ee', borderRadius:'16px', boxShadow:'0 2px 12px rgba(15,23,42,.05)', marginBottom:'14px', overflow:'hidden' }
   const cardHead: React.CSSProperties  = { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:'1px solid #e3e7ee', gap:'12px', background:'#fff' }
   const cardTitle: React.CSSProperties = { fontSize:'14px', fontWeight:900, color:'#111827', letterSpacing:'-.2px' }
-  const cardSub: React.CSSProperties   = { fontSize:'11.5px', color:'#9ca3af', marginTop:'3px', lineHeight:1.45 }
-  const colLabels: React.CSSProperties = { display:'flex', alignItems:'center', padding:'8px 16px', gap:'6px', background:'#f7f8fa', borderBottom:'1px solid #e3e7ee', fontSize:'10px', fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.65px' }
+  const cardSub: React.CSSProperties   = { fontSize:'12px', color:'#64748b', fontWeight:600, marginTop:'4px', lineHeight:1.45 }
+  const colLabels: React.CSSProperties = { display:'flex', alignItems:'center', padding:'9px 16px', gap:'6px', background:'#f7f8fa', borderBottom:'1px solid #e3e7ee', fontSize:'10.5px', fontWeight:850, color:'#64748b', textTransform:'uppercase', letterSpacing:'.55px' }
   const actionBtn: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', padding:'8px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', background:'#fff', fontSize:'12px', fontWeight:800, color:'#4b5563', cursor:'pointer', boxShadow:'0 1px 2px rgba(15,23,42,.04)' }
 
   const MOBILE_TABS: { key: MobileTab; label: string }[] = [
@@ -398,7 +398,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         {!isMobile && (
           <div style={{ display:'flex', gap:'3px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'3px' }}>
             {(['budget','income'] as DesktopPanel[]).map(p => (
-              <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'11.5px', fontWeight:600, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#9ca3af', border:'none', padding:'6px 14px', borderRadius:'8px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
+              <button key={p} onClick={()=>setDesktopPanel(p)} style={{ fontSize:'12px', fontWeight:750, background:desktopPanel===p?'#fff':'none', color:desktopPanel===p?'#111827':'#64748b', border:'none', padding:'6px 14px', borderRadius:'8px', cursor:'pointer', boxShadow:desktopPanel===p?'0 1px 3px rgba(0,0,0,.07)':'none' }}>
                 {p==='budget' ? 'Expense' : 'Income'}
               </button>
             ))}
@@ -456,12 +456,12 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           <h1 style={{ fontSize: isMobile?'17px':'19px', fontWeight:700, letterSpacing:'-.3px' }}>
             {MONTH_NAMES[curMonth]} {curYear}
           </h1>
-          <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>{phSub}</p>
+          <p style={{ fontSize:'12.5px', color:'#64748b', fontWeight:600, marginTop:'4px', lineHeight:1.4 }}>{phSub}</p>
         </div>
         <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
-          {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
-          {!loading && refreshing && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Syncing...</span>}
-          {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
+          {loading && <span style={{ fontSize:'12px', color:'#64748b', fontWeight:650 }}>Loading...</span>}
+          {!loading && refreshing && <span style={{ fontSize:'12px', color:'#64748b', fontWeight:650 }}>Syncing...</span>}
+          {saving && <span style={{ fontSize:'12px', color:'#64748b', fontWeight:650 }}>Saving...</span>}
           {/* Review, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
             style={actionBtn}>

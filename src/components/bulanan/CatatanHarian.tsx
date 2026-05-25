@@ -218,7 +218,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
             <input
               type="text"
               inputMode="numeric"
-              style={{ ...inp, fontFamily: 'var(--font-mono), monospace', fontWeight: 500, paddingRight:'10px' }}
+              style={{ ...inp, fontFamily: 'var(--font-mono), monospace', fontWeight: 650, paddingRight:'10px' }}
               placeholder="Amount (Rp)"
               value={amt}
               onChange={e => setAmt(fmtInput(e.target.value))}
@@ -257,7 +257,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
             onChange={e => setNote(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 500, color: '#4b5563', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0 4px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 650, color: '#4b5563', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0 4px' }}>
             <input type="checkbox" checked={isDebt} onChange={e => setIsDebt(e.target.checked)} style={{ accentColor: '#92400e', width: '15px', height: '15px', flexShrink: 0 }} />
             Unpaid
           </label>
@@ -391,9 +391,9 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
 
       {/* ── HISTORY HEADER ── */}
       <div style={{ padding: '8px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e3e7ee' }}>
-        <div style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.7px' }}>Transaction History</div>
+        <div style={{ fontSize: '10.8px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.7px' }}>Transaction History</div>
         {debtCount > 0 && (
-          <span style={{ fontSize: '10px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '20px' }}>
+          <span style={{ fontSize: '10.8px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '20px' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><AppIcon name="warning" size={12} />{debtCount} unpaid{debtCount > 1 ? 's' : ''}</span>
           </span>
         )}
@@ -402,7 +402,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
       {/* ── TX LIST ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 16px' }}>
         {tx.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
+          <div style={{ textAlign: 'center', padding: '28px', color: '#64748b', fontSize: '13px' }}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:'6px' }}><AppIcon name="transactions" size={24} /></div>
             No transactions yet
           </div>
@@ -418,12 +418,12 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
             <div key={t.id} style={{ background: '#fff', border: '1.5px solid #1a5c42', borderRadius: '6px', padding: '10px 12px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Date</div>
+                  <div style={{ fontSize: '10.8px', fontWeight: 600, color: '#64748b', marginBottom: '3px', textTransform: 'uppercase' }}>Date</div>
                   <input type="number" min="1" max="31" style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
                     value={editData.date || ''} onChange={e => setEditData(p => ({ ...p, date: e.target.value }))} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
+                  <div style={{ fontSize: '10.8px', fontWeight: 600, color: '#64748b', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
                   <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
                     value={editData.type || 'out'}
                     onChange={e => {
@@ -441,7 +441,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
                 </div>
               </div>
               <div style={{ marginBottom: '6px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Category</div>
+                <div style={{ fontSize: '10.8px', fontWeight: 600, color: '#64748b', marginBottom: '3px', textTransform: 'uppercase' }}>Category</div>
                 <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
                   value={editData.cat || ''}
                   onChange={e => setEditData(p => ({ ...p, cat: e.target.value }))}>
@@ -455,12 +455,12 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Description</div>
+                  <div style={{ fontSize: '10.8px', fontWeight: 600, color: '#64748b', marginBottom: '3px', textTransform: 'uppercase' }}>Description</div>
                   <input style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
                     value={editData.note || ''} onChange={e => setEditData(p => ({ ...p, note: e.target.value }))} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
+                  <div style={{ fontSize: '10.8px', fontWeight: 600, color: '#64748b', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
                   <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'var(--font-mono), monospace' }}
                     value={editData.amt ? Number(editData.amt).toLocaleString('id-ID') : ''} onChange={e => setEditData(p => ({ ...p, amt: parseInputAmount(e.target.value) }))} />
                 </div>
@@ -491,9 +491,9 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], onAdd, onUpdate,
               border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
-              <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace' }}>{t.date}</div>
+              <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace' }}>{t.date}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
+                <div style={{ fontSize: '13px', fontWeight: 650, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
                   {t.cat && <span style={{ fontSize: '9.5px', fontWeight: 600, background: bc, color: tc, padding: '2px 7px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '.3px' }}>{t.cat}</span>}
                   {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="warning" size={10} />Unpaid</span></span>}
