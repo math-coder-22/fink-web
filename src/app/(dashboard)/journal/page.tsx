@@ -23,6 +23,185 @@ const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID
 /* ─── RECONCILIATION MODAL ─────────────────────────────────── */
 
 
+
+/* ─── FINANCIAL REVIEW MODAL ─────────────────────────────── */
+function ReflectionModal({
+  open,
+  onClose,
+  budget,
+  tx,
+}: {
+  open: boolean
+  onClose: () => void
+  budget: any[]
+  tx: any[]
+}) {
+  const [openCategory, setOpenCategory] = useState<string | null>(null)
+  const [openItem, setOpenItem] = useState<string | null>(null)
+
+  if (!open) return null
+
+  const expenseTx = tx.filter((t:any) => t.type === 'out')
+
+  const totalExpense = expenseTx.reduce((a:number, b:any) => a + Number(b.amt || 0), 0)
+  const totalBudget = budget.reduce((a:number, b:any) => a + Number(b.amount || 0), 0)
+
+  const grouped = budget.map((b:any) => {
+    const related = expenseTx.filter((t:any) => t.cat === b.label)
+    const spent = related.reduce((a:number, x:any) => a + Number(x.amt || 0), 0)
+
+    const itemMap = new Map()
+
+    related.forEach((r:any) => {
+      const key = r.note || 'Other'
+      if (!itemMap.has(key)) {
+        itemMap.set(key, {
+          label: key,
+          total: 0,
+          txs: [],
+        })
+      }
+
+      const item = itemMap.get(key)
+      item.total += Number(r.amt || 0)
+      item.txs.push(r)
+    })
+
+    const items = Array.from(itemMap.values()).sort((a:any,b:any)=>b.total-a.total)
+
+    return {
+      label: b.label,
+      budget: Number(b.amount || 0),
+      spent,
+      diff: spent - Number(b.amount || 0),
+      over: spent > Number(b.amount || 0),
+      items,
+    }
+  }).sort((a:any,b:any)=>b.spent-a.spent)
+
+  return (
+    <div className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4">
+      <div className="w-full max-w-4xl rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 my-8">
+        <div className="sticky top-0 z-10 rounded-t-3xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Financial Review</h2>
+            <p className="text-sm text-zinc-500">Monthly spending reflection & investigation</p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:scale-105 transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-2xl border p-4">
+              <div className="text-sm text-zinc-500">Budget Used</div>
+              <div className="text-2xl font-bold">
+                {totalBudget > 0 ? Math.round((totalExpense / totalBudget) * 100) : 0}%
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-4">
+              <div className="text-sm text-zinc-500">Total Expenses</div>
+              <div className="text-2xl font-bold">
+                Rp {Math.round(totalExpense).toLocaleString('id-ID')}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-4">
+              <div className="text-sm text-zinc-500">Budget</div>
+              <div className="text-2xl font-bold">
+                Rp {Math.round(totalBudget).toLocaleString('id-ID')}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-4">
+              <div className="text-sm text-zinc-500">Alerts</div>
+              <div className="text-2xl font-bold">
+                {grouped.filter((g:any)=>g.over).length}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border p-5">
+            <h3 className="font-semibold text-lg mb-3">Category Review</h3>
+
+            <div className="space-y-3">
+              {grouped.map((cat:any, idx:number)=>(
+                <div key={idx} className="rounded-2xl border overflow-hidden">
+                  <button
+                    onClick={() => setOpenCategory(openCategory === cat.label ? null : cat.label)}
+                    className="w-full px-4 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  >
+                    <div>
+                      <div className="font-semibold">{cat.label}</div>
+                      <div className="text-sm text-zinc-500">
+                        Rp {Math.round(cat.spent).toLocaleString('id-ID')} / Rp {Math.round(cat.budget).toLocaleString('id-ID')}
+                      </div>
+                    </div>
+
+                    <div className={`text-sm font-semibold ${cat.over ? 'text-red-500' : 'text-emerald-600'}`}>
+                      {cat.over ? 'Over Budget' : 'Safe'}
+                    </div>
+                  </button>
+
+                  {openCategory === cat.label && (
+                    <div className="border-t bg-zinc-50/50 dark:bg-zinc-900/30 p-4 space-y-3">
+                      {cat.items.map((item:any, i:number)=>(
+                        <div key={i} className="rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden">
+                          <button
+                            onClick={() => setOpenItem(openItem === `${cat.label}-${item.label}` ? null : `${cat.label}-${item.label}`)}
+                            className="w-full px-4 py-3 flex items-center justify-between text-left"
+                          >
+                            <div>
+                              <div className="font-medium">{item.label}</div>
+                              <div className="text-sm text-zinc-500">
+                                Rp {Math.round(item.total).toLocaleString('id-ID')}
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-zinc-500">
+                              {item.txs.length} tx
+                            </div>
+                          </button>
+
+                          {openItem === `${cat.label}-${item.label}` && (
+                            <div className="border-t px-4 py-3 space-y-2">
+                              {item.txs
+                                .sort((a:any,b:any)=>Number(b.amt)-Number(a.amt))
+                                .map((t:any, j:number)=>(
+                                <div key={j} className="flex items-center justify-between rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2">
+                                  <div>
+                                    <div className="font-medium text-sm">{t.note || 'Transaction'}</div>
+                                    <div className="text-xs text-zinc-500">{t.date}</div>
+                                  </div>
+
+                                  <div className="font-semibold">
+                                    Rp {Math.round(Number(t.amt || 0)).toLocaleString('id-ID')}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 /* ─── MAIN CONTENT ─────────────────────────────────────────── */
 function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: number }) {
   const {
@@ -394,7 +573,15 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
 
       {/* TX DETAIL MODAL */}
       {txDetailLabel && (
-        <TxDetailModal label={txDetailLabel} tx={tx} onClose={()=>setTxDetailLabel(null)} />
+  
+      <ReflectionModal
+        open={refleksiOpen}
+        onClose={() => setRefleksiOpen(false)}
+        budget={budget}
+        tx={tx}
+      />
+
+      <TxDetailModal label={txDetailLabel} tx={tx} onClose={()=>setTxDetailLabel(null)} />
       )}
 
       {/* RECONCILIATION MODAL */}
