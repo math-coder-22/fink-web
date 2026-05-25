@@ -35,7 +35,7 @@ export async function getEffectiveUser(): Promise<EffectiveUserContext> {
 
   const { data: actualProfile, error: profileError } = await supabase
     .from('profiles')
-    .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at')
+    .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at,display_name,profile_type,family_members,dependents,financial_focus')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -90,7 +90,7 @@ export async function getEffectiveUser(): Promise<EffectiveUserContext> {
 
   const { data: targetProfile, error: targetError } = await admin
     .from('profiles')
-    .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at')
+    .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at,display_name,profile_type,family_members,dependents,financial_focus')
     .eq('id', monitoringUserId)
     .maybeSingle()
 

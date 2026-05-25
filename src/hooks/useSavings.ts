@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type {
   SavingsGoal,
@@ -130,9 +130,14 @@ export function calcGoal(g: SavingsGoal): GoalCalcResult {
 }
 
 const LEGACY_STORAGE_KEY = "fink_savings_goals";
+const GOALS_CACHE_PREFIX = "fink_savings_goals_cache";
 
 function storageKey(userId: string) {
   return `fink_savings_goals:${userId}`;
+}
+
+function cacheKey(userId: string) {
+  return `${GOALS_CACHE_PREFIX}:${userId}`;
 }
 
 function migratedKey(userId: string) {
@@ -164,6 +169,18 @@ function parseGoals(raw: string | null): SavingsGoal[] {
   } catch {
     return [];
   }
+}
+
+function loadCachedGoals(userId: string): SavingsGoal[] {
+  if (typeof window === "undefined") return [];
+  return parseGoals(sessionStorage.getItem(cacheKey(userId)) || localStorage.getItem(cacheKey(userId)));
+}
+
+function saveGoalsCache(userId: string, goals: SavingsGoal[]) {
+  if (typeof window === "undefined") return;
+  const payload = JSON.stringify(goals.map(normalizeGoal));
+  sessionStorage.setItem(cacheKey(userId), payload);
+  localStorage.setItem(cacheKey(userId), payload);
 }
 
 function loadLegacyGoalsForUser(userId: string): SavingsGoal[] {
@@ -233,7 +250,7 @@ export function useSavings() {
 
   const blockReadOnly = useCallback(() => {
     alert('Mode Monitoring bersifat read-only. Keluar dari monitoring untuk mengubah data.');
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => {
     let alive = true;
@@ -254,8 +271,15 @@ export function useSavings() {
   }, []);
 
   const loadForCurrentUser = useCallback(async (uidUser: string) => {
-    setLoaded(false);
     setError(null);
+
+    const cachedGoals = loadCachedGoals(uidUser);
+    if (cachedGoals.length > 0) {
+      setGoals(cachedGoals);
+      setLoaded(true);
+    } else {
+      setLoaded(false);
+    }
 
     try {
       let remoteGoals = await fetchGoalsFromServer();
@@ -272,13 +296,14 @@ export function useSavings() {
       }
 
       setGoals(remoteGoals);
+      saveGoalsCache(uidUser, remoteGoals);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat Smart Saving");
-      setGoals([]);
+      if (cachedGoals.length === 0) setGoals([]);
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => {
     let mounted = true;
@@ -331,15 +356,21 @@ export function useSavings() {
     async (next: SavingsGoal[]) => {
       if (!userId) return;
       if (readOnly) { blockReadOnly(); return; }
+      const previous = goals;
       const normalized = next.map(normalizeGoal);
       setGoals(normalized);
+      saveGoalsCache(userId, normalized);
       try {
-        await saveGoalsToServer(normalized);
+        const savedGoals = await saveGoalsToServer(normalized);
+        setGoals(savedGoals);
+        saveGoalsCache(userId, savedGoals);
       } catch (e) {
+        setGoals(previous);
+        saveGoalsCache(userId, previous);
         setError(e instanceof Error ? e.message : "Gagal menyimpan Smart Saving");
       }
     },
-    [userId, readOnly, blockReadOnly],
+    [userId, readOnly, blockReadOnly, goals],
   );
 
   const addGoal = useCallback(
@@ -355,15 +386,23 @@ export function useSavings() {
         updatedAt: now,
       });
 
-      setGoals((prev) => [goal, ...prev]);
+      const previous = goals;
+      const optimisticGoals = [goal, ...previous];
+      setGoals(optimisticGoals);
+      saveGoalsCache(userId, optimisticGoals);
 
       try {
-        await saveGoalToServer(goal);
+        const savedGoal = await saveGoalToServer(goal);
+        const savedGoals = [savedGoal, ...previous];
+        setGoals(savedGoals);
+        saveGoalsCache(userId, savedGoals);
       } catch (e) {
+        setGoals(previous);
+        saveGoalsCache(userId, previous);
         setError(e instanceof Error ? e.message : "Gagal menambah Smart Saving");
       }
     },
-    [userId, readOnly, blockReadOnly],
+    [userId, readOnly, blockReadOnly, goals],
   );
 
   const updateGoal = useCallback(
@@ -383,11 +422,14 @@ export function useSavings() {
       if (!userId) return;
       if (readOnly) { blockReadOnly(); return; }
       const previous = goals;
-      setGoals(goals.filter((g) => g.id !== id));
+      const optimisticGoals = goals.filter((g) => g.id !== id);
+      setGoals(optimisticGoals);
+      saveGoalsCache(userId, optimisticGoals);
       try {
         await deleteGoalFromServer(id);
       } catch (e) {
         setGoals(previous);
+        saveGoalsCache(userId, previous);
         setError(e instanceof Error ? e.message : "Gagal menghapus Smart Saving");
       }
     },
@@ -494,11 +536,19 @@ export function useSavings() {
     [goals, persistAll, userId],
   );
 
-  const summary = (() => {
+  const summary = useMemo(() => {
     const active = goals.filter((g) => g.status === "active");
-    const totalTarget = active.reduce((s, g) => s + calcGoal(g).targetNow, 0);
-    const totalCollected = active.reduce((s, g) => s + g.current, 0);
-    const totalMonthly = active.reduce((s, g) => s + calcGoal(g).monthlyNeeded, 0);
+    let totalTarget = 0;
+    let totalCollected = 0;
+    let totalMonthly = 0;
+
+    active.forEach((g) => {
+      const calc = calcGoal(g);
+      totalTarget += calc.targetNow;
+      totalCollected += g.current;
+      totalMonthly += calc.monthlyNeeded;
+    });
+
     const pct = totalTarget > 0 ? (totalCollected / totalTarget) * 100 : 0;
     return {
       totalTarget,
@@ -507,7 +557,7 @@ export function useSavings() {
       pct,
       count: active.length,
     };
-  })();
+  }, [goals]);
 
   return {
     goals,

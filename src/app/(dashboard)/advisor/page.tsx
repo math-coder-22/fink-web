@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
 import { AppIcon, SectionCard, SectionHeader, MetricCard as DesignMetricCard, StatusBadge, PremiumLockCard } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
+import { createClient } from '@/lib/supabase/client'
 
 type Tone = 'good' | 'warning' | 'danger' | 'neutral'
 type Priority = 'high' | 'medium' | 'low'
@@ -115,6 +116,31 @@ const priorityTone: Record<Priority, Tone> = {
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n || 0)).toLocaleString('id-ID')
 const pct = (n: number) => `${Math.round(n || 0)}%`
+const ADVISOR_CACHE_VERSION = 'v1'
+const advisorCacheKey = (userKey: string, month: string, year: number) => `fink:advisor:${ADVISOR_CACHE_VERSION}:${userKey}:${year}:${month}`
+
+function readAdvisorCache(userKey: string, month: string, year: number): AdvisorSummary | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.sessionStorage.getItem(advisorCacheKey(userKey, month, year)) || window.localStorage.getItem(advisorCacheKey(userKey, month, year))
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed?.data || null
+  } catch {
+    return null
+  }
+}
+
+function writeAdvisorCache(userKey: string, month: string, year: number, data: AdvisorSummary | null) {
+  if (typeof window === 'undefined' || !data) return
+  try {
+    const payload = JSON.stringify({ data, cachedAt: Date.now() })
+    window.sessionStorage.setItem(advisorCacheKey(userKey, month, year), payload)
+    window.localStorage.setItem(advisorCacheKey(userKey, month, year), payload)
+  } catch {
+    // Ignore storage quota / privacy mode errors. Advisor should still work from network data.
+  }
+}
 
 function deltaText(value: number | null, goodWhenUp = true) {
   if (value === null || !Number.isFinite(value)) return { text:'Belum ada data perbandingan', color:'#9ca3af' }
@@ -123,7 +149,7 @@ function deltaText(value: number | null, goodWhenUp = true) {
   return { text:`${up ? 'Up' : 'Down'} ${Math.abs(Math.round(value))}% vs last month`, color: good ? '#15803d' : '#b91c1c' }
 }
 
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+const Card = memo(function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <SectionCard
       style={{
@@ -137,14 +163,14 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
       {children}
     </SectionCard>
   )
-}
+})
 
-function Badge({ tone, children }: { tone: Tone; children: React.ReactNode }) {
+const Badge = memo(function Badge({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   const mappedTone = tone === 'good' ? 'success' : tone === 'neutral' ? 'default' : tone
   return <StatusBadge tone={mappedTone}>{children}</StatusBadge>
-}
+})
 
-function SectionHead({ title, subtitle, right }: { title:string; subtitle?:string; right?:React.ReactNode }) {
+const SectionHead = memo(function SectionHead({ title, subtitle, right }: { title:string; subtitle?:string; right?:React.ReactNode }) {
   return (
     <SectionHeader
       title={title}
@@ -152,17 +178,17 @@ function SectionHead({ title, subtitle, right }: { title:string; subtitle?:strin
       right={right}
     />
   )
-}
+})
 
-function ProgressBar({ value, color = '#1a5c42' }: { value:number; color?:string }) {
+const ProgressBar = memo(function ProgressBar({ value, color = '#1a5c42' }: { value:number; color?:string }) {
   return (
     <div style={{ height:7, background:'#f3f4f6', borderRadius:999, overflow:'hidden' }}>
       <div style={{ height:'100%', width:`${Math.max(0, Math.min(100, value))}%`, background:color, borderRadius:999 }} />
     </div>
   )
-}
+})
 
-function MetricCard({ label, value, note, tone = 'neutral' }: { label:string; value:string; note:string; tone?:Tone }) {
+const MetricCard = memo(function MetricCard({ label, value, note, tone = 'neutral' }: { label:string; value:string; note:string; tone?:Tone }) {
   const mappedTone = tone === 'good' ? 'success' : tone === 'neutral' ? 'default' : tone
   return (
     <DesignMetricCard
@@ -173,7 +199,7 @@ function MetricCard({ label, value, note, tone = 'neutral' }: { label:string; va
       style={{ borderRadius: 14 }}
     />
   )
-}
+})
 
 
 function PremiumAdvisorLock() {
@@ -218,34 +244,82 @@ export default function FinancialDoctorPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
-    fetch(`/api/advisor/summary?month=${curMonth}&year=${curYear}`, { cache:'no-store' })
-      .then(res => res.ok ? res.json() : Promise.reject(res))
-      .then(json => {
-        if (!cancelled) setSummary(json.data || null)
-      })
-      .catch(() => {
+    const controller = new AbortController()
+
+    async function loadAdvisor() {
+      setError(null)
+      setLoading(true)
+
+      const supabase = createClient()
+      const { data: authData } = await supabase.auth.getUser()
+      const userKey = authData.user?.id || 'anonymous'
+      const cached = readAdvisorCache(userKey, curMonth, curYear)
+
+      if (cancelled) return
+      if (cached) {
+        setSummary(cached)
+        setLoading(false)
+      }
+
+      try {
+        const res = await fetch(`/api/advisor/summary?month=${curMonth}&year=${curYear}`, {
+          cache:'no-store',
+          signal: controller.signal,
+        })
+        if (!res.ok) throw res
+        const json = await res.json()
+        const freshData = json.data || null
         if (!cancelled) {
-          setSummary(null)
-          setError('Gagal memuat ringkasan Advisor.')
+          setSummary(freshData)
+          writeAdvisorCache(userKey, curMonth, curYear, freshData)
         }
-      })
-      .finally(() => {
+      } catch (err: any) {
+        if (!cancelled && err?.name !== 'AbortError') {
+          if (!cached) setSummary(null)
+          setError('Gagal memuat ringkasan Advisor. Data cache tetap ditampilkan jika tersedia.')
+        }
+      } finally {
         if (!cancelled) setLoading(false)
-      })
-    return () => { cancelled = true }
+      }
+    }
+
+    loadAdvisor()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [curMonth, curYear])
 
-  if (loading || subscriptionLoading) {
+  const data = summary
+  const showInitialLoading = (loading || subscriptionLoading) && !data
+
+  const deltaNotes = useMemo(() => {
+    if (!data) return null
+    return {
+      income: deltaText(data.deltas.incomeVsPrev, true),
+      expense: deltaText(data.deltas.expenseVsPrev, false),
+      savingRate: deltaText(data.deltas.savingRateVsPrev, true),
+    }
+  }, [data])
+
+  const guideItems = useMemo(() => {
+    if (!data) return [] as Array<[string, boolean]>
+    return [
+      ['Catat transaksi bulan ini', data.monthly.transactionCount > 0],
+      ['Jaga arus kas tetap positif', data.monthly.cashflow >= 0],
+      ['Capai rasio tabungan minimal 10%', data.ratios.savingRate >= 10],
+      ['Tinjau target prioritas di Advisor', !!(data.focusTargets && data.focusTargets.length)],
+    ] as Array<[string, boolean]>
+  }, [data])
+
+  if (showInitialLoading) {
     return (
       <div style={{ minHeight:'45vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#9ca3af', fontSize:13 }}>
         Loading Advisor...
       </div>
     )
   }
-
-  const data = summary
 
   return (
     <div className="advisor-page">
@@ -301,8 +375,8 @@ export default function FinancialDoctorPage() {
           <>
                     <div className="advisor-metric-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:10, marginBottom:14 }}>
             <MetricCard label="Cashflow" value={fmt(data.monthly.cashflow)} tone={data.monthly.cashflow >= 0 ? 'good' : 'danger'} note="Pemasukan - pengeluaran - tabungan" />
-            <MetricCard label="Saving Rate" value={pct(data.ratios.savingRate)} tone={data.ratios.savingRate >= 20 ? 'good' : data.ratios.savingRate >= 10 ? 'warning' : 'danger'} note={deltaText(data.deltas.savingRateVsPrev, true).text} />
-            <MetricCard label="Expense Rate" value={pct(data.ratios.expenseRate)} tone={data.ratios.expenseRate <= 70 ? 'good' : data.ratios.expenseRate <= 85 ? 'warning' : 'danger'} note={deltaText(data.deltas.expenseVsPrev, false).text} />
+            <MetricCard label="Saving Rate" value={pct(data.ratios.savingRate)} tone={data.ratios.savingRate >= 20 ? 'good' : data.ratios.savingRate >= 10 ? 'warning' : 'danger'} note={deltaNotes?.savingRate.text || 'Belum ada data perbandingan'} />
+            <MetricCard label="Expense Rate" value={pct(data.ratios.expenseRate)} tone={data.ratios.expenseRate <= 70 ? 'good' : data.ratios.expenseRate <= 85 ? 'warning' : 'danger'} note={deltaNotes?.expense.text || 'Belum ada data perbandingan'} />
             <MetricCard label="Debt Ratio" value={pct(data.ratios.debtRatio)} tone={data.ratios.debtRatio <= 25 ? 'good' : data.ratios.debtRatio <= 35 ? 'warning' : 'danger'} note="Rasio cicilan terhadap pemasukan" />
           </div>
 
@@ -464,11 +538,11 @@ export default function FinancialDoctorPage() {
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', gap:10, borderBottom:'1px solid #f3f4f6', paddingBottom:9 }}>
                     <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Income</span>
-                    <span style={{ fontSize:12.3, color:deltaText(data.deltas.incomeVsPrev, true).color, fontWeight:900 }}>{deltaText(data.deltas.incomeVsPrev, true).text}</span>
+                    <span style={{ fontSize:12.3, color:deltaNotes?.income.color || '#9ca3af', fontWeight:900 }}>{deltaNotes?.income.text || 'Belum ada data perbandingan'}</span>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', gap:10, borderBottom:'1px solid #f3f4f6', paddingBottom:9 }}>
                     <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Expense</span>
-                    <span style={{ fontSize:12.3, color:deltaText(data.deltas.expenseVsPrev, false).color, fontWeight:900 }}>{deltaText(data.deltas.expenseVsPrev, false).text}</span>
+                    <span style={{ fontSize:12.3, color:deltaNotes?.expense.color || '#9ca3af', fontWeight:900 }}>{deltaNotes?.expense.text || 'Belum ada data perbandingan'}</span>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', gap:10 }}>
                     <span style={{ fontSize:12.3, color:'#4b5563', fontWeight:800 }}>Rata-rata tabungan 3 bulan</span>
@@ -480,12 +554,7 @@ export default function FinancialDoctorPage() {
               <Card>
                 <SectionHead title="My Guide" subtitle="Alur sederhana agar FiNK tetap membantu seperti planner pribadi." />
                 <div style={{ padding:14, display:'flex', flexDirection:'column', gap:9 }}>
-                  {[
-                    ["Catat transaksi bulan ini", data.monthly.transactionCount > 0],
-                    ['Jaga arus kas tetap positif', data.monthly.cashflow >= 0],
-                    ['Capai rasio tabungan minimal 10%', data.ratios.savingRate >= 10],
-                    ['Tinjau target prioritas di Advisor', !!(data.focusTargets && data.focusTargets.length)],
-                  ].map(([label, done], idx) => (
+                  {guideItems.map(([label, done], idx) => (
                     <div key={idx} style={{ display:'flex', alignItems:'center', gap:9, fontSize:12.3, color:'#374151' }}>
                       <span style={{ width:22, height:22, borderRadius:999, background:done ? '#dcfce7' : '#f3f4f6', color:done ? '#166534' : '#9ca3af', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:950 }}>{done ? <AppIcon name="check" size={12} /> : idx + 1}</span>
                       <span style={{ fontWeight:800 }}>{label}</span>

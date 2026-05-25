@@ -29,7 +29,7 @@ export async function GET() {
         suspended: false,
         deleted_at: null,
       })
-      .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at')
+      .select('id,email,full_name,role,suspended,deleted_at,created_at,updated_at,display_name,profile_type,family_members,dependents,financial_focus')
       .single()
 
     if (insertProfileError) {

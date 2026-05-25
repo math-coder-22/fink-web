@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
@@ -47,60 +47,75 @@ export default function TabunganPage() {
   const [reconcileId, setReconcileId] = useState<string | null>(null);
   const { isPremium } = useSubscription();
 
-  const filtered = goals.filter((g) => g.status === tab);
-  const sortedGoals = sortGoalsByAdvisor(filtered, calcGoal);
-  const goalAdvisor = (g: SavingsGoal) => buildGoalAdvisorItem(g, calcGoal(g), goals);
-  const focusGoals = sortedGoals.filter((g) => g.focus && g.status === tab);
-  const regularGoals = sortedGoals.filter((g) => !g.focus);
-  const priorityGoals = tab === "active"
-    ? regularGoals.filter((g) => {
-        const a = goalAdvisor(g);
-        return a.priority === "critical" || a.priority === "high";
-      })
-    : [];
-  const longTermGoals = tab === "active"
-    ? regularGoals.filter((g) => {
-        const a = goalAdvisor(g);
-        return !priorityGoals.some((p) => p.id === g.id) && (
-          g.type === "pensiun" ||
-          g.type === "investasi" ||
-          g.type === "darurat_lanjutan" ||
-          a.priority === "low" ||
-          a.priority === "maintain"
-        );
-      })
-    : [];
-  const otherGoals = tab === "active"
-    ? regularGoals.filter((g) => !priorityGoals.some((p) => p.id === g.id) && !longTermGoals.some((p) => p.id === g.id))
-    : regularGoals;
+  const tabCounts = useMemo(() => {
+    return goals.reduce<Record<TabKey, number>>((acc, goal) => {
+      acc[goal.status] = (acc[goal.status] || 0) + 1;
+      return acc;
+    }, { active: 0, pending: 0, complete: 0, archived: 0 });
+  }, [goals]);
 
-  const topupGoalObj = topupId
-    ? (goals.find((g) => g.id === topupId) ?? null)
-    : null;
-  const wdGoalObj = withdrawId
-    ? (goals.find((g) => g.id === withdrawId) ?? null)
-    : null;
-  const rcGoalObj = reconcileId
-    ? (goals.find((g) => g.id === reconcileId) ?? null)
-    : null;
+  const { sortedGoals, focusGoals, priorityGoals, longTermGoals, otherGoals } = useMemo(() => {
+    const filtered = goals.filter((g) => g.status === tab);
+    const sorted = sortGoalsByAdvisor(filtered, calcGoal);
+    const advisorCache = new Map<string, ReturnType<typeof buildGoalAdvisorItem>>();
+    const goalAdvisor = (g: SavingsGoal) => {
+      const cached = advisorCache.get(g.id);
+      if (cached) return cached;
+      const advisor = buildGoalAdvisorItem(g, calcGoal(g), goals);
+      advisorCache.set(g.id, advisor);
+      return advisor;
+    };
+
+    const focus = sorted.filter((g) => g.focus && g.status === tab);
+    const regular = sorted.filter((g) => !g.focus);
+    const priority = tab === "active"
+      ? regular.filter((g) => {
+          const a = goalAdvisor(g);
+          return a.priority === "critical" || a.priority === "high";
+        })
+      : [];
+    const priorityIds = new Set(priority.map((g) => g.id));
+    const longTerm = tab === "active"
+      ? regular.filter((g) => {
+          const a = goalAdvisor(g);
+          return !priorityIds.has(g.id) && (
+            g.type === "pensiun" ||
+            g.type === "investasi" ||
+            g.type === "darurat_lanjutan" ||
+            a.priority === "low" ||
+            a.priority === "maintain"
+          );
+        })
+      : [];
+    const longTermIds = new Set(longTerm.map((g) => g.id));
+    const other = tab === "active"
+      ? regular.filter((g) => !priorityIds.has(g.id) && !longTermIds.has(g.id))
+      : regular;
+
+    return { sortedGoals: sorted, focusGoals: focus, priorityGoals: priority, longTermGoals: longTerm, otherGoals: other };
+  }, [goals, tab]);
+
+  const calcById = useMemo(() => new Map(goals.map((g) => [g.id, calcGoal(g)])), [goals]);
+  const goalsById = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
+  const topupGoalObj = topupId ? (goalsById.get(topupId) ?? null) : null;
+  const wdGoalObj = withdrawId ? (goalsById.get(withdrawId) ?? null) : null;
+  const rcGoalObj = reconcileId ? (goalsById.get(reconcileId) ?? null) : null;
 
 
-  function renderGoal(goal: SavingsGoal) {
-    return (
-      <GoalCard
-        key={goal.id}
-        goal={goal}
-        calc={calcGoal(goal)}
-        onEdit={setEditGoal}
-        onTopup={setTopupId}
-        onWithdraw={setWithdrawId}
-        onReconcile={setReconcileId}
-        onStatus={changeStatus}
-        onDelete={deleteGoal}
-        allGoals={goals}
-      />
-    );
-  }
+  const renderGoal = useCallback((goal: SavingsGoal) => (
+    <GoalCard
+      key={goal.id}
+      goal={goal}
+      calc={calcById.get(goal.id) ?? calcGoal(goal)}
+      onEdit={setEditGoal}
+      onTopup={setTopupId}
+      onWithdraw={setWithdrawId}
+      onReconcile={setReconcileId}
+      onStatus={changeStatus}
+      onDelete={deleteGoal}
+      allGoals={goals}
+    />
+  ), [calcById, changeStatus, deleteGoal, goals]);
 
   function GoalSection({
     title,
@@ -196,7 +211,7 @@ export default function TabunganPage() {
       <div className="savings-tabs-row">
         <div className="savings-tabs">
           {TABS.map((t) => {
-            const count = goals.filter((g) => g.status === t.key).length;
+            const count = tabCounts[t.key];
             return (
               <button
                 key={t.key}

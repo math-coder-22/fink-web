@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { useMonthContext, MONTH_NAMES } from '@/components/layout/DashboardShell'
+import { memo, useEffect, useMemo, useState } from 'react'
+import { useMonthContext, MONTH_NAMES, MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import CashFlowTrendChart from '@/components/dashboard/CashFlowTrendChart'
@@ -37,6 +37,36 @@ type MonthlyTrendItem = {
   transactionCount: number
 }
 
+const OVERVIEW_TREND_CACHE_PREFIX = 'fink-overview-trend:v1'
+const OVERVIEW_TREND_CACHE_TTL = 1000 * 60 * 30 // 30 menit: trend historis jarang berubah, tapi tetap cukup segar.
+
+function safeParseTrendCache(raw: string | null): { data: MonthlyTrendItem[]; cachedAt?: number } | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.data)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function getCachedTrend(cacheKey: string) {
+  if (typeof window === 'undefined') return null
+  const local = safeParseTrendCache(window.localStorage.getItem(cacheKey))
+  if (local?.cachedAt && Date.now() - local.cachedAt <= OVERVIEW_TREND_CACHE_TTL) return local.data
+  const session = safeParseTrendCache(window.sessionStorage.getItem(cacheKey))
+  if (session?.data) return session.data
+  return null
+}
+
+function setCachedTrend(cacheKey: string, data: MonthlyTrendItem[]) {
+  if (typeof window === 'undefined') return
+  const value = JSON.stringify({ data, cachedAt: Date.now() })
+  try { window.localStorage.setItem(cacheKey, value) } catch {}
+  try { window.sessionStorage.setItem(cacheKey, value) } catch {}
+}
+
 const trendPct = (current?: number, previous?: number) => {
   if (!previous) return null
   return ((Number(current || 0) - previous) / previous) * 100
@@ -52,7 +82,7 @@ const trendLabel = (value: number | null, goodWhenUp = true) => {
   }
 }
 
-function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
+const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
   const chartData = data
     .filter(d => d.income > 0 || d.expense > 0 || d.saving > 0)
     .slice(-3)
@@ -141,7 +171,7 @@ function MonthlyComparisonChart({ data }: { data: MonthlyTrendItem[] }) {
       `}</style>
     </Card>
   )
-}
+})
 
 function dailyBalanceStatus(leftToSpend: number, remainingDays: number, totalExpense: number, currentDay: number) {
   const safeDaily = remainingDays > 0 ? leftToSpend / remainingDays : leftToSpend
@@ -252,7 +282,7 @@ type FinancialPositionProps = {
   hasFinancialData: boolean
 }
 
-function FinancialPositionHero({
+const FinancialPositionHero = memo(function FinancialPositionHero({
   totalAssets,
   trackedSavings,
   currentCash,
@@ -347,7 +377,7 @@ function FinancialPositionHero({
       `}</style>
     </div>
   )
-}
+})
 
 function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: string }) {
   return (
@@ -374,7 +404,7 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
 }
 
 
-function QuickActionsSection() {
+const QuickActionsSection = memo(function QuickActionsSection() {
   const actions = [
     { href:'/journal', icon:'transactions' as const, title:'Add Transaction', note:'Catat pemasukan atau pengeluaran' },
     { href:'/goals', icon:'goals' as const, title:'Update Goal', note:'Perbarui progres target keluarga' },
@@ -400,9 +430,9 @@ function QuickActionsSection() {
       `}</style>
     </div>
   )
-}
+})
 
-function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, monthlySurplus }: { insight: string; savingRate: number; expenseRate: number; emergencyMonths: number | null; monthlySurplus: number }) {
+const InsightPanel = memo(function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, monthlySurplus }: { insight: string; savingRate: number; expenseRate: number; emergencyMonths: number | null; monthlySurplus: number }) {
   const alerts: { text: string; tone: 'good' | 'warn' | 'danger' }[] = []
   if (monthlySurplus < 0) alerts.push({ text:'Cash flow bulan ini negatif. Cek kategori terbesar sebelum menambah alokasi baru.', tone:'danger' })
   if (expenseRate > 80) alerts.push({ text:'Expense rate melewati 80% pemasukan. Ruang napas keuangan mulai sempit.', tone:'warn' })
@@ -439,7 +469,7 @@ function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, month
       `}</style>
     </Card>
   )
-}
+})
 
 
 function DashboardPremiumLock() {
@@ -460,7 +490,7 @@ function DashboardPremiumLock() {
   )
 }
 
-function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
+const PriorityGoalsList = memo(function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
   if (goals.length === 0) return <div style={{ fontSize:'12px', color:'#9ca3af' }}>Belum ada target tabungan aktif.</div>
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -490,7 +520,7 @@ function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
       })}
     </div>
   )
-}
+})
 
 
 function getInsight(totalIncome: number, totalExpense: number, totalSaving: number, rawSisa: number) {
@@ -520,10 +550,21 @@ const { curMonth, curYear } = useMonthContext()
 
   useEffect(() => {
     let cancelled = false
+    const cacheKey = `${OVERVIEW_TREND_CACHE_PREFIX}:${curYear}:${curMonth}:6`
+    const cached = getCachedTrend(cacheKey)
+    if (cached) setMonthlyTrend(cached)
+
     fetch(`/api/overview/trend?month=${curMonth}&year=${curYear}&count=6`, { cache: 'no-store' })
       .then(res => res.ok ? res.json() : Promise.reject(res))
-      .then(json => { if (!cancelled) setMonthlyTrend(Array.isArray(json.data) ? json.data : []) })
-      .catch(() => { if (!cancelled) setMonthlyTrend([]) })
+      .then(json => {
+        if (cancelled) return
+        const data = Array.isArray(json.data) ? json.data : []
+        setMonthlyTrend(data)
+        setCachedTrend(cacheKey, data)
+      })
+      .catch(() => {
+        if (!cancelled && !cached) setMonthlyTrend([])
+      })
     return () => { cancelled = true }
   }, [curMonth, curYear])
 
@@ -532,40 +573,81 @@ const { curMonth, curYear } = useMonthContext()
   const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
   const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
 
-  const budget = computedBudget()
-  const income = computedIncome()
-  const saving = computedSaving()
-  const debt = typeof computedDebt === 'function' ? computedDebt() : []
+  const budget = useMemo(() => computedBudget(), [computedBudget])
+  const income = useMemo(() => computedIncome(), [computedIncome])
+  const saving = useMemo(() => computedSaving(), [computedSaving])
+  const debt = useMemo(() => (typeof computedDebt === 'function' ? computedDebt() : []), [computedDebt])
 
-  const totalIncome = sumIncome(income)
-  const plannedIncome = sumIncomePlan(income)
-  const totalExpense = sumBudget(budget)
-  const plannedExpense = sumBudgetPlan(budget)
-  const totalSaving = sumSaving(saving)
-  const totalDebtPayment = sumDebt(debt)
-  const hasFinancialData = tx.length > 0 || plannedIncome > 0 || plannedExpense > 0 || totalSaving > 0 || totalDebtPayment > 0 || goals.some(g => g.status !== 'archived' && ((g.current || 0) > 0 || (g.target || 0) > 0 || Boolean(g.name)))
-  const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
-  const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
-  const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
-  const trackedSavings = goals.filter(g => g.status !== 'archived').reduce((s, g) => s + (g.current || 0), 0)
-  const currentCash = Math.max(0, rawSisa || 0)
-  const totalAssets = trackedSavings + currentCash
-  const netWorthEstimate = totalAssets - totalDebtPayment
-  const emergencyGoal = goals.find(g => g.type === 'darurat' && g.status !== 'archived' && (g.current || 0) > 0)
-  const emergencyMonthlyExpense =
-    emergencyGoal?.expense && emergencyGoal.expense > 0
-      ? emergencyGoal.expense
-      : totalExpense + totalDebtPayment
-  const emergencyMonths =
-    emergencyGoal && emergencyMonthlyExpense > 0
-      ? (emergencyGoal.current || 0) / emergencyMonthlyExpense
-      : null
-  const emergencyNote = emergencyGoal
-    ? (emergencyGoal.expense && emergencyGoal.expense > 0
-        ? 'Berdasarkan target dana darurat'
-        : 'Estimasi dari expenses + debt bulan ini')
-    : 'Buat goal dana darurat dulu'
-  const activeTrackedGoals = goals.filter(g => g.status !== 'archived').length
+  const overviewSummary = useMemo(() => {
+    const totalIncome = sumIncome(income)
+    const plannedIncome = sumIncomePlan(income)
+    const totalExpense = sumBudget(budget)
+    const plannedExpense = sumBudgetPlan(budget)
+    const totalSaving = sumSaving(saving)
+    const totalDebtPayment = sumDebt(debt)
+    const trackedSavings = goals.filter(g => g.status !== 'archived').reduce((s, g) => s + (g.current || 0), 0)
+    const currentCash = Math.max(0, rawSisa || 0)
+    const totalAssets = trackedSavings + currentCash
+    const netWorthEstimate = totalAssets - totalDebtPayment
+    const emergencyGoal = goals.find(g => g.type === 'darurat' && g.status !== 'archived' && (g.current || 0) > 0)
+    const emergencyMonthlyExpense =
+      emergencyGoal?.expense && emergencyGoal.expense > 0
+        ? emergencyGoal.expense
+        : totalExpense + totalDebtPayment
+    const emergencyMonths =
+      emergencyGoal && emergencyMonthlyExpense > 0
+        ? (emergencyGoal.current || 0) / emergencyMonthlyExpense
+        : null
+    const emergencyNote = emergencyGoal
+      ? (emergencyGoal.expense && emergencyGoal.expense > 0
+          ? 'Berdasarkan target dana darurat'
+          : 'Estimasi dari expenses + debt bulan ini')
+      : 'Buat goal dana darurat dulu'
+    const savingRate = totalIncome > 0 ? (totalSaving / totalIncome) * 100 : 0
+    const expenseRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0
+    const budgetUseRate = plannedExpense > 0 ? (totalExpense / plannedExpense) * 100 : 0
+    const hasFinancialData = tx.length > 0 || plannedIncome > 0 || plannedExpense > 0 || totalSaving > 0 || totalDebtPayment > 0 || goals.some(g => g.status !== 'archived' && ((g.current || 0) > 0 || (g.target || 0) > 0 || Boolean(g.name)))
+    const activeTrackedGoals = goals.filter(g => g.status !== 'archived').length
+
+    return {
+      totalIncome,
+      plannedIncome,
+      totalExpense,
+      plannedExpense,
+      totalSaving,
+      totalDebtPayment,
+      trackedSavings,
+      currentCash,
+      totalAssets,
+      netWorthEstimate,
+      emergencyMonths,
+      emergencyNote,
+      savingRate,
+      expenseRate,
+      budgetUseRate,
+      hasFinancialData,
+      activeTrackedGoals,
+    }
+  }, [budget, income, saving, debt, goals, rawSisa, tx.length])
+
+  const {
+    totalIncome,
+    totalExpense,
+    plannedExpense,
+    totalSaving,
+    totalDebtPayment,
+    trackedSavings,
+    currentCash,
+    totalAssets,
+    netWorthEstimate,
+    emergencyMonths,
+    emergencyNote,
+    savingRate,
+    expenseRate,
+    budgetUseRate,
+    hasFinancialData,
+    activeTrackedGoals,
+  } = overviewSummary
 
   const topCategories = useMemo(() => {
     return budget
@@ -580,16 +662,19 @@ const { curMonth, curYear } = useMonthContext()
   }, [tx])
 
   const activeGoals = useMemo(() => goals.filter(g => g.status === 'active').sort((a, b) => Number(Boolean(b.focus)) - Number(Boolean(a.focus)) || ((b.target > 0 ? b.current / b.target : 0) - (a.target > 0 ? a.current / a.target : 0))).slice(0,4), [goals])
-  const insight = getInsight(totalIncome, totalExpense, totalSaving, rawSisa)
+  const insight = useMemo(() => getInsight(totalIncome, totalExpense, totalSaving, rawSisa), [totalIncome, totalExpense, totalSaving, rawSisa])
 
-  const now = new Date()
-  const monthIndex = Number(curMonth)
-  const yearNumber = Number(curYear)
-  const daysInActiveMonth = new Date(yearNumber, monthIndex + 1, 0).getDate()
-  const chartVisibleDay =
-    now.getFullYear() === yearNumber && now.getMonth() === monthIndex
-      ? Math.min(now.getDate(), daysInActiveMonth)
-      : daysInActiveMonth
+  const { chartVisibleDay, daysInActiveMonth } = useMemo(() => {
+    const now = new Date()
+    const monthIndex = Math.max(0, MONTHS_ORDER.indexOf(curMonth))
+    const yearNumber = Number(curYear)
+    const daysInActiveMonth = new Date(yearNumber, monthIndex + 1, 0).getDate()
+    const chartVisibleDay =
+      now.getFullYear() === yearNumber && now.getMonth() === monthIndex
+        ? Math.min(now.getDate(), daysInActiveMonth)
+        : daysInActiveMonth
+    return { chartVisibleDay, daysInActiveMonth }
+  }, [curMonth, curYear])
 
   return (
     <div className="fink-dashboard-page">

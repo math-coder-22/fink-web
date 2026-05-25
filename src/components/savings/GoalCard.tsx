@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { memo, useMemo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type {
   SavingsGoal,
@@ -719,7 +719,7 @@ interface Props {
   allGoals?: SavingsGoal[];
 }
 
-export default function GoalCard({
+function GoalCard({
   goal,
   calc,
   onEdit,
@@ -732,13 +732,17 @@ export default function GoalCard({
 }: Props) {
   const [showDetail, setShowDetail] = useState(false);
   const pct = Math.round(calc.progress * 100);
-  const advisor = buildGoalAdvisorItem(goal, calc, allGoals.length ? allGoals : [goal]);
-  const progColor =
+  const advisor = useMemo(
+    () => buildGoalAdvisorItem(goal, calc, allGoals.length ? allGoals : [goal]),
+    [goal, calc, allGoals],
+  );
+  const progColor = useMemo(() => (
     calc.trackStatus === "behind"
       ? "#b91c1c"
       : calc.trackStatus === "complete"
         ? "#1d4ed8"
-        : "#1a5c42";
+        : "#1a5c42"
+  ), [calc.trackStatus]);
 
   const deleteGoalSafe = () => {
     if (confirm("Delete this goal?")) {
@@ -828,3 +832,5 @@ export default function GoalCard({
     </>
   );
 }
+
+export default memo(GoalCard);

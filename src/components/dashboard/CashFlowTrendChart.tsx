@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import type { IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 
 type Props = {
@@ -127,17 +127,18 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n))
 }
 
-export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, daysInMonth }: Props) {
+function CashFlowTrendChart({ tx, income, saving, debt, curDay, daysInMonth }: Props) {
   const [hoverDay, setHoverDay] = useState<number | null>(null)
+  const hoverDayRef = useRef<number | null>(null)
 
   const today = Math.max(1, curDay || new Date().getDate())
   const totalDays = daysInMonth || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
   const visibleUntilDay = Math.min(today, totalDays)
   const xDomainDays = Math.max(2, totalDays)
 
-  const fallbackIncome = sumIncome(income)
-  const fallbackSaving = sumSaving(saving)
-  const fallbackDebt = sumDebtRows(debt)
+  const fallbackIncome = useMemo(() => sumIncome(income), [income])
+  const fallbackSaving = useMemo(() => sumSaving(saving), [saving])
+  const fallbackDebt = useMemo(() => sumDebtRows(debt), [debt])
 
   const dayData = useMemo(
     () => makeDayData(totalDays, tx, fallbackIncome, fallbackSaving, fallbackDebt, visibleUntilDay),
@@ -151,33 +152,40 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
 
   const width = 980
   const height = 310
-  const pad = { l: 54, r: 18, t: 16, b: 26 }
-  const maxValue = Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut)))
-  const scale = makeScale(maxValue, width, height, pad)
+  const pad = useMemo(() => ({ l: 54, r: 18, t: 16, b: 26 }), [])
+  const maxValue = useMemo(() => Math.max(totalIncome, totalCashOut, ...points.map(p => Math.max(p.income, p.cashOut))), [points, totalCashOut, totalIncome])
+  const scale = useMemo(() => makeScale(maxValue, width, height, pad), [maxValue, pad])
 
-  const yTicks = [0, scale.yMax * 0.5, scale.yMax]
-  const xTicks = Array.from(new Set([1, Math.max(1, Math.round(xDomainDays / 3)), Math.max(1, Math.round((xDomainDays * 2) / 3)), xDomainDays]))
+  const yTicks = useMemo(() => [0, scale.yMax * 0.5, scale.yMax], [scale.yMax])
+  const xTicks = useMemo(() => Array.from(new Set([1, Math.max(1, Math.round(xDomainDays / 3)), Math.max(1, Math.round((xDomainDays * 2) / 3)), xDomainDays])), [xDomainDays])
 
-  const incomePath = makePath(points.map(p => ({
+  const incomePath = useMemo(() => makePath(points.map(p => ({
     x: scale.x(p.day, xDomainDays),
     y: scale.y(p.income),
-  })))
+  }))), [points, scale, xDomainDays])
 
-  const cashOutPath = makePath(points.map(p => ({
+  const cashOutPath = useMemo(() => makePath(points.map(p => ({
     x: scale.x(p.day, xDomainDays),
     y: scale.y(p.cashOut),
-  })))
+  }))), [points, scale, xDomainDays])
 
   const lastPoint = points[points.length - 1]
-  const hoveredPoint = points.find(p => p.day === hoverDay) || null
+  const hoveredPoint = useMemo(() => points.find(p => p.day === hoverDay) || null, [hoverDay, points])
 
-  function handleMove(e: React.MouseEvent<SVGSVGElement>) {
+  const handleMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const px = ((e.clientX - rect.left) / rect.width) * width
     const ratio = (px - pad.l) / Math.max(1, width - pad.l - pad.r)
-    const day = Math.round(ratio * (xDomainDays - 1) + 1)
-    setHoverDay(clamp(day, 1, visibleUntilDay))
-  }
+    const day = clamp(Math.round(ratio * (xDomainDays - 1) + 1), 1, visibleUntilDay)
+    if (hoverDayRef.current === day) return
+    hoverDayRef.current = day
+    setHoverDay(day)
+  }, [pad, xDomainDays, visibleUntilDay])
+
+  const handleLeave = useCallback(() => {
+    hoverDayRef.current = null
+    setHoverDay(null)
+  }, [])
 
   return (
     <section className="fink-cashflow-card" style={{
@@ -224,7 +232,7 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
           role="img"
           aria-label="Tren cash flow harian"
           onMouseMove={handleMove}
-          onMouseLeave={() => setHoverDay(null)}
+          onMouseLeave={handleLeave}
           className="fink-cashflow-svg"
           style={{ width:'100%', height:'100%', minHeight:0, display:'block', cursor:'crosshair', flex: 1 }}
         >
@@ -414,3 +422,5 @@ export default function CashFlowTrendChart({ tx, income, saving, debt, curDay, d
     </section>
   )
 }
+
+export default memo(CashFlowTrendChart)

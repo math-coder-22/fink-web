@@ -15,6 +15,11 @@ export interface Database {
           updated_at: string
           suspended: boolean
           deleted_at: string | null
+          display_name: string | null
+          profile_type: 'personal' | 'family'
+          family_members: number
+          dependents: number
+          financial_focus: 'emergency_fund' | 'debt_free' | 'saving' | 'investing' | 'retirement'
         }
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>

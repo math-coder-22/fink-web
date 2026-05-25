@@ -8,7 +8,7 @@ import {
   StatusBadge,
 } from '@/components/ui/design'
 import { useSubscription } from '@/hooks/useSubscription'
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const fmtDate = (s?: string | null) => {
@@ -29,6 +29,33 @@ type FinancialProfileState = {
   familyMembers: string
   dependents: string
   financialFocus: FinancialFocus
+}
+
+const DEFAULT_FINANCIAL_PROFILE: FinancialProfileState = {
+  displayName: '',
+  profileType: 'personal',
+  familyMembers: '1',
+  dependents: '0',
+  financialFocus: 'emergency_fund',
+}
+
+function normalizeFinancialProfile(source: any, fallbackName = ''): FinancialProfileState {
+  const profileType = source?.profileType || source?.profile_type
+  const financialFocus = source?.financialFocus || source?.financial_focus
+
+  return {
+    displayName: source?.displayName ?? source?.display_name ?? fallbackName ?? '',
+    profileType: profileType === 'family' ? 'family' : 'personal',
+    familyMembers: String(Math.max(1, Number(source?.familyMembers ?? source?.family_members ?? 1) || 1)),
+    dependents: String(Math.max(0, Number(source?.dependents ?? 0) || 0)),
+    financialFocus: ['emergency_fund', 'debt_free', 'saving', 'investing', 'retirement'].includes(financialFocus)
+      ? financialFocus
+      : 'emergency_fund',
+  }
+}
+
+function getFinancialProfileCacheKey(userId?: string | null) {
+  return userId ? `fink-financial-profile-${userId}` : ''
 }
 
 const focusLabels: Record<FinancialFocus, string> = {
@@ -67,7 +94,7 @@ function getInitials(nameOrEmail?: string | null) {
   return (parts[0]?.[0] || 'F').toUpperCase() + (parts[1]?.[0] || '').toUpperCase()
 }
 
-function Notice({ tone, children }: { tone: 'success' | 'error' | 'info'; children: ReactNode }) {
+const Notice = memo(function Notice({ tone, children }: { tone: 'success' | 'error' | 'info'; children: ReactNode }) {
   const palette = {
     success: { border: '#bbf7d0', bg: '#f0fdf4', text: '#166534' },
     error: { border: '#fecaca', bg: '#fef2f2', text: '#991b1b' },
@@ -89,9 +116,9 @@ function Notice({ tone, children }: { tone: 'success' | 'error' | 'info'; childr
       {children}
     </div>
   )
-}
+})
 
-function CompactInfoCard({
+const CompactInfoCard = memo(function CompactInfoCard({
   label,
   value,
   note,
@@ -165,9 +192,9 @@ function CompactInfoCard({
       {note && <div style={{ marginTop: 8, color: '#6b7280', fontSize: 12, lineHeight: 1.45 }}>{note}</div>}
     </div>
   )
-}
+})
 
-function SettingRow({
+const SettingRow = memo(function SettingRow({
   title,
   description,
   right,
@@ -194,7 +221,7 @@ function SettingRow({
       <div style={{ flex: '0 0 auto' }}>{right}</div>
     </div>
   )
-}
+})
 
 export default function SettingsPage() {
   const {
@@ -218,38 +245,64 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState('')
   const [passwordMessage, setPasswordMessage] = useState('')
   const [financialMessage, setFinancialMessage] = useState('')
-  const [financialProfile, setFinancialProfile] = useState<FinancialProfileState>({
-    displayName: '',
-    profileType: 'personal',
-    familyMembers: '1',
-    dependents: '0',
-    financialFocus: 'emergency_fund',
-  })
+  const [financialError, setFinancialError] = useState('')
+  const [financialSaving, setFinancialSaving] = useState(false)
+  const [financialProfile, setFinancialProfile] = useState<FinancialProfileState>(DEFAULT_FINANCIAL_PROFILE)
 
   useEffect(() => {
     if (!profile?.id) return
-    const key = `fink-financial-profile-${profile.id}`
+    const fallbackName = profile.full_name || profile.email?.split('@')[0] || ''
+    const key = getFinancialProfileCacheKey(profile.id)
     const saved = window.localStorage.getItem(key)
+
     if (saved) {
       try {
-        setFinancialProfile((prev) => ({ ...prev, ...JSON.parse(saved) }))
-        return
+        setFinancialProfile(normalizeFinancialProfile(JSON.parse(saved), fallbackName))
       } catch {
-        // ignore invalid local storage value
+        window.localStorage.removeItem(key)
       }
     }
-    setFinancialProfile((prev) => ({
-      ...prev,
-      displayName: profile.full_name || profile.email?.split('@')[0] || '',
-    }))
-  }, [profile?.id, profile?.email, profile?.full_name])
 
-  function saveFinancialProfile(e: FormEvent<HTMLFormElement>) {
+    const serverProfile = normalizeFinancialProfile(profile, fallbackName)
+    setFinancialProfile((prev) => ({ ...prev, ...serverProfile }))
+    window.localStorage.setItem(key, JSON.stringify(serverProfile))
+  }, [profile])
+
+  async function saveFinancialProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!profile?.id) return
-    const key = `fink-financial-profile-${profile.id}`
-    window.localStorage.setItem(key, JSON.stringify(financialProfile))
-    setFinancialMessage('Financial profile tersimpan di perangkat ini. Data ini tidak berisi informasi sensitif.')
+    if (!profile?.id || financialSaving) return
+
+    const normalized = normalizeFinancialProfile(financialProfile, profile.full_name || profile.email?.split('@')[0] || '')
+    const key = getFinancialProfileCacheKey(profile.id)
+
+    setFinancialError('')
+    setFinancialMessage('Profile tersimpan di tampilan. Sinkronisasi ke server berjalan...')
+    setFinancialProfile(normalized)
+    window.localStorage.setItem(key, JSON.stringify(normalized))
+
+    setFinancialSaving(true)
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        display_name: normalized.displayName.trim() || null,
+        profile_type: normalized.profileType,
+        family_members: Math.max(1, Number(normalized.familyMembers) || 1),
+        dependents: Math.max(0, Number(normalized.dependents) || 0),
+        financial_focus: normalized.financialFocus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', profile.id)
+
+    setFinancialSaving(false)
+
+    if (updateError) {
+      setFinancialError(updateError.message)
+      setFinancialMessage('')
+      return
+    }
+
+    setFinancialMessage('Financial profile berhasil disimpan.')
+    refresh()
     window.setTimeout(() => setFinancialMessage(''), 3500)
   }
 
@@ -295,19 +348,21 @@ export default function SettingsPage() {
     setPasswordMessage('')
   }
 
-  const periodText = subscription?.is_lifetime
-    ? 'Seumur hidup'
-    : subscription?.current_period_end
-      ? fmtDate(subscription.current_period_end)
-      : plan === 'free'
-        ? 'Tidak ada masa aktif premium'
-        : '-'
+  const periodText = useMemo(() => (
+    subscription?.is_lifetime
+      ? 'Seumur hidup'
+      : subscription?.current_period_end
+        ? fmtDate(subscription.current_period_end)
+        : plan === 'free'
+          ? 'Tidak ada masa aktif premium'
+          : '-'
+  ), [plan, subscription?.current_period_end, subscription?.is_lifetime])
 
-  const roleText = isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'
+  const roleText = useMemo(() => (isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'User'), [isAdmin, isSuperAdmin])
   const subscriptionStatus = subscription?.status || 'active'
-  const subscriptionText = loading
-    ? 'Memuat...'
-    : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+  const subscriptionText = useMemo(() => (
+    loading ? 'Memuat...' : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+  ), [loading, plan])
   const displayName = financialProfile.displayName || profile?.full_name || profile?.email?.split('@')[0] || 'FiNK User'
   const email = profile?.email || 'Memuat...'
 
@@ -511,6 +566,7 @@ export default function SettingsPage() {
           )}
 
           {financialMessage && <Notice tone="success">{financialMessage}</Notice>}
+          {financialError && <Notice tone="error">{financialError}</Notice>}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ color: '#6b7280', fontSize: 12, lineHeight: 1.5 }}>
@@ -518,19 +574,20 @@ export default function SettingsPage() {
             </div>
             <button
               type="submit"
+              disabled={financialSaving}
               style={{
                 border: 0,
                 borderRadius: 12,
                 padding: '10px 14px',
-                background: '#1a5c42',
+                background: financialSaving ? '#9ca3af' : '#1a5c42',
                 color: '#ffffff',
                 fontSize: 12.5,
                 fontWeight: 800,
-                cursor: 'pointer',
-                boxShadow: '0 8px 18px rgba(26,92,66,.16)',
+                cursor: financialSaving ? 'not-allowed' : 'pointer',
+                boxShadow: financialSaving ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
               }}
             >
-              Save Profile
+              {financialSaving ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
         </form>
