@@ -25,7 +25,7 @@ const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID
 
 
 /* ─── FINANCIAL REVIEW MODAL ─────────────────────────────── */
-function ReflectionModal({
+function ReviewModal({
   open,
   onClose,
   budget,
@@ -148,7 +148,7 @@ function ReflectionModal({
             </div>
             <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'2px' }}>{monthLabel} · ringkasan kondisi + investigasi pengeluaran</div>
           </div>
-          <button aria-label="Close reflection" onClick={onClose} style={{ width:'32px', height:'32px', border:'none', background:'#f7f8fa', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <button aria-label="Close review" onClick={onClose} style={{ width:'32px', height:'32px', border:'none', background:'#f7f8fa', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <AppIcon name="close" size={16} />
           </button>
         </div>
@@ -462,10 +462,10 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {!loading && refreshing && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Syncing...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
-          {/* Reflection, Reconcile, Copy */}
+          {/* Review, Reconcile, Copy */}
           <button onClick={()=>setRefleksiOpen(true)}
             style={actionBtn}>
-            <AppIcon name="mirror" size={14} /> Reflection
+            <AppIcon name="mirror" size={14} /> Review
           </button>
           <button onClick={()=>setRekonOpen(true)}
             style={actionBtn}>
@@ -532,7 +532,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </div>
       )}
 
-      <ReflectionModal
+      <ReviewModal
         open={refleksiOpen}
         onClose={() => setRefleksiOpen(false)}
         budget={budget}
