@@ -35,6 +35,7 @@ function ReflectionModal({
   tx,
   rawSisa,
   monthLabel,
+  isMobile,
 }: {
   open: boolean
   onClose: () => void
@@ -45,6 +46,7 @@ function ReflectionModal({
   tx: any[]
   rawSisa: number
   monthLabel: string
+  isMobile: boolean
 }) {
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const [openItem, setOpenItem] = useState<string | null>(null)
@@ -540,6 +542,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         tx={tx}
         rawSisa={sisaApp}
         monthLabel={`${MONTH_NAMES[curMonth]} ${curYear}`}
+        isMobile={isMobile}
       />
 
       {/* TX DETAIL MODAL */}
