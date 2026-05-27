@@ -146,9 +146,9 @@ export default function StatStrip({
             }}
           >
             <div style={{
-              fontSize: isMobile ? '10.5px' : '11.5px',
-              fontWeight: 850,
-              color: '#64748b',
+              fontSize: isMobile ? '9.5px' : '11px',
+              fontWeight: 800,
+              color: '#9ca3af',
               textTransform: 'uppercase',
               letterSpacing: '.7px',
               marginBottom: isMobile ? '3px' : '4px',
@@ -160,7 +160,7 @@ export default function StatStrip({
             <div style={{
               fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
               fontSize: isMobile ? '16px' : '20px',
-              fontWeight: 850,
+              fontWeight: 800,
               color: item.color,
               letterSpacing: '-.8px',
               whiteSpace: 'nowrap',
@@ -186,7 +186,7 @@ export default function StatStrip({
                   minWidth: 0,
                   color: daily.color,
                   fontWeight: 800,
-                  fontSize: isMobile ? '10.5px' : '11.2px',
+                  fontSize: isMobile ? '9.8px' : '10.8px',
                   lineHeight: 1.15,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -205,9 +205,8 @@ export default function StatStrip({
 
                 <div style={{
                   marginTop: isMobile ? '1px' : '2px',
-                  fontSize: isMobile ? '10.5px' : '11.2px',
-                  color: '#64748b',
-                  fontWeight: 650,
+                  fontSize: isMobile ? '9.5px' : '10.5px',
+                  color: '#9ca3af',
                   fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
                   lineHeight: 1.15,
                   whiteSpace: 'nowrap',
@@ -220,7 +219,7 @@ export default function StatStrip({
             ) : (
               <>
                 <div style={{
-                  height: isMobile ? '2.5px' : '3px',
+                  height: isMobile ? '3px' : '3.5px',
                   background: '#e5e7eb',
                   borderRadius: '999px',
                   margin: isMobile ? '6px 0 3px' : '7px 0 4px',
@@ -235,9 +234,8 @@ export default function StatStrip({
                 </div>
 
                 <div style={{
-                  fontSize: isMobile ? '10.5px' : '11.2px',
-                  color: '#64748b',
-                  fontWeight: 650,
+                  fontSize: isMobile ? '9.5px' : '10.5px',
+                  color: '#9ca3af',
                   fontFamily: 'JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
                   lineHeight: 1.15,
                   whiteSpace: 'nowrap',

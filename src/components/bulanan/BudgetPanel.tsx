@@ -91,7 +91,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
 
   // ── Shared styles ──
   const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
-  const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12.5px', fontWeight:650, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#475569', whiteSpace:'nowrap' }
+  const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
   const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'8px' }
 
   return (
@@ -114,19 +114,19 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               style={{ ...rowBase, background:'#fff', cursor:'grab', borderColor: dragOver===hk?'#1a5c42':'#e3e7ee', borderWidth: dragOver===hk?'2px':'1px' }}
               onMouseEnter={()=>setHovRow(hk)} onMouseLeave={()=>setHovRow(null)}>
               <DragHandle />
-              <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13.5px', fontWeight:750, color:'#111827', cursor:'text' }}
+              <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
                 value={cat.label} onMouseDown={e=>e.stopPropagation()}
                 onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,label:e.target.value}))} />
               {isMobile ? (
                 /* Mobile: flex:2 agar proporsional dengan label (flex:1 di input) */
                 <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                  <span style={{ fontSize:'10.5px', color:'#64748b', fontWeight:650, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
-                  <span style={{ fontSize:'12px', fontWeight:850, color:clr, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
+                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
+                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
                 </div>
               ) : (
                 <>
-                  <span style={{ width:'100px', flexShrink:0, fontSize:'12px', color:'#64748b', fontWeight:650, textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:800, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
+                  <span style={{ width:'100px', flexShrink:0, fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
+                  <span style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
                 </>
               )}
               <button
@@ -142,8 +142,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
             </div>
 
             {/* Progress bar */}
-            <div style={{ height:'1.5px', background:'#e8edf3', borderRadius:'1px', margin:'-2px 0 5px 22px' }}>
-              <div style={{ height:'1.5px', borderRadius:'1px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
+            <div style={{ height:'2px', background:'#e3e7ee', borderRadius:'1px', margin:'-2px 0 5px 22px' }}>
+              <div style={{ height:'2px', borderRadius:'1px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
             </div>
 
             {/* Items */}
@@ -158,19 +158,19 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                     style={{ ...rowBase, background:'#f7f8fa', cursor:'grab', borderColor: dragOver===ik?'#1a5c42':'#e3e7ee', borderWidth: dragOver===ik?'2px':'1px' }}
                     onMouseEnter={()=>setHovRow(ik)} onMouseLeave={()=>setHovRow(null)}>
                     <DragHandle />
-                    <span style={{ width:'10px', fontSize:'10px', color:'#64748b', textAlign:'center', flexShrink:0 }}>└</span>
+                    <span style={{ width:'10px', fontSize:'9px', color:'#9ca3af', textAlign:'center', flexShrink:0 }}>└</span>
 
                     {isMobile ? (
                       /* Mobile: flex ratio — label:angka = 3:2, keduanya minWidth:0 */
                       <>
                         <div style={{ flex:'3', minWidth:0, overflow:'hidden' }}>
-                          <input style={{ ...inp, width:'100%', fontSize:'12.5px', fontWeight:650, color:'#334155', cursor:'text' }}
+                          <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
                             value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                             onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                             onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'10.5px', fontWeight:650, fontFamily:'var(--font-mono), monospace', color:'#64748b', textAlign:'right', width:'100%' }}
+                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                             value={item.plan?fmtNum(item.plan):''} placeholder="0"
                             onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                             onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -185,8 +185,8 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                             style={{
                               border:'none',
                               background:'transparent',
-                              fontSize:'12px',
-                              fontWeight:800,
+                              fontSize:'11.5px',
+                              fontWeight:600,
                               fontFamily:'var(--font-mono), monospace',
                               color:(item.actual||0)>0?'#b91c1c':'#9ca3af',
                               width:'100%',
@@ -207,7 +207,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                     ) : (
                       /* Desktop: side by side */
                       <>
-                        <input style={{ ...inp, flex:1, fontSize:'13px', fontWeight:650, color:'#334155', cursor:'text' }}
+                        <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
                           value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                           onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                           onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
@@ -220,7 +220,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                           onChange={()=>{}} />
                         <div
                           onClick={e=>{ e.stopPropagation(); if(onItemClick && (item.actual||0)>0) onItemClick(item.label) }}
-                          style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:800, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
+                          style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
                           title={(item.actual||0)>0?'Klik untuk lihat transaksi':undefined}
                           onMouseEnter={e=>{ if((item.actual||0)>0) e.currentTarget.style.background='#fee2e2' }}
                           onMouseLeave={e=>{ e.currentTarget.style.background='transparent' }}>
@@ -256,15 +256,15 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
       <div style={{ height:'1px', background:'#e3e7ee', margin:'12px 0' }} />
       <div style={totalRow}>
         <div style={{ width:'14px' }}/>
-        <div style={{ flex:1, fontSize:'12.5px', fontWeight:800, color:'#334155' }}>Total Expenses</div>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Expenses</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10.8px', color:'#64748b', fontWeight:650, fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpP)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpP)}</span>
             <span style={{ fontSize:'12px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'12px', color:'#64748b', fontWeight:650, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
             <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
           </>
         )}
@@ -273,7 +273,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
 
       {/* Savings & Allocations */}
       <div style={{ height:'1px', background:'#e3e7ee', margin:'14px 0 10px' }} />
-      <div style={{ fontSize:'10.8px', fontWeight:850, color:'#64748b', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>Savings &amp; Allocations</div>
+      <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>Savings &amp; Allocations</div>
       {saving.map((r, i) => {
         const sk = `sav-${i}`
         return (
@@ -283,14 +283,14 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
             style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
             onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
-            <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13.5px', fontWeight:750, color:'#111827', cursor:'text' }}
+            <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,label:e.target.value}))}
               onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'save') }} />
             {isMobile ? (
               /* Mobile: flex:2 untuk angka */
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'10.5px', fontWeight:650, fontFamily:'var(--font-mono), monospace', color:'#64748b', textAlign:'right', width:'100%' }}
+                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -301,12 +301,12 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               </div>
             ) : (
               <>
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12.5px', fontWeight:650, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
                   onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12.5px', fontWeight:650, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
                   value={r.actual?fmtNum(r.actual):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -321,15 +321,15 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
       <AddBtn label="+ add allocation" onClick={handleAddSavingItem} />
       <div style={totalRow}>
         <div style={{ width:'14px' }}/>
-        <div style={{ flex:1, fontSize:'12.5px', fontWeight:800, color:'#334155' }}>Total Savings</div>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Savings</div>
         {isMobile ? (
           <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10.8px', color:'#64748b', fontWeight:650, fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavP)}</span>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavP)}</span>
             <span style={{ fontSize:'12px', fontWeight:700, color:'#1d4ed8', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavA)}</span>
           </div>
         ) : (
           <>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'12px', color:'#64748b', fontWeight:650, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
             <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
           </>
         )}

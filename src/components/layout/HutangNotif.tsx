@@ -38,6 +38,12 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
     return () => window.removeEventListener('hutang-refresh', load)
   }, [load])
 
+  const totalUnpaid = unpaidTx.reduce((sum, tx) => sum + Number(tx.amt || 0), 0)
+  const pillLabel = isMobile
+    ? `${unpaidTx.length}`
+    : `${unpaidTx.length} unpaid • ${fmt(totalUnpaid)}`
+
+
   async function settleUnpaid(id: string, full: boolean) {
     setSaving(id)
     const unpaid = unpaidTx.find(d => d.id === id)
@@ -81,11 +87,15 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
         onClick={() => setOpen(true)}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          background: 'rgba(255,255,255,.15)',
-          border: '1px solid rgba(255,255,255,.25)',
-          borderRadius: '20px', padding: '4px 12px',
-          fontSize: '12px', fontWeight: 600, color: '#fff',
+          background: 'rgba(255,255,255,.13)',
+          border: '1px solid rgba(255,255,255,.22)',
+          borderRadius: '999px', padding: isMobile ? '4px 8px' : '4px 10px',
+          fontSize: '11.5px', fontWeight: 750, color: '#fff',
           cursor: 'pointer',
+          maxWidth: isMobile ? '68px' : '220px',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
       >
         <span style={{
@@ -93,7 +103,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
           background: '#fbbf24', flexShrink: 0,
           animation: 'pulse 1.6s infinite',
         }} />
-        {isMobile ? unpaidTx.length : `${unpaidTx.length} unpaid expense${unpaidTx.length > 1 ? 's' : ''}`}
+        {pillLabel}
       </button>
 
       {/* MODAL */}
@@ -113,12 +123,15 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
           }}>
             {/* Head */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #e3e7ee' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:7, fontSize: '15px', fontWeight: 700 }}><AppIcon name="warning" size={16} />Unpaid Expenses</div>
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize: '15px', fontWeight: 800, color:'#111827' }}><AppIcon name="warning" size={16} />Unpaid Expenses</div>
+                <div style={{ marginTop:'2px', fontSize:'11.5px', color:'#64748b', fontWeight:650 }}>{unpaidTx.length} records · {fmt(totalUnpaid)}</div>
+              </div>
               <button aria-label="Close" onClick={() => setOpen(false)} style={{ width: '28px', height: '28px', border: 'none', background: '#f7f8fa', borderRadius: '6px', cursor: 'pointer', color: '#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: '16px 20px', maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ padding: '12px 16px', maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {unpaidTx.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
                   <div style={{ display:'flex', justifyContent:'center', marginBottom: '8px' }}><AppIcon name="check" size={28} /></div>
@@ -126,40 +139,72 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                 </div>
               )}
               {unpaidTx.map(d => (
-                <div key={d.id} style={{ background: '#f7f8fa', border: '1px solid #e3e7ee', borderRadius: '8px', padding: '12px 14px' }}>
+                <div key={d.id} style={{ background: '#f7f8fa', border: '1px solid #e3e7ee', borderRadius: '12px', padding: '10px' }}>
                   {/* Info baris */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>{d.note}</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', fontFamily: 'var(--font-mono), monospace' }}>{fmt(d.amt)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 650, color: '#111827' }}>{d.note}</div>
+                    <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#92400e', fontFamily: 'var(--font-mono), monospace' }}>{fmt(d.amt)}</div>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10.5px', color: '#94a3b8', marginBottom: '7px' }}>
                     {d.date} {MONTH_NAMES[d.month]} {d.year} · {d.cat || '—'}
                   </div>
 
-                  {/* Tombol lunas semua */}
-                  <button
-                    disabled={saving === d.id}
-                    onClick={() => settleUnpaid(d.id, true)}
-                    style={{ width: '100%', padding: '7px', borderRadius: '6px', border: 'none', background: saving === d.id ? '#9ca3af' : '#d1eadd', color: '#1a5c42', fontSize: '12.5px', fontWeight: 600, cursor: saving === d.id ? 'not-allowed' : 'pointer', marginBottom: '8px' }}
-                  >
-                    {saving === d.id ? 'Saving...' : 'Mark as Settled'}
-                  </button>
 
-                  {/* Bayar sebagian */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  {/* Compact actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      disabled={saving === d.id}
+                      onClick={() => settleUnpaid(d.id, true)}
+                      style={{
+                        padding: '6px 9px',
+                        fontSize: '11.5px',
+                        fontWeight: 750,
+                        background: saving === d.id ? '#9ca3af' : '#eef7f1',
+                        color: '#1a5c42',
+                        border: '1px solid #cfe7d8',
+                        borderRadius: '8px',
+                        cursor: saving === d.id ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      {saving === d.id ? 'Saving...' : 'Settled'}
+                    </button>
+
                     <input
                       type="number"
-                      placeholder="Partial amount (Rp)"
+                      placeholder="Partial Rp"
                       value={partial[d.id] || ''}
                       onChange={e => setPartial(p => ({ ...p, [d.id]: e.target.value }))}
-                      style={{ flex: 1, padding: '6px 9px', fontSize: '12.5px', border: '1.5px solid #e3e7ee', borderRadius: '6px', background: '#fff', outline: 'none', fontFamily: 'var(--font-mono), monospace' }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: '6px 8px',
+                        fontSize: '12px',
+                        border: '1.5px solid #e3e7ee',
+                        borderRadius: '8px',
+                        background: '#fff',
+                        outline: 'none',
+                        fontFamily: 'var(--font-mono), monospace'
+                      }}
                     />
                     <button
                       disabled={saving === d.id}
                       onClick={() => settleUnpaid(d.id, false)}
-                      style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 600, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '6px', cursor: saving === d.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                      style={{
+                        padding: '6px 9px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        borderRadius: '8px',
+                        cursor: saving === d.id ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
                     >
-                      Pay Partial
+                      Partial
                     </button>
                   </div>
                 </div>
