@@ -152,25 +152,6 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
 
                   {/* Compact actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      disabled={saving === d.id}
-                      onClick={() => settleUnpaid(d.id, true)}
-                      style={{
-                        padding: '6px 9px',
-                        fontSize: '11.5px',
-                        fontWeight: 750,
-                        background: saving === d.id ? '#9ca3af' : '#eef7f1',
-                        color: '#1a5c42',
-                        border: '1px solid #cfe7d8',
-                        borderRadius: '8px',
-                        cursor: saving === d.id ? 'not-allowed' : 'pointer',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0
-                      }}
-                    >
-                      {saving === d.id ? 'Saving...' : 'Settled'}
-                    </button>
-
                     <input
                       type="number"
                       placeholder="Partial Rp"
@@ -205,6 +186,25 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                       }}
                     >
                       Partial
+                    </button>
+
+                    <button
+                      disabled={saving === d.id}
+                      onClick={() => settleUnpaid(d.id, true)}
+                      style={{
+                        padding: '6px 9px',
+                        fontSize: '11.5px',
+                        fontWeight: 750,
+                        background: saving === d.id ? '#9ca3af' : '#eef7f1',
+                        color: '#1a5c42',
+                        border: '1px solid #cfe7d8',
+                        borderRadius: '8px',
+                        cursor: saving === d.id ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }}
+                    >
+                      {saving === d.id ? 'Saving...' : 'Settled'}
                     </button>
                   </div>
                 </div>
