@@ -59,11 +59,11 @@ function getFinancialProfileCacheKey(userId?: string | null) {
 }
 
 const focusLabels: Record<FinancialFocus, string> = {
-  emergency_fund: 'Emergency Fund',
-  debt_free: 'Debt Free',
-  saving: 'Saving',
-  investing: 'Investing',
-  retirement: 'Retirement',
+  emergency_fund: 'Dana Darurat',
+  debt_free: 'Bebas Utang',
+  saving: 'Menabung',
+  investing: 'Investasi',
+  retirement: 'Pensiun',
 }
 
 const fieldStyle: CSSProperties = {
@@ -246,7 +246,7 @@ export default function SettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState('')
   const [financialMessage, setFinancialMessage] = useState('')
   const [financialError, setFinancialError] = useState('')
-  const [financialSaving, setFinancialSaving] = useState(false)
+  const [financialMenabung, setFinancialMenabung] = useState(false)
   const [financialProfile, setFinancialProfile] = useState<FinancialProfileState>(DEFAULT_FINANCIAL_PROFILE)
 
   useEffect(() => {
@@ -270,7 +270,7 @@ export default function SettingsPage() {
 
   async function saveFinancialProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!profile?.id || financialSaving) return
+    if (!profile?.id || financialMenabung) return
 
     const normalized = normalizeFinancialProfile(financialProfile, profile.full_name || profile.email?.split('@')[0] || '')
     const key = getFinancialProfileCacheKey(profile.id)
@@ -280,7 +280,7 @@ export default function SettingsPage() {
     setFinancialProfile(normalized)
     window.localStorage.setItem(key, JSON.stringify(normalized))
 
-    setFinancialSaving(true)
+    setFinancialMenabung(true)
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
@@ -293,7 +293,7 @@ export default function SettingsPage() {
       })
       .eq('id', profile.id)
 
-    setFinancialSaving(false)
+    setFinancialMenabung(false)
 
     if (updateError) {
       setFinancialError(updateError.message)
@@ -574,20 +574,20 @@ export default function SettingsPage() {
             </div>
             <button
               type="submit"
-              disabled={financialSaving}
+              disabled={financialMenabung}
               style={{
                 border: 0,
                 borderRadius: 12,
                 padding: '10px 14px',
-                background: financialSaving ? '#9ca3af' : '#1a5c42',
+                background: financialMenabung ? '#9ca3af' : '#1a5c42',
                 color: '#ffffff',
                 fontSize: 12.5,
                 fontWeight: 800,
-                cursor: financialSaving ? 'not-allowed' : 'pointer',
-                boxShadow: financialSaving ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
+                cursor: financialMenabung ? 'not-allowed' : 'pointer',
+                boxShadow: financialMenabung ? 'none' : '0 8px 18px rgba(26,92,66,.16)',
               }}
             >
-              {financialSaving ? 'Saving...' : 'Save Profile'}
+              {financialMenabung ? 'Menabung...' : 'Save Profile'}
             </button>
           </div>
         </form>

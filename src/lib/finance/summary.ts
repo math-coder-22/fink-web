@@ -102,6 +102,17 @@ export function sumPlanIncome(plan?: RawPlan | null) {
   }, 0)
 }
 
+export function sumTargetedActualIncome(plan?: RawPlan | null) {
+  return (plan?.income || []).reduce((s, c: any) => {
+    if (Array.isArray(c?.items)) {
+      return s + c.items.reduce((ss: number, i: any) => {
+        return ss + (Number(i?.plan || 0) > 0 ? Number(i?.actual || 0) : 0)
+      }, 0)
+    }
+    return s + (Number(c?.plan || 0) > 0 ? Number(c?.actual || 0) : 0)
+  }, 0)
+}
+
 export function sumPlanBudget(plan?: RawPlan | null) {
   return (plan?.budget || []).reduce((s, c: any) => s + (Array.isArray(c?.items) ? c.items.reduce((ss: number, i: any) => ss + Number(i?.plan || 0), 0) : 0), 0)
 }
@@ -158,10 +169,12 @@ export function aggregateMonthFromBucket(
   bucket?: { incomeActual: number; expense: number; saving: number; transactionCount: number },
   plan?: RawPlan | null
 ): MonthlyTrendItem {
-  const incomeActual = bucket?.incomeActual || 0
   const expense = bucket?.expense || 0
   const saving = bucket?.saving || 0
-  const income = incomeActual || sumPlanIncome(plan)
+  // Income uses ACTUAL values, but only for income items whose TARGET/PLAN > 0.
+  // Untargeted actual income is excluded because it may be emergency withdrawal,
+  // transfers, loans, or other non-regular money.
+  const income = sumTargetedActualIncome(plan)
   const cashflow = income - expense - saving
 
   return {

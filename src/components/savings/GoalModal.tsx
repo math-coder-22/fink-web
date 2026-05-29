@@ -105,7 +105,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
           {/* Nama */}
           <div>
-            <label style={lbl}>Goal Name</label>
+            <label style={lbl}>Nama Tujuan</label>
             <input required style={inp} value={form.name} placeholder="Example: Family Emergency Fund"
               onChange={e => set('name', e.target.value)} />
           </div>
@@ -113,25 +113,24 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {/* Jenis + Status */}
           <div style={row}>
             <div>
-              <label style={lbl}>Goal Type</label>
-              <select style={sel} value={form.type} onChange={e => handleTypeChange(e.target.value as GoalType)}>
-                <option value="biasa">General Saving</option>
-                <option value="darurat">Emergency Fund</option>
-                <option value="darurat_lanjutan">Extended Emergency</option>
-                <option value="rumah">House</option>
-                <option value="kendaraan">Vehicle</option>
-                <option value="pendidikan">Education</option>
-                <option value="pensiun">Retirement</option>
-                <option value="investasi">Investment</option>
+              <label style={lbl}>Jenis Tujuan</label>
+              <select style={sel} value={form.type === 'darurat_lanjutan' ? 'darurat' : form.type} onChange={e => handleTypeChange(e.target.value as GoalType)}>
+                <option value="biasa">Tabungan Umum</option>
+                <option value="darurat">Dana Darurat</option>
+                <option value="rumah">Rumah</option>
+                <option value="kendaraan">Kendaraan</option>
+                <option value="pendidikan">Pendidikan</option>
+                <option value="pensiun">Pensiun</option>
+                <option value="investasi">Investasi</option>
               </select>
             </div>
             <div>
               <label style={lbl}>Status</label>
               <select style={sel} value={form.status} onChange={e => set('status', e.target.value as SavingsGoal['status'])}>
-                <option value="active">Active</option>
+                <option value="active">Aktif</option>
                 <option value="pending">Pending</option>
-                <option value="complete">Complete</option>
-                <option value="archived">Archived</option>
+                <option value="complete">Selesai</option>
+                <option value="archived">Arsip</option>
               </select>
             </div>
           </div>

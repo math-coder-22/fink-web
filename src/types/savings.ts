@@ -1,6 +1,6 @@
 // ─── Savings / Goal Types ───────────────────────────────
 
-export type GoalType   = 'darurat' | 'darurat_lanjutan' | 'rumah' | 'kendaraan' | 'pendidikan' | 'pensiun' | 'investasi' | 'biasa'
+export type GoalType   = 'darurat' | 'darurat_lanjutan' | 'rumah' | 'kendaraan' | 'pendidikan' | 'pensiun' | 'investasi' | 'biasa' // darurat_lanjutan is legacy and treated as darurat
 export type GoalStatus = 'active' | 'pending' | 'complete' | 'archived'
 export type GoalPriorityLevel = 'critical' | 'high' | 'medium' | 'low' | 'maintain' | 'paused'
 export type GoalHealthStatus = 'ontrack' | 'behind' | 'atrisk' | 'complete'

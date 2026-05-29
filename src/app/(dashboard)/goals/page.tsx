@@ -19,10 +19,10 @@ import { buildGoalAdvisorItem, sortGoalsByAdvisor } from "@/lib/finance/goals";
 type TabKey = "active" | "pending" | "complete" | "archived";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "active", label: "Active" },
+  { key: "active", label: "Aktif" },
   { key: "pending", label: "Pending" },
-  { key: "complete", label: "Complete" },
-  { key: "archived", label: "Archived" },
+  { key: "complete", label: "Selesai" },
+  { key: "archived", label: "Arsip" },
 ];
 
 export default function TabunganPage() {
@@ -81,7 +81,6 @@ export default function TabunganPage() {
           return !priorityIds.has(g.id) && (
             g.type === "pensiun" ||
             g.type === "investasi" ||
-            g.type === "darurat_lanjutan" ||
             a.priority === "low" ||
             a.priority === "maintain"
           );
@@ -263,7 +262,7 @@ export default function TabunganPage() {
             tone="priority"
           />
           <GoalSection
-            title="Active Goals"
+            title="Aktif Goals"
             subtitle="Goals that are still active but not currently marked as focus or high priority."
             items={otherGoals}
             tone="neutral"

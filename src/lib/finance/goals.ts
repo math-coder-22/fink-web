@@ -46,12 +46,12 @@ export type GoalPlanSummary = {
 
 const TYPE_RANK: Record<string, number> = {
   darurat: 1,
+  darurat_lanjutan: 1, // legacy: treated as Dana Darurat
   rumah: 2,
   pendidikan: 3,
   kendaraan: 4,
   investasi: 5,
   pensiun: 6,
-  darurat_lanjutan: 7,
   biasa: 8,
 }
 
@@ -75,26 +75,26 @@ const PRIORITY_WEIGHT: Record<GoalPriorityLevel, number> = {
 
 export function goalTypeLabel(type: SavingsGoal['type']) {
   const map: Record<SavingsGoal['type'], string> = {
-    darurat: 'Emergency Fund',
-    darurat_lanjutan: 'Extended Emergency',
-    rumah: 'House',
-    kendaraan: 'Vehicle',
-    pendidikan: 'Education',
-    pensiun: 'Retirement',
-    investasi: 'Investment',
-    biasa: 'General Saving',
+    darurat: 'Dana Darurat',
+    darurat_lanjutan: 'Dana Darurat', // legacy
+    rumah: 'Rumah',
+    kendaraan: 'Kendaraan',
+    pendidikan: 'Pendidikan',
+    pensiun: 'Pensiun',
+    investasi: 'Investasi',
+    biasa: 'Tabungan Umum',
   }
-  return map[type] || 'General Saving'
+  return map[type] || 'Tabungan Umum'
 }
 
 export function priorityLabel(priority: GoalPriorityLevel) {
   const map: Record<GoalPriorityLevel, string> = {
-    critical: 'Critical',
-    high: 'High',
-    medium: 'Medium',
-    low: 'Low',
-    maintain: 'Maintain',
-    paused: 'Paused',
+    critical: 'Kritis',
+    high: 'Tinggi',
+    medium: 'Sedang',
+    low: 'Rendah',
+    maintain: 'Pertahankan',
+    paused: 'Ditunda',
   }
   return map[priority]
 }

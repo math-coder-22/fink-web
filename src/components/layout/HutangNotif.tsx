@@ -204,7 +204,7 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
                         flexShrink: 0
                       }}
                     >
-                      {saving === d.id ? 'Saving...' : 'Settled'}
+                      {saving === d.id ? 'Saving...' : 'Full'}
                     </button>
                   </div>
                 </div>
