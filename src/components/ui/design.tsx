@@ -13,7 +13,7 @@ export const colors = {
 }
 
 export type AppIconName =
-  | 'overview' | 'journal' | 'advisor' | 'goals' | 'profile' | 'admin'
+  | 'overview' | 'journal' | 'clipboard' | 'advisor' | 'goals' | 'profile' | 'admin'
   | 'mirror' | 'scale' | 'copy' | 'income' | 'saving' | 'expense' | 'warning' | 'check'
   | 'insight' | 'chart' | 'calculator' | 'transactions' | 'edit' | 'trash' | 'settings' | 'users'
   | 'trendUp' | 'trendDown' | 'transfer' | 'zap' | 'close'
@@ -34,6 +34,7 @@ export function AppIcon({ name, size = 16 }: { name: AppIconName; size?: number 
   switch (name) {
     case 'overview': return <svg {...common}><rect x="3" y="3" width="7" height="8" rx="1.8"/><rect x="14" y="3" width="7" height="5" rx="1.8"/><rect x="14" y="12" width="7" height="9" rx="1.8"/><rect x="3" y="15" width="7" height="6" rx="1.8"/></svg>
     case 'journal': return <svg {...common}><path d="M6 4.5h9.2A2.8 2.8 0 0 1 18 7.3v12.2H7.8A2.8 2.8 0 0 1 5 16.7V5.5a1 1 0 0 1 1-1Z"/><path d="M8.5 4.5v15"/><path d="M11 8h4"/><path d="M11 11h3"/></svg>
+    case 'clipboard': return <svg {...common}><rect x="7" y="4" width="10" height="16" rx="2"/><path d="M9.5 4h5l.7 2H8.8l.7-2Z"/><path d="m9.8 10.7.9.9 1.8-2"/><path d="M13.5 10.7H15"/><path d="m9.8 15.2.9.9 1.8-2"/><path d="M13.5 15.2H15"/></svg>
     case 'advisor': return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5-4.9 2 2.1-4.9 4.9-2.1Z"/><circle cx="12" cy="12" r="1"/></svg>
     case 'goals': return <svg {...common}><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
     case 'profile': return <svg {...common}><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>

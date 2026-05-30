@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useMonthContext, MONTH_NAMES, MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
-import StatStrip     from '@/components/bulanan/StatStrip'
 import BudgetPanel   from '@/components/bulanan/BudgetPanel'
 import IncomePanel   from '@/components/bulanan/IncomePanel'
 import CatatanHarian from '@/components/bulanan/CatatanHarian'
@@ -16,6 +15,8 @@ type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
 
 const fmt = (n: number) => 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID')
+const pct = (actual: number, plan: number) => plan > 0 ? Math.round((actual / plan) * 100) : 0
+const outcomeText = (n: number) => `${n >= 0 ? '+' : '-'} ${fmt(n)}`
 
 /* ─── TX DETAIL MODAL (transaksi per item budget) ─────── */
 
@@ -1046,7 +1047,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     const nowYear  = now.getFullYear()
     if (curYear === nowYear && curMonth === nowMonth) {
       const last = new Date(nowYear, now.getMonth()+1, 0).getDate()
-      return `Day ${now.getDate()} of ${last} · ${last - now.getDate()} days remaining · FiNK System`
+      return `Day ${now.getDate()} of ${last} · ${Math.max(1, last - now.getDate() + 1)} days remaining · FiNK System`
     }
     const selDate = new Date(curYear, MONTHS_ORDER.indexOf(curMonth), 1)
     const nowDate = new Date(nowYear, now.getMonth(), 1)
@@ -1085,6 +1086,196 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   ]
 
   const activePanel = isMobile ? mobileTab : desktopPanel
+
+  const journalSummary = useMemo(() => {
+    const incomeActual = incomeComputed.reduce((s:any, c:any) => s + (c.items || []).reduce((ss:any, i:any) => ss + Number(i.actual || 0), 0), 0)
+    const incomePlan = incomeComputed.reduce((s:any, c:any) => s + (c.items || []).reduce((ss:any, i:any) => ss + Number(i.plan || 0), 0), 0)
+    const expenseOnlyActual = budget.reduce((s:any, c:any) => s + (c.items || []).reduce((ss:any, i:any) => ss + Number(i.actual || 0), 0), 0)
+    const expenseOnlyPlan = budget.reduce((s:any, c:any) => s + (c.items || []).reduce((ss:any, i:any) => ss + Number(i.plan || 0), 0), 0)
+    const debtActual = debtComputed.reduce((s:any, i:any) => s + Number(i.actual || 0), 0)
+    const debtPlan = debtComputed.reduce((s:any, i:any) => s + Number(i.plan || 0), 0)
+    const expenseActual = expenseOnlyActual + debtActual
+    const expensePlan = expenseOnlyPlan + debtPlan
+    const savingActual = savingComputed.reduce((s:any, i:any) => s + Number(i.actual || 0), 0)
+    const savingPlan = savingComputed.reduce((s:any, i:any) => s + Number(i.plan || 0), 0)
+    const outcome = incomeActual - expenseActual - savingActual
+    return { incomeActual, incomePlan, expenseActual, expensePlan, savingActual, savingPlan, outcome }
+  }, [incomeComputed, budget, debtComputed, savingComputed])
+
+  const outcomeTone = journalSummary.outcome >= 0 ? '#4f2fe6' : '#b91c1c'
+  const remainingDays = (() => {
+    const now = new Date()
+    const nowMonth = MONTHS_ORDER[now.getMonth()]
+    const nowYear = now.getFullYear()
+    if (curYear === nowYear && curMonth === nowMonth) {
+      const last = new Date(nowYear, now.getMonth()+1, 0).getDate()
+      return Math.max(1, last - now.getDate() + 1)
+    }
+    const selectedMonthIndex = MONTHS_ORDER.indexOf(curMonth)
+    return new Date(curYear, selectedMonthIndex + 1, 0).getDate()
+  })()
+  const dailyRecommendation = Math.floor(Math.max(0, journalSummary.outcome) / remainingDays)
+  const outcomeMessage =
+    journalSummary.outcome > 0
+      ? `≈ ${fmt(dailyRecommendation)} / hari`
+      : journalSummary.outcome < 0
+        ? `Defisit ${fmt(Math.abs(journalSummary.outcome))}`
+        : 'Budget bulan ini telah habis'
+  const outcomeSubMessage = ''
+
+  const SummaryMetric = ({ label, value, actual, plan, color }: { label:string; value:number; actual:number; plan:number; color:string }) => {
+    const percentage = pct(actual, plan)
+    if (isMobile) {
+      return (
+        <div style={{ minWidth:0, display:'grid', gridTemplateColumns:'minmax(0, 1fr) auto', alignItems:'center', gap:10, padding:'6px 0', borderBottom:'none' }}>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:9.5, fontWeight:950, color, textTransform:'uppercase', letterSpacing:'.55px' }}>{label}</div>
+            <div style={{ marginTop:3, fontSize:9.5, color:'#64748b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{percentage}% · plan {fmt(plan)}</div>
+          </div>
+          <div style={{ fontSize:13.5, fontWeight:950, color, fontFamily:'var(--font-mono), monospace', letterSpacing:'-.45px', whiteSpace:'nowrap' }}>{fmt(value)}</div>
+        </div>
+      )
+    }
+    return (
+      <div style={{ minWidth:0, borderLeft:'none', padding:'0' }}>
+        <div style={{ fontSize:9.5, fontWeight:950, color, textTransform:'uppercase', letterSpacing:'.55px' }}>{label}</div>
+        <div style={{ marginTop:6, fontSize:15, fontWeight:950, color, fontFamily:'var(--font-mono), monospace', letterSpacing:'-.5px', overflowWrap:'anywhere' }}>{fmt(value)}</div>
+        <div style={{ marginTop:7, height:5, borderRadius:999, background:'#e5e7eb', overflow:'hidden' }}>
+          <div style={{ width:`${Math.min(100, Math.max(0, percentage))}%`, height:'100%', borderRadius:999, background:color }} />
+        </div>
+        <div style={{ marginTop:7, fontSize:9.5, color:'#64748b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{percentage}% · plan {fmt(plan)}</div>
+      </div>
+    )
+  }
+
+  const MoreActionsMenu = (
+    <div style={{ position:'relative' }}>
+      <button onClick={()=>setToolsOpen(v=>!v)} aria-label="More actions" style={{
+        width:isMobile ? 31 : 36,
+        height:isMobile ? 31 : 36,
+        border:'none',
+        borderRadius:10,
+        background:'transparent',
+        color:'#334155',
+        fontSize:22,
+        lineHeight:1,
+        fontWeight:900,
+        cursor:'pointer',
+        boxShadow:'none',
+      }}>⋮</button>
+
+      {toolsOpen && (
+        <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', zIndex:60, minWidth:'172px', background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', boxShadow:'0 14px 36px rgba(15,23,42,.16)', padding:'6px' }}>
+          <button onClick={()=>{ setSetupBudgetOpen(true); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:500, color:'#374151', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
+            Setup Budget
+          </button>
+          <button onClick={()=>{ setRekonOpen(true); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:500, color:'#374151', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
+            Reconcile
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
+  const ReviewButton = (
+    <button onClick={()=>setRefleksiOpen(true)} style={{
+      display:'inline-flex',
+      alignItems:'center',
+      justifyContent:'center',
+      padding:isMobile ? '6px 10px' : '7px 12px',
+      border:'1px solid #8ab39f',
+      borderRadius:9,
+      background:'#fff',
+      color:'#1a5c42',
+      fontSize:isMobile ? 11 : 12,
+      fontWeight:600,
+      cursor:'pointer',
+      boxShadow:'none',
+    }}>
+      Review
+    </button>
+  )
+
+  const JournalOutcomeHero = (
+    <div style={{
+      position:'relative',
+      border:'1px solid #e3e7ee',
+      borderRadius:18,
+      background:'linear-gradient(135deg,#ffffff 0%,#fbfaff 48%,#ffffff 100%)',
+      boxShadow:'0 10px 28px rgba(15,23,42,.07)',
+      padding:isMobile ? '14px 16px 12px' : '16px 18px',
+      marginBottom:14,
+      overflow:'hidden',
+    }}>
+      <div style={{ position:'absolute', right:-70, top:-70, width:170, height:170, borderRadius:999, background:'rgba(79,47,230,.06)' }} />
+
+      <div style={{
+        position:'relative',
+        display:'grid',
+        gridTemplateColumns:isMobile ? '1fr' : 'minmax(340px, .78fr) minmax(0, 2.05fr)',
+        gap:isMobile ? 10 : 20,
+        alignItems:'center',
+      }}>
+        <div style={{
+          minWidth:0,
+          display:'grid',
+          gridTemplateColumns:isMobile ? 'auto minmax(0, 1fr) auto' : 'auto minmax(0, 1fr)',
+          gap:isMobile ? 12 : 16,
+          alignItems:'center',
+          paddingRight:isMobile ? 0 : 20,
+          borderRight:isMobile ? 'none' : '1px solid #e5e7eb',
+        }}>
+          <div style={{
+            width:isMobile ? 38 : 52,
+            height:isMobile ? 38 : 52,
+            borderRadius:isMobile ? 14 : 16,
+            background:'linear-gradient(135deg, rgba(79,47,230,.13), rgba(79,47,230,.06))',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            color:'#4f2fe6',
+            flexShrink:0,
+          }}>
+            <AppIcon name="clipboard" size={isMobile ? 17 : 24} />
+          </div>
+
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:isMobile ? 10 : 12, fontWeight:950, color:'#4f2fe6', textTransform:'uppercase', letterSpacing:'.65px' }}>
+              Outcome
+            </div>
+            <div style={{ marginTop:7, fontSize:isMobile ? 20 : 22, fontWeight:950, color:outcomeTone, letterSpacing:'-.9px', fontFamily:'var(--font-mono), monospace', lineHeight:1.05, whiteSpace:isMobile ? 'normal' : 'nowrap' }}>
+              {outcomeText(journalSummary.outcome)}
+            </div>
+            <div style={{ marginTop:8, fontSize:isMobile ? 11.5 : 12.5, color:'#374151', lineHeight:1.45, fontWeight:700, color: journalSummary.outcome < 0 ? '#dc2626' : '#374151' }}>
+              {outcomeMessage}
+            </div>
+          </div>
+
+          {isMobile && (
+            <div style={{ display:'flex', alignItems:'center', gap:6, alignSelf:'start', paddingTop:2 }}>
+              {ReviewButton}
+              {MoreActionsMenu}
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:isMobile ? '1fr' : 'minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr)',
+          gap:isMobile ? 4 : 14,
+          alignItems:'center',
+          paddingTop:isMobile ? 10 : 0,
+          borderTop:isMobile ? '1px solid #e5e7eb' : 'none',
+        }}>
+          <SummaryMetric label="Income" value={journalSummary.incomeActual} actual={journalSummary.incomeActual} plan={journalSummary.incomePlan} color="#15803d" />
+          {!isMobile && <div style={{ color:'#111827', opacity:.75, fontSize:20, fontWeight:900, textAlign:'center' }}>-</div>}
+          <SummaryMetric label="Expenses/Debt" value={journalSummary.expenseActual} actual={journalSummary.expenseActual} plan={journalSummary.expensePlan} color="#dc2626" />
+          {!isMobile && <div style={{ color:'#111827', opacity:.75, fontSize:20, fontWeight:900, textAlign:'center' }}>-</div>}
+          <SummaryMetric label="Savings" value={journalSummary.savingActual} actual={journalSummary.savingActual} plan={journalSummary.savingPlan} color="#2563eb" />
+        </div>
+      </div>
+    </div>
+  )
 
   const CatatanCard = (
     <div style={card}>
@@ -1165,42 +1356,63 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   return (
     <div className="fink-journal-page">
       {/* HEADER */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
+      <div style={{ display:isMobile ? 'none' : 'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'12px', marginBottom:'14px', flexWrap:'wrap' }}>
         <div>
-          <h1 style={{ fontSize: isMobile?'17px':'19px', fontWeight:700, letterSpacing:'-.3px' }}>
-            {MONTH_NAMES[curMonth]} {curYear}
-          </h1>
-          <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>{phSub}</p>
+          {!isMobile && (
+            <>
+              <h1 style={{ fontSize: isMobile?'17px':'19px', fontWeight:700, letterSpacing:'-.3px' }}>
+                {MONTH_NAMES[curMonth]} {curYear}
+              </h1>
+              <p style={{ fontSize:'12px', color:'#9ca3af', marginTop:'3px' }}>{phSub}</p>
+            </>
+          )}
         </div>
-        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', justifyContent:'flex-end' }}>
           {loading && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Loading...</span>}
           {!loading && refreshing && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Syncing...</span>}
           {saving && <span style={{ fontSize:'11px', color:'#9ca3af' }}>Saving...</span>}
-          {/* Review + Tools */}
-          <button onClick={()=>setRefleksiOpen(true)}
-            style={actionBtn}>
-            <AppIcon name="mirror" size={14} /> Review
-          </button>
-          <div style={{ position:'relative' }}>
-            <button onClick={()=>setToolsOpen(v=>!v)} style={actionBtn}>
-              <AppIcon name="scale" size={14} /> Tools ▾
-            </button>
-            {toolsOpen && (
-              <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', zIndex:50, minWidth:'168px', background:'#fff', border:'1px solid #e3e7ee', borderRadius:'12px', boxShadow:'0 14px 36px rgba(15,23,42,.16)', padding:'6px' }}>
-                <button onClick={()=>{ setSetupBudgetOpen(true); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:800, color:'#111827', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
-                  <AppIcon name="copy" size={14} /> Setup Budget
-                </button>
-                <button onClick={()=>{ setRekonOpen(true); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:800, color:'#111827', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
-                  <AppIcon name="scale" size={14} /> Reconcile
-                </button>
-              </div>
-            )}
-          </div>
+          {!isMobile && (
+            <>
+              {ReviewButton}
+              {MoreActionsMenu}
+            </>
+          )}
         </div>
       </div>
 
-      {/* STAT STRIP */}
-      <StatStrip income={incomeComputed} saving={savingComputed} debt={debtComputed} budget={budget} isMobile={isMobile} rawSisa={sisaApp} />
+      {isMobile && (loading || refreshing || saving) && (
+        <div style={{
+          position:'fixed',
+          top:10,
+          right:12,
+          zIndex:80,
+          display:'flex',
+          alignItems:'center',
+          gap:6,
+          padding:'6px 9px',
+          borderRadius:999,
+          background:'rgba(255,255,255,.92)',
+          border:'1px solid rgba(226,232,240,.9)',
+          boxShadow:'0 8px 20px rgba(15,23,42,.12)',
+          backdropFilter:'blur(10px)',
+          WebkitBackdropFilter:'blur(10px)',
+          fontSize:10.5,
+          fontWeight:700,
+          color:'#64748b',
+        }}>
+          <span style={{
+            width:7,
+            height:7,
+            borderRadius:999,
+            background:saving ? '#2563eb' : refreshing ? '#f59e0b' : '#94a3b8',
+            display:'inline-block',
+          }} />
+          {saving ? 'Saving' : refreshing ? 'Syncing' : 'Loading'}
+        </div>
+      )}
+
+      {JournalOutcomeHero}
+
 
       {/* MOBILE: 3-tab */}
       {isMobile ? (
