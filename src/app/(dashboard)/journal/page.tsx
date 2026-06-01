@@ -599,6 +599,13 @@ function SetupBudgetModal({
     return 'Possible adjustment: review planned allocation before applying this budget.'
   }, [totals])
 
+  const allocationPct = totals.incomeCapacity > 0
+    ? Math.min(120, Math.round((totals.plannedAllocation / totals.incomeCapacity) * 100))
+    : 0
+  const summaryTone = totals.remaining < 0 ? '#b91c1c' : '#15803d'
+  const summaryBg = totals.remaining < 0 ? '#fef2f2' : '#f0fdf4'
+  const summaryBorder = totals.remaining < 0 ? '#fecaca' : '#bbf7d0'
+
   if (!open) return null
 
   const setRowValue = (id: string, value: number) => {
@@ -738,23 +745,69 @@ function SetupBudgetModal({
         </div>
 
         <div style={{ padding:'14px 16px 18px', display:'flex', flexDirection:'column', gap:'12px' }}>
-          <div style={{ border:'1px solid #e3e7ee', borderRadius:'16px', padding:'12px 14px', background:'#fff' }}>
-            <div style={{ fontSize:'12px', color:'#64748b', lineHeight:1.5, marginBottom:'10px' }}>Current budget is loaded from the selected month. Previous month data is shown only for comparison and awareness.</div>
-            <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(3, 1fr)', gap:'8px' }}>
-              {[
-                ['Income Capacity', totals.incomeCapacity, '#15803d'],
-                ['Planned Allocation', totals.plannedAllocation, '#111827'],
-                ['Remaining Capacity', totals.remaining, totals.remaining < 0 ? '#b91c1c' : '#15803d'],
-              ].map(([label, value, color]) => (
-                <div key={String(label)} style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
-                  <div style={{ fontSize:'11px', color:'#64748b', fontWeight:750 }}>{label}</div>
-                  <div style={{ marginTop:'3px', fontSize:'14px', fontWeight:900, color:String(color), fontFamily:'var(--font-mono), monospace' }}>{String(label) === 'Remaining Capacity' ? renderSignedMoney(Number(value)) : renderMoney(Number(value))}</div>
+          <div style={{ border:'1px solid #d9e8df', borderRadius:'16px', padding:isMobile ? '12px 13px' : '14px 16px', background:'#fff' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', marginBottom:'12px', flexWrap:'wrap' }}>
+              <div>
+                <div style={{ fontSize:'12px', fontWeight:950, color:'#1a5c42', textTransform:'uppercase', letterSpacing:'.65px' }}>Budget Summary</div>
+                <div style={{ marginTop:'3px', fontSize:'11.5px', color:'#64748b' }}>
+                  Income − Expenses/Debt − Saving = Available
                 </div>
-              ))}
+              </div>
+              <div style={{ padding:'8px 12px', border:`1px solid ${summaryBorder}`, borderRadius:'13px', background:summaryBg, minWidth:isMobile ? '100%' : '170px', textAlign:isMobile ? 'left' : 'right' }}>
+                <div style={{ fontSize:'10.5px', fontWeight:850, color:'#64748b', textTransform:'uppercase', letterSpacing:'.45px' }}>
+                  {totals.remaining < 0 ? 'Deficit' : 'Available'}
+                </div>
+                <div style={{ marginTop:'3px', fontSize:'15px', fontWeight:950, color:summaryTone, fontFamily:'var(--font-mono), monospace' }}>
+                  {renderSignedMoney(totals.remaining)}
+                </div>
+              </div>
             </div>
+
+            <div style={{
+              display:'grid',
+              gridTemplateColumns:isMobile ? '1fr' : '1fr auto 1fr auto 1fr auto 1fr',
+              alignItems:'center',
+              gap:isMobile ? '8px' : '12px',
+            }}>
+              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
+                <div style={{ fontSize:'11px', color:'#15803d', fontWeight:850 }}>Income</div>
+                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#15803d', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.incomeCapacity)}</div>
+              </div>
+              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>−</div>}
+              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
+                <div style={{ fontSize:'11px', color:'#b91c1c', fontWeight:850 }}>Expenses/Debt</div>
+                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.expenseAllocation + totals.debtAllocation)}</div>
+              </div>
+              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>−</div>}
+              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
+                <div style={{ fontSize:'11px', color:'#2563eb', fontWeight:850 }}>Saving</div>
+                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#2563eb', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.savingAllocation)}</div>
+              </div>
+              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>=</div>}
+              <div style={{ border:`1px solid ${summaryBorder}`, borderRadius:'13px', padding:'10px 11px', background:summaryBg }}>
+                <div style={{ fontSize:'11px', color:summaryTone, fontWeight:850 }}>{totals.remaining < 0 ? 'Deficit' : 'Available'}</div>
+                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:summaryTone, fontFamily:'var(--font-mono), monospace' }}>{renderSignedMoney(totals.remaining)}</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop:'12px' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', fontSize:'11px', color:'#64748b', fontWeight:750, marginBottom:'6px' }}>
+                <span>Allocated {allocationPct}%</span>
+                <span style={{ fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.plannedAllocation)} / {renderMoney(totals.incomeCapacity)}</span>
+              </div>
+              <div style={{ height:'7px', borderRadius:999, background:'#e5e7eb', overflow:'hidden' }}>
+                <div style={{
+                  width:`${Math.min(100, Math.max(0, allocationPct))}%`,
+                  height:'100%',
+                  borderRadius:999,
+                  background: totals.remaining < 0 ? '#b91c1c' : '#1a5c42',
+                }} />
+              </div>
+            </div>
+
             {totals.remaining < 0 && (
               <div style={{ marginTop:'10px', padding:'9px 10px', border:'1px solid #fecaca', borderRadius:'12px', background:'#fef2f2', color:'#b91c1c', fontSize:'12px', fontWeight:700, lineHeight:1.45 }}>
-                Planned allocation exceeds income capacity by {renderMoney(Math.abs(totals.remaining))}. Consider reducing saving allocation or flexible expenses first before increasing total spending.
+                Planned allocation exceeds income by {renderMoney(Math.abs(totals.remaining))}.
                 {capacityGuidance && (
                   <div style={{ marginTop:'5px', color:'#7f1d1d', fontWeight:600 }}>
                     {capacityGuidance}
@@ -837,7 +890,22 @@ function SetupBudgetModal({
                           onMouseEnter={()=>setHovRow(hk)}
                           onMouseLeave={()=>setHovRow(null)}
                         >
-                          <span style={{ width:'6px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center' }} />
+                          <span
+                            title="Drag category"
+                            style={{
+                              width:'16px',
+                              flexShrink:0,
+                              cursor:'grab',
+                              display:'flex',
+                              alignItems:'center',
+                              justifyContent:'center',
+                              color:'#94a3b8',
+                              fontSize:'14px',
+                              lineHeight:1,
+                              opacity:.75,
+                              userSelect:'none'
+                            }}
+                          >⠿</span>
                           <input
                             style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
                             value={category}
@@ -914,7 +982,23 @@ function SetupBudgetModal({
                                 onMouseEnter={()=>setHovRow(rk)}
                                 onMouseLeave={()=>setHovRow(null)}
                               >
-                                <span style={{ width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center', touchAction:'none' }} />
+                                <span
+                                  title="Drag item"
+                                  style={{
+                                    width:'18px',
+                                    flexShrink:0,
+                                    cursor:'grab',
+                                    display:'flex',
+                                    alignItems:'center',
+                                    justifyContent:'center',
+                                    touchAction:'none',
+                                    color:'#94a3b8',
+                                    fontSize:'14px',
+                                    lineHeight:1,
+                                    opacity:.75,
+                                    userSelect:'none'
+                                  }}
+                                >⠿</span>
                                 <div style={{ flex:1, minWidth:0 }}>
                                   <input
                                     style={{ ...inp, width:'100%', minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
@@ -934,11 +1018,25 @@ function SetupBudgetModal({
                                     <div style={{ fontSize:'9.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.previousBudget ? Math.round(row.previousBudget).toLocaleString('id-ID') : '-'}</div>
                                     <div style={{ fontSize:'10px', color:row.previousActual > row.previousBudget && row.previousBudget > 0 ? '#b91c1c' : '#6b7280', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.previousActual ? Math.round(row.previousActual).toLocaleString('id-ID') : '-'}</div>
                                     <input
-                                      style={{ ...inp, fontSize:'11px', fontFamily:'var(--font-mono), monospace', color:'#111827', fontWeight:800, textAlign:'right', width:'100%' }}
+                                      style={{
+                                        ...inp,
+                                        fontSize:'11px',
+                                        fontFamily:'var(--font-mono), monospace',
+                                        color:'#111827',
+                                        fontWeight:800,
+                                        textAlign:'right',
+                                        width:'100%',
+                                        padding:'3px 4px 2px',
+                                        borderBottom:`1.5px solid ${hovRow===rk ? clr : 'transparent'}`,
+                                        background:hovRow===rk ? 'rgba(255,255,255,.7)' : 'transparent',
+                                        borderRadius:'6px 6px 0 0',
+                                        transition:'border-color .14s, background .14s'
+                                      }}
                                       value={row.value ? Math.round(row.value).toLocaleString('id-ID') : ''}
                                       placeholder="0"
                                       onMouseDown={e=>e.stopPropagation()}
-                                      onFocus={e=>e.currentTarget.select()}
+                                      onFocus={e=>{ setHovRow(rk); e.currentTarget.select() }}
+                                      onBlur={()=>setHovRow(null)}
                                       onChange={e=>setRowValue(row.id, Number(String(e.currentTarget.value).replace(/\D/g,'')) || 0)}
                                     />
                                   </div>
@@ -952,11 +1050,28 @@ function SetupBudgetModal({
                                     </div>
                                     <div style={{ width:'124px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'4px' }}>
                                       <input
-                                        style={{ ...inp, width: changed ? '84px' : '104px', flexShrink:0, fontSize:'12px', fontWeight:800, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#111827', whiteSpace:'nowrap' }}
+                                        style={{
+                                          ...inp,
+                                          width: changed ? '84px' : '104px',
+                                          flexShrink:0,
+                                          fontSize:'12px',
+                                          fontWeight:800,
+                                          textAlign:'right',
+                                          fontFamily:'var(--font-mono), monospace',
+                                          color:'#111827',
+                                          whiteSpace:'nowrap',
+                                          padding:'3px 6px 2px',
+                                          borderBottom:`1.5px solid ${hovRow===rk ? clr : 'transparent'}`,
+                                          background:hovRow===rk ? '#fff' : 'transparent',
+                                          borderRadius:'7px 7px 0 0',
+                                          boxShadow:hovRow===rk ? '0 1px 0 rgba(15,23,42,.03)' : 'none',
+                                          transition:'border-color .14s, background .14s, box-shadow .14s'
+                                        }}
                                         value={row.value ? Math.round(row.value).toLocaleString('id-ID') : ''}
                                         placeholder="0"
                                         onMouseDown={e=>e.stopPropagation()}
-                                        onFocus={e=>e.currentTarget.select()}
+                                        onFocus={e=>{ setHovRow(rk); e.currentTarget.select() }}
+                                        onBlur={()=>setHovRow(null)}
                                         onChange={e=>setRowValue(row.id, Number(String(e.currentTarget.value).replace(/\D/g,'')) || 0)}
                                       />
                                       {changed && (
