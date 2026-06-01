@@ -14,7 +14,23 @@ const delBtn: React.CSSProperties = { width:'18px', height:'20px', borderRadius:
 
 function DragHandle() {
   return (
-    <span style={{ width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center', touchAction:'none' }} />
+    <span
+      title="Drag"
+      style={{
+        width:'18px',
+        flexShrink:0,
+        cursor:'grab',
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'center',
+        touchAction:'none',
+        color:'#94a3b8',
+        fontSize:'14px',
+        lineHeight:1,
+        opacity:.75,
+        userSelect:'none'
+      }}
+    >⠿</span>
   )
 }
 
@@ -90,7 +106,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
   const totSavA = saving.reduce((s,r)=>s+(r.actual||0),0)
 
   // ── Shared styles ──
-  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
+  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s, background .13s, box-shadow .13s' }
   const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
   const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'8px' }
 
@@ -170,7 +186,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                             onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#1a5c42' : 'transparent'}`, background:hovRow===ik ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
                             value={item.plan?fmtNum(item.plan):''} placeholder="0"
                             onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                             onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -211,7 +227,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                           value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                           onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                           onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
-                        <input style={mono} defaultValue={item.plan?fmtNum(item.plan):''}
+                        <input style={{ ...mono, padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#1a5c42' : 'transparent'}`, background:hovRow===ik ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===ik ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }} defaultValue={item.plan?fmtNum(item.plan):''}
                           key={`plan-${ci}-${ii}-${item.plan}`}
                           placeholder="0" type="text"
                           onMouseDown={e=>e.stopPropagation()}
@@ -280,7 +296,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
           <div key={i} draggable onDragStart={e=>onSavDragStart(e,i)}
             onDragOver={e=>{ e.preventDefault(); setDragOver(sk) }}
             onDrop={e=>onSavDrop(e,i)} onDragLeave={()=>setDragOver(null)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s' }}
+            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s, background .13s, box-shadow .13s' }}
             onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
             <DragHandle />
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
@@ -290,7 +306,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
             {isMobile ? (
               /* Mobile: flex:2 untuk angka */
               <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%' }}
+                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===sk ? '#2563eb' : 'transparent'}`, background:hovRow===sk ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
@@ -301,7 +317,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               </div>
             ) : (
               <>
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }}
+                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===sk ? '#2563eb' : 'transparent'}`, background:hovRow===sk ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===sk ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
                   onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
