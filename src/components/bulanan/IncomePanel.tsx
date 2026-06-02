@@ -164,7 +164,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                             onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'inn') }} />
                         </div>
                         <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===rk ? '#15803d' : 'transparent'}`, background:hovRow===rk ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
+                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#15803d' : 'transparent'}`, background:hovRow===ik ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
                             defaultValue={item.plan?fmtNum(item.plan):''} placeholder="0"
                             key={`incplan-${ci}-${ii}-${item.plan}`}
                             onMouseDown={e=>e.stopPropagation()}
@@ -182,7 +182,7 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                           value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
                           onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
                           onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'inn') }} />
-                        <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===rk ? '#15803d' : 'transparent'}`, background:hovRow===rk ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===rk ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }}
+                        <input style={{ ...inp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#15803d' : 'transparent'}`, background:hovRow===ik ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===ik ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }}
                           value={item.plan?fmtNum(item.plan):''} placeholder="0"
                           onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                           onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}

@@ -21,6 +21,7 @@ export type MonthlyTrendItem = {
   label: string
   income: number
   expense: number
+  debt: number
   saving: number
   cashflow: number
   savingRate: number
@@ -144,6 +145,10 @@ export function sumPlanDebt(plan?: RawPlan | null) {
   return (plan?.debt || []).reduce((s, d: any) => s + Number(d?.plan || d?.actual || 0), 0)
 }
 
+export function sumActualDebt(plan?: RawPlan | null) {
+  return (plan?.debt || []).reduce((s, d: any) => s + Number(d?.actual || 0), 0)
+}
+
 export function buildTransactionMonthBuckets(tx: Transaction[]) {
   const buckets = new Map<string, { incomeActual: number; expense: number; saving: number; transactionCount: number }>()
 
@@ -170,12 +175,14 @@ export function aggregateMonthFromBucket(
   plan?: RawPlan | null
 ): MonthlyTrendItem {
   const expense = bucket?.expense || 0
+  const debt = sumActualDebt(plan)
   const saving = bucket?.saving || 0
-  // Income uses ACTUAL values, but only for income items whose TARGET/PLAN > 0.
-  // Untargeted actual income is excluded because it may be emergency withdrawal,
-  // transfers, loans, or other non-regular money.
-  const income = sumTargetedActualIncome(plan)
-  const cashflow = income - expense - saving
+  // Monthly comparison should reflect actual activity.
+  // Prefer income recorded from transactions; fall back to targeted actual income
+  // from the monthly plan when transaction income is not available.
+  const incomeFromTransactions = bucket?.incomeActual || 0
+  const income = incomeFromTransactions > 0 ? incomeFromTransactions : sumTargetedActualIncome(plan)
+  const cashflow = income - expense - debt - saving
 
   return {
     month,
@@ -183,6 +190,7 @@ export function aggregateMonthFromBucket(
     label: `${MONTH_LABELS[month]} ${String(year).slice(-2)}`,
     income,
     expense,
+    debt,
     saving,
     cashflow,
     savingRate: income > 0 ? (saving / income) * 100 : 0,

@@ -29,6 +29,7 @@ type MonthlyTrendItem = {
   label: string
   income: number
   expense: number
+  debt?: number
   saving: number
   cashflow: number
   savingRate: number
@@ -36,7 +37,7 @@ type MonthlyTrendItem = {
   transactionCount: number
 }
 
-const OVERVIEW_TREND_CACHE_PREFIX = 'fink-overview-trend:v2'
+const OVERVIEW_TREND_CACHE_PREFIX = 'fink-overview-trend:v4'
 const OVERVIEW_TREND_CACHE_TTL = 1000 * 60 * 30 // 30 menit: trend historis jarang berubah, tapi tetap cukup segar.
 
 function safeParseTrendCache(raw: string | null): { data: MonthlyTrendItem[]; cachedAt?: number } | null {
@@ -746,6 +747,39 @@ type DailyPoint = {
   balance: number
 }
 
+function getTransactionDay(t: Transaction, days: number) {
+  const raw = (t as any).date ?? (t as any).tanggal ?? (t as any).day
+  if (raw === null || raw === undefined || raw === '') return null
+
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return Math.max(1, Math.min(days, Math.trunc(raw)))
+  }
+
+  const str = String(raw).trim()
+
+  // Numeric day saved as string, e.g. "1" or "01"
+  if (/^\d{1,2}$/.test(str)) {
+    const day = Number(str)
+    return Number.isFinite(day) ? Math.max(1, Math.min(days, day)) : null
+  }
+
+  // Date string without timezone conversion, e.g. "2026-06-01" or "2026-06-01T..."
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const day = Number(isoMatch[3])
+    return Number.isFinite(day) ? Math.max(1, Math.min(days, day)) : null
+  }
+
+  // Indonesian/simple date, e.g. "01/06/2026" or "1-6-2026"
+  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/)
+  if (dmyMatch) {
+    const day = Number(dmyMatch[1])
+    return Number.isFinite(day) ? Math.max(1, Math.min(days, day)) : null
+  }
+
+  return null
+}
+
 function buildDailyProgressData({
   tx,
   income,
@@ -770,28 +804,15 @@ function buildDailyProgressData({
 
   for (const t of tx || []) {
     if ((t as any).debt && !(t as any).settled) continue
-    const day = Math.max(1, Math.min(days, Number(t.date || 1)))
+
+    const day = getTransactionDay(t, days)
+    if (!day) continue
+
     const amount = Number(t.amt || 0)
     if (isTargetedIncomeTransaction(t, incomeTargetLabels)) byDay[day].income += amount
     if (t.type === 'out') byDay[day].expense += amount
     if (t.type === 'save') byDay[day].saving += amount
   }
-
-  const incomeFromTx = tx.filter(t => isTargetedIncomeTransaction(t, incomeTargetLabels)).reduce((s,t)=>s+Number(t.amt||0),0)
-  const savingFromTx = tx.filter(t => t.type === 'save').reduce((s,t)=>s+Number(t.amt||0),0)
-  const debtFromRows = debt.reduce((s,r)=>s+Number(r.actual||0),0)
-
-  if (incomeFromTx <= 0) {
-    const fallbackIncome = sumIncome(income)
-    if (fallbackIncome > 0) byDay[1].income += fallbackIncome
-  }
-
-  if (savingFromTx <= 0) {
-    const fallbackSaving = saving.reduce((s,r)=>s+Number(r.actual||0),0)
-    if (fallbackSaving > 0) byDay[visibleDay].saving += fallbackSaving
-  }
-
-  if (debtFromRows > 0) byDay[visibleDay].expense += debtFromRows
 
   const totalMovement = Array.from({ length: visibleDay }, (_, i) => i + 1)
     .reduce((s, day) => s + byDay[day].income - byDay[day].expense - byDay[day].saving, 0)
@@ -1645,6 +1666,15 @@ const { curMonth, curYear } = useMonthContext()
 
   const { tx, loading, computedBudget, computedIncome, computedSaving, computedDebt, rawSisa } = useBulanan({ curMonth, curYear })
   const { goals, loaded: goalsLoaded, summary } = useSavings()
+
+  const avgExpenseDebt3m = useMemo(() => {
+    const candidates = (monthlyTrend || [])
+      .map(item => Number(item.expense || 0) + Number(item.debt || 0))
+      .filter(value => value > 0)
+      .slice(-3)
+    if (candidates.length === 0) return 0
+    return candidates.reduce((sum, value) => sum + value, 0) / candidates.length
+  }, [monthlyTrend])
   const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
   const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
 
@@ -1684,7 +1714,9 @@ const { curMonth, curYear } = useMonthContext()
     const emergencyMonthlyExpense =
       emergencyGoal?.expense && emergencyGoal.expense > 0
         ? emergencyGoal.expense
-        : totalExpense + totalDebtPayment
+        : avgExpenseDebt3m > 0
+          ? avgExpenseDebt3m
+          : totalExpense + totalDebtPayment
     const emergencyMonths =
       emergencyCurrent > 0 && emergencyMonthlyExpense > 0
         ? emergencyCurrent / emergencyMonthlyExpense
