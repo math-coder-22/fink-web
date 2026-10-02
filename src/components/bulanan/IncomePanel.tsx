@@ -124,10 +124,10 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
               )}
               <button
                 style={{ ...delBtn, opacity: hovRow===hk?1:0 }}
-                title="Hapus kategori income"
+                title="Delete income category"
                 onMouseDown={e=>e.stopPropagation()}
                 onClick={()=>{
-                  const ok = confirm(`Hapus kategori income "${cat.label}" beserta semua item di dalamnya?`)
+                  const ok = confirm(`Delete income category "${cat.label}" and all its items?`)
                   if (!ok) return
                   onIncomeChange(income.filter((_,ci2)=>ci2!==ci))
                 }}
@@ -194,10 +194,10 @@ export default function IncomePanel({ income, onIncomeChange, onRename, isMobile
                     )}
                     <button
                       style={{ ...delBtn, opacity: hovRow===ik?1:0 }}
-                      title="Hapus item income"
+                      title="Delete income item"
                       onMouseDown={e=>e.stopPropagation()}
                       onClick={()=>{
-                        const ok = confirm(`Hapus item income "${item.label}"?`)
+                        const ok = confirm(`Delete income item "${item.label}"?`)
                         if (!ok) return
                         onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
                       }}
