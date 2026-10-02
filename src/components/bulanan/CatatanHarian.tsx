@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useRef, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
 import { MONTHS_ORDER } from '@/components/layout/DashboardShell'
@@ -139,8 +139,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [calcResult, setCalcResult] = useState<number|null>(null)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [errors, setErrors] = useState<{ amt?: string; note?: string }>({})
-  const [undoTx, setUndoTx] = useState<Transaction | null>(null)
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [confirmTx, setConfirmTx] = useState<Transaction | null>(null)
 
   // Category options grouped by category. Memoized agar input form tidak menghitung ulang opsi setiap render.
   const catGroups = useMemo(() => {
@@ -287,26 +286,16 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     setCalcOpen(false)
   }
 
-  async function handleDeleteTx(t: Transaction) {
+  function openDeleteConfirm(t: Transaction) {
     setActionMenuId(null)
+    setConfirmTx(t)
+  }
+
+  async function confirmDeleteTx() {
+    if (!confirmTx) return
+    const t = confirmTx
+    setConfirmTx(null)
     await onDelete(t.id)
-    window.dispatchEvent(new Event('hutang-refresh'))
-    // Undo window: the transaction can be restored within 5 seconds.
-    if (undoTimer.current) clearTimeout(undoTimer.current)
-    setUndoTx(t)
-    undoTimer.current = setTimeout(() => setUndoTx(null), 5000)
-  }
-
-  function dismissUndo() {
-    if (undoTimer.current) clearTimeout(undoTimer.current)
-    setUndoTx(null)
-  }
-
-  async function handleUndoDelete() {
-    if (!undoTx) return
-    const t = undoTx
-    dismissUndo()
-    await onAdd({ date: t.date, type: t.type, cat: t.cat, note: t.note, amt: t.amt, debt: t.debt, settled: t.settled })
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
@@ -757,7 +746,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteTx(t)
+                          openDeleteConfirm(t)
                         }}
                         style={{
                           width:'100%',
@@ -792,30 +781,47 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
         })}
       </div>
 
-      {/* ── UNDO TOAST (delete confirmation replacement) ── */}
-      {undoTx && (
-        <div style={{ position:'fixed', left:'50%', bottom:'max(22px, env(safe-area-inset-bottom))', transform:'translateX(-50%)', zIndex:1000, display:'flex', alignItems:'center', gap:'10px', background:'#111827', color:'#f9fafb', borderRadius:'12px', padding:'10px 12px 10px 16px', boxShadow:'0 16px 40px rgba(0,0,0,.35)', animation:'finkToastIn .18s ease', maxWidth:'calc(100vw - 32px)' }}>
-          <span style={{ fontSize:'12.5px', fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Transaction deleted</span>
-          <button
-            type="button"
-            onClick={handleUndoDelete}
-            style={{ border:'none', background:'#1a5c42', color:'#fff', fontSize:'12.5px', fontWeight:800, borderRadius:'8px', padding:'7px 12px', cursor:'pointer', flexShrink:0 }}
+      {/* ── DELETE CONFIRMATION DIALOG ── */}
+      {confirmTx && (
+        <div
+          onClick={() => setConfirmTx(null)}
+          style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(17,24,39,.45)', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', animation:'finkFadeIn .15s ease' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Delete transaction"
+            style={{ ...baseFont, background:'#fff', borderRadius:'14px', padding:'20px', width:'100%', maxWidth:'340px', boxShadow:'0 20px 50px rgba(0,0,0,.25)', animation:'finkPopIn .15s ease' }}
           >
-            Undo
-          </button>
-          <button
-            type="button"
-            onClick={dismissUndo}
-            aria-label="Dismiss"
-            style={{ border:'none', background:'transparent', color:'#9ca3af', fontSize:'15px', cursor:'pointer', padding:'4px', flexShrink:0, lineHeight:1 }}
-          >
-            ×
-          </button>
+            <div style={{ fontSize:'15px', fontWeight:800, color:'#111827', marginBottom:'8px' }}>Delete transaction?</div>
+            <div style={{ fontSize:'12.5px', color:'#6b7280', lineHeight:1.5, marginBottom:'18px' }}>
+              Delete this {TYPE_LABELS[confirmTx.type] || 'transaction'} of <strong style={{ color:'#111827' }}>{fmt(confirmTx.amt)}</strong>
+              {confirmTx.note ? <> — “{confirmTx.note}”</> : confirmTx.cat ? <> ({confirmTx.cat})</> : <> (Uncategorized)</>}? This cannot be undone.
+            </div>
+            <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmTx(null)}
+                style={{ ...baseFont, border:'1.5px solid #e3e7ee', background:'#fff', color:'#374151', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteTx}
+                style={{ ...baseFont, border:'none', background:'#b91c1c', color:'#fff', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       <style>{`
-        @keyframes finkToastIn { from { opacity:0; transform:translate(-50%, 8px); } to { opacity:1; transform:translate(-50%, 0); } }
+        @keyframes finkFadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes finkPopIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
         @media (max-width: 430px) {
           .fink-tx-row { grid-template-columns: 1fr !important; }
         }
