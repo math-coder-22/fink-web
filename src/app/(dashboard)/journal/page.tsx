@@ -10,6 +10,7 @@ import { RekonModal, TxDetailModal } from '@/components/bulanan/BulananModals'
 import type { MonthKey } from '@/types/database'
 import DebtPanel from '@/components/bulanan/DebtPanel'
 import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 type MobileTab    = 'transactions' | 'budget' | 'income'
 type DesktopPanel = 'budget' | 'income'
@@ -341,8 +342,6 @@ function setupBudgetInsight(previousBudget: number, previousActual: number, sect
   const ratio = actual / budget
   if (ratio > 1.4) return 'Spending was far over last month\'s budget. Use this figure as a starting point, not a justification for overspending.'
   if (ratio > 1.1) return 'Spending exceeded last month\'s budget. This month\'s budget is raised conservatively.'
-  if (ratio < 0.65 && actual > 0) return 'A lot of last month\'s budget was left unused. Consider whether this allocation is still too loose.'
-  if (ratio >= 0.9 && ratio <= 1.1) return 'Spending is relatively stable against last month\'s budget.'
   return undefined
 }
 
@@ -505,11 +504,7 @@ function SetupBudgetModal({
   const [rows, setRows] = useState<SetupBudgetRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [hovRow, setHovRow] = useState<string|null>(null)
-  const [dragOver, setDragOver] = useState<string|null>(null)
-
-  const catDragSrc = useRef<{ section: SetupBudgetSectionKey; category: string } | null>(null)
-  const itemDragSrc = useRef<{ id: string } | null>(null)
+  const [confirmRebuild, setConfirmRebuild] = useState(false)
 
   const previousInfo = useMemo(() => {
     const idx = MONTHS_ORDER.indexOf(curMonth)
@@ -612,75 +607,8 @@ function SetupBudgetModal({
     setRows(prev => prev.map(row => row.id === id ? { ...row, value: Number.isFinite(value) ? value : 0 } : row))
   }
 
-  const renameCategory = (section: SetupBudgetSectionKey, oldCategory: string, nextCategory: string) => {
-    setRows(prev => prev.map(row => row.section === section && row.category === oldCategory ? { ...row, category: nextCategory } : row))
-  }
-
-  const renameItem = (id: string, label: string) => {
-    setRows(prev => prev.map(row => row.id === id ? { ...row, label } : row))
-  }
-
-  const removeCategory = (section: SetupBudgetSectionKey, category: string) => {
-    const ok = confirm(`Delete category "${category}" and all its items?`)
-    if (!ok) return
-    setRows(prev => prev.filter(row => !(row.section === section && row.category === category)))
-  }
-
-  const removeItem = (id: string, label: string) => {
-    const ok = confirm(`Delete item "${label}"?`)
-    if (!ok) return
-    setRows(prev => prev.filter(row => row.id !== id))
-  }
-
-  const addCategory = (section: SetupBudgetSectionKey) => {
-    const category = section === 'income' ? 'New Category' : section === 'budget' ? 'New Category' : section === 'saving' ? 'Saving' : 'Debt'
-    const label = section === 'debt' ? 'New Debt' : section === 'saving' ? 'New Allocation' : 'New Item'
-    setRows(prev => [...prev, createSetupRow(section, category, label, 0, 0, 0)])
-  }
-
-  const addItemToCategory = (section: SetupBudgetSectionKey, category: string) => {
-    const label = section === 'debt' ? 'New Debt' : section === 'saving' ? 'New Allocation' : 'New Item'
-    setRows(prev => [...prev, createSetupRow(section, category, label, 0, 0, 0)])
-  }
-
-  const reorderCategories = (section: SetupBudgetSectionKey, sourceCategory: string, targetCategory: string) => {
-    if (sourceCategory === targetCategory) return
-    setRows(prev => {
-      const before = prev.filter(row => row.section !== section)
-      const sectionRows = prev.filter(row => row.section === section)
-      const categories = Array.from(new Set(sectionRows.map(row => row.category)))
-      const from = categories.indexOf(sourceCategory)
-      const to = categories.indexOf(targetCategory)
-      if (from < 0 || to < 0) return prev
-      const nextCategories = [...categories]
-      const [moved] = nextCategories.splice(from, 1)
-      nextCategories.splice(to, 0, moved)
-      return [
-        ...before,
-        ...nextCategories.flatMap(cat => sectionRows.filter(row => row.category === cat))
-      ]
-    })
-  }
-
-  const reorderItem = (sourceId: string, targetId: string, targetSection: SetupBudgetSectionKey, targetCategory: string) => {
-    if (sourceId === targetId) return
-    setRows(prev => {
-      const source = prev.find(row => row.id === sourceId)
-      const targetIndex = prev.findIndex(row => row.id === targetId)
-      if (!source || targetIndex < 0) return prev
-      const without = prev.filter(row => row.id !== sourceId)
-      const adjustedTargetIndex = without.findIndex(row => row.id === targetId)
-      if (adjustedTargetIndex < 0) return prev
-      const moved = { ...source, section: targetSection, category: targetCategory }
-      const next = [...without]
-      next.splice(adjustedTargetIndex, 0, moved)
-      return next
-    })
-  }
-
   const rebuildFromPrevious = async () => {
-    const confirmed = window.confirm(`Rebuild current budget using ${previousInfo.label} activity? Current unsaved changes will be replaced.`)
-    if (!confirmed) return
+    setConfirmRebuild(false)
     try {
       setLoading(true)
       const json = await loadPreviousData()
@@ -705,20 +633,8 @@ function SetupBudgetModal({
     return value < 0 ? `- ${amount}` : amount
   }
   const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
-  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s' }
-  const delBtn: React.CSSProperties = { width:'20px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
-
-  const renderAddButton = (label: string, onClick: () => void) => (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ width:'100%', padding:'9px 10px', border:'1.5px dashed #cbd5e1', borderRadius:'10px', background:'#fff', color:'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s', textAlign:'center' }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a5c42'; e.currentTarget.style.background = '#e8f5ef'; e.currentTarget.style.color = '#1a5c42' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#6b7280' }}
-    >
-      {label}
-    </button>
-  )
+  /* Budget value inputs: dotted underline so editability is obvious */
+  const budgetInp: React.CSSProperties = { ...inp, borderBottom:'1px dotted #cbd5e1', borderRadius:'2px' }
 
   return (
     <div onClick={e => { if (e.currentTarget === e.target) onClose() }} style={{ position:'fixed', inset:0, zIndex:860, background:'rgba(15,23,42,.42)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-start', justifyContent:'center', overflowY:'auto', padding:'max(14px, env(safe-area-inset-top)) 12px 16px' }}>
@@ -733,7 +649,7 @@ function SetupBudgetModal({
           <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
             <button
               type="button"
-              onClick={rebuildFromPrevious}
+              onClick={()=>setConfirmRebuild(true)}
               style={{ border:'1px solid #dbe3ef', background:'#fff', color:'#334155', borderRadius:'10px', padding:'8px 10px', fontSize:'11px', fontWeight:800, cursor:'pointer' }}
             >
               Rebuild from Previous Month
@@ -745,74 +661,31 @@ function SetupBudgetModal({
         </div>
 
         <div style={{ padding:'14px 16px 18px', display:'flex', flexDirection:'column', gap:'12px' }}>
-          <div style={{ border:'1px solid #d9e8df', borderRadius:'16px', padding:isMobile ? '12px 13px' : '14px 16px', background:'#fff' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', marginBottom:'12px', flexWrap:'wrap' }}>
-              <div>
-                <div style={{ fontSize:'12px', fontWeight:950, color:'#1a5c42', textTransform:'uppercase', letterSpacing:'.65px' }}>Budget Summary</div>
-                <div style={{ marginTop:'3px', fontSize:'11.5px', color:'#64748b' }}>
-                  Income − Expenses/Debt − Saving = Available
-                </div>
-              </div>
-              <div style={{ padding:'8px 12px', border:`1px solid ${summaryBorder}`, borderRadius:'13px', background:summaryBg, minWidth:isMobile ? '100%' : '170px', textAlign:isMobile ? 'left' : 'right' }}>
-                <div style={{ fontSize:'10.5px', fontWeight:850, color:'#64748b', textTransform:'uppercase', letterSpacing:'.45px' }}>
-                  {totals.remaining < 0 ? 'Deficit' : 'Available'}
-                </div>
-                <div style={{ marginTop:'3px', fontSize:'15px', fontWeight:950, color:summaryTone, fontFamily:'var(--font-mono), monospace' }}>
-                  {renderSignedMoney(totals.remaining)}
-                </div>
-              </div>
+          {/* Slim summary: available + allocation bar */}
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'14px', padding:'10px 14px', background:'#fff' }}>
+            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:'10px', flexWrap:'wrap' }}>
+              <span style={{ fontSize:'11px', fontWeight:800, color:'#64748b', textTransform:'uppercase', letterSpacing:'.5px' }}>
+                {totals.remaining < 0 ? 'Deficit' : 'Available'}
+              </span>
+              <span style={{ fontSize:'16px', fontWeight:900, color:summaryTone, fontFamily:'var(--font-mono), monospace' }}>
+                {renderSignedMoney(totals.remaining)}
+              </span>
             </div>
-
-            <div style={{
-              display:'grid',
-              gridTemplateColumns:isMobile ? '1fr' : '1fr auto 1fr auto 1fr auto 1fr',
-              alignItems:'center',
-              gap:isMobile ? '8px' : '12px',
-            }}>
-              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
-                <div style={{ fontSize:'11px', color:'#15803d', fontWeight:850 }}>Income</div>
-                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#15803d', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.incomeCapacity)}</div>
-              </div>
-              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>−</div>}
-              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
-                <div style={{ fontSize:'11px', color:'#b91c1c', fontWeight:850 }}>Expenses/Debt</div>
-                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#b91c1c', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.expenseAllocation + totals.debtAllocation)}</div>
-              </div>
-              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>−</div>}
-              <div style={{ border:'1px solid #eef2f7', borderRadius:'13px', padding:'10px 11px', background:'#fcfcfd' }}>
-                <div style={{ fontSize:'11px', color:'#2563eb', fontWeight:850 }}>Saving</div>
-                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:'#2563eb', fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.savingAllocation)}</div>
-              </div>
-              {!isMobile && <div style={{ color:'#64748b', fontWeight:950, fontSize:'18px' }}>=</div>}
-              <div style={{ border:`1px solid ${summaryBorder}`, borderRadius:'13px', padding:'10px 11px', background:summaryBg }}>
-                <div style={{ fontSize:'11px', color:summaryTone, fontWeight:850 }}>{totals.remaining < 0 ? 'Deficit' : 'Available'}</div>
-                <div style={{ marginTop:'4px', fontSize:'14px', fontWeight:950, color:summaryTone, fontFamily:'var(--font-mono), monospace' }}>{renderSignedMoney(totals.remaining)}</div>
-              </div>
+            <div style={{ marginTop:'8px', display:'flex', justifyContent:'space-between', gap:'10px', fontSize:'10.5px', color:'#64748b', fontWeight:600, marginBottom:'5px' }}>
+              <span>Allocated {allocationPct}%</span>
+              <span style={{ fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.plannedAllocation)} / {renderMoney(totals.incomeCapacity)}</span>
             </div>
-
-            <div style={{ marginTop:'12px' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', fontSize:'11px', color:'#64748b', fontWeight:750, marginBottom:'6px' }}>
-                <span>Allocated {allocationPct}%</span>
-                <span style={{ fontFamily:'var(--font-mono), monospace' }}>{renderMoney(totals.plannedAllocation)} / {renderMoney(totals.incomeCapacity)}</span>
-              </div>
-              <div style={{ height:'7px', borderRadius:999, background:'#e5e7eb', overflow:'hidden' }}>
-                <div style={{
-                  width:`${Math.min(100, Math.max(0, allocationPct))}%`,
-                  height:'100%',
-                  borderRadius:999,
-                  background: totals.remaining < 0 ? '#b91c1c' : '#1a5c42',
-                }} />
-              </div>
+            <div style={{ height:'6px', borderRadius:999, background:'#e5e7eb', overflow:'hidden' }}>
+              <div style={{
+                width:`${Math.min(100, Math.max(0, allocationPct))}%`,
+                height:'100%',
+                borderRadius:999,
+                background: totals.remaining < 0 ? '#b91c1c' : '#1a5c42',
+              }} />
             </div>
-
             {totals.remaining < 0 && (
-              <div style={{ marginTop:'10px', padding:'9px 10px', border:'1px solid #fecaca', borderRadius:'12px', background:'#fef2f2', color:'#b91c1c', fontSize:'12px', fontWeight:700, lineHeight:1.45 }}>
-                Planned allocation exceeds income by {renderMoney(Math.abs(totals.remaining))}.
-                {capacityGuidance && (
-                  <div style={{ marginTop:'5px', color:'#7f1d1d', fontWeight:600 }}>
-                    {capacityGuidance}
-                  </div>
-                )}
+              <div style={{ marginTop:'8px', fontSize:'11.5px', fontWeight:700, color:'#b91c1c', lineHeight:1.45 }}>
+                Planned allocation exceeds income by {renderMoney(Math.abs(totals.remaining))}.{capacityGuidance ? ` ${capacityGuidance}` : ''}
               </div>
             )}
           </div>
@@ -868,50 +741,12 @@ function SetupBudgetModal({
                     const hk = `${section}-${category}`
 
                     return (
-                      <div key={hk}
-                        style={{ margin:'0 12px 6px' }}
-                        onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(hk) }}
-                        onDrop={e=>{
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if(e.dataTransfer.getData('type') === 'setup-cat') {
-                            const src = catDragSrc.current
-                            if(src) reorderCategories(src.section, src.category, category)
-                            catDragSrc.current = null
-                          }
-                          setDragOver(null)
-                        }}
-                        onDragLeave={()=>setDragOver(null)}
-                      >
-                        <div
-                          draggable
-                          onDragStart={e=>{ catDragSrc.current = { section, category }; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','setup-cat'); e.stopPropagation() }}
-                          style={{ ...rowBase, background:'#fff', cursor:'grab', borderColor:dragOver===hk ? clr : '#e3e7ee', borderWidth:dragOver===hk ? '2px' : '1px' }}
-                          onMouseEnter={()=>setHovRow(hk)}
-                          onMouseLeave={()=>setHovRow(null)}
-                        >
-                          <span
-                            title="Drag category"
-                            style={{
-                              width:'16px',
-                              flexShrink:0,
-                              cursor:'grab',
-                              display:'flex',
-                              alignItems:'center',
-                              justifyContent:'center',
-                              color:'#94a3b8',
-                              fontSize:'14px',
-                              lineHeight:1,
-                              opacity:.75,
-                              userSelect:'none'
-                            }}
-                          >⠿</span>
-                          <input
-                            style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
-                            value={category}
-                            onMouseDown={e=>e.stopPropagation()}
-                            onChange={e=>renameCategory(section, category, e.target.value)}
-                          />
+                      <div key={hk} style={{ margin:'0 12px 8px' }}>
+                        {/* Category header — static label, values only */}
+                        <div style={{ display:'flex', alignItems:'center', gap:'6px', padding:'5px 2px' }}>
+                          <span style={{ flex:1, minWidth:0, fontSize:'13px', fontWeight:700, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {category}
+                          </span>
                           {isMobile ? (
                             <div style={{ flex:'2', minWidth:0, display:'grid', gridTemplateColumns:'1fr 1fr 1.15fr', gap:'4px', alignItems:'center' }}>
                               <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{catPrev ? Math.round(catPrev).toLocaleString('id-ID') : '-'}</span>
@@ -925,90 +760,34 @@ function SetupBudgetModal({
                               <span style={{ width:'124px', flexShrink:0, fontSize:'12px', fontWeight:850, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#111827', whiteSpace:'nowrap' }}>{catBudget ? Math.round(catBudget).toLocaleString('id-ID') : '-'}</span>
                             </>
                           )}
-                          <button style={{ ...delBtn, opacity:hovRow===hk ? 1 : 0 }} title="Hapus kategori" onMouseDown={e=>e.stopPropagation()} onClick={()=>removeCategory(section, category)} aria-label="Remove">
-                            <AppIcon name="trash" size={13} />
-                          </button>
                         </div>
 
-                        <div style={{ height:'2px', background:'#e3e7ee', borderRadius:'1px', margin:'-2px 0 5px 22px' }}>
-                          <div style={{ height:'2px', borderRadius:'1px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
+                        <div style={{ height:'3px', background:'#eef1f5', borderRadius:'2px', margin:'0 0 2px' }}>
+                          <div style={{ height:'3px', borderRadius:'2px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
                         </div>
 
-                        {(pct > 110 || pct < 65) && (
-                          <div style={{
-                            margin:'0 0 8px 22px',
-                            padding:'0 2px',
-                            fontSize:'11px',
-                            lineHeight:1.45,
-                            color:pct > 110 ? '#b45309' : '#64748b',
-                            fontWeight:550,
-                            display:'flex',
-                            alignItems:'flex-start',
-                            gap:'6px'
-                          }}>
-                            <span style={{ marginTop:'1px', flexShrink:0 }}>
-                              {pct > 110 ? '⚠' : '•'}
-                            </span>
-                            <span>
-                              {pct > 110
-                                ? `${category} exceeded last month’s budget by ${Math.round(pct - 100)}%.`
-                                : `${category} spending remained below planned budget last month.`}
-                            </span>
+                        {pct > 110 && (
+                          <div style={{ margin:'0 0 6px', padding:'0 2px', fontSize:'11px', lineHeight:1.45, color:'#b45309', fontWeight:600, display:'flex', alignItems:'flex-start', gap:'6px' }}>
+                            <span style={{ marginTop:'1px', flexShrink:0 }}>⚠</span>
+                            <span>{category} exceeded last month’s budget by {Math.round(pct - 100)}%.</span>
                           </div>
                         )}
 
-                        <div style={{ paddingLeft:'22px' }}>
-                          {sectionRows.map(row => {
-                            const rk = `setup-row-${row.id}`
+                        <div style={{ paddingLeft:'14px' }}>
+                          {sectionRows.map((row, ri) => {
                             const changed = Number(row.value || 0) !== Number(row.suggested || 0)
                             return (
                               <div
                                 key={row.id}
-                                draggable
-                                onDragStart={e=>{ itemDragSrc.current = { id:row.id }; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','setup-item'); e.stopPropagation() }}
-                                onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(rk) }}
-                                onDrop={e=>{
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  if(e.dataTransfer.getData('type') === 'setup-item') {
-                                    const src = itemDragSrc.current
-                                    if(src) reorderItem(src.id, row.id, section, category)
-                                    itemDragSrc.current = null
-                                  }
-                                  setDragOver(null)
-                                }}
-                                onDragLeave={()=>setDragOver(null)}
-                                style={{ ...rowBase, background:'#f7f8fa', cursor:'grab', borderColor:dragOver===rk ? clr : '#e3e7ee', borderWidth:dragOver===rk ? '2px' : '1px' }}
-                                onMouseEnter={()=>setHovRow(rk)}
-                                onMouseLeave={()=>setHovRow(null)}
+                                style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: ri<sectionRows.length-1?'1px solid #f1f4f8':'none' }}
                               >
-                                <span
-                                  title="Drag item"
-                                  style={{
-                                    width:'18px',
-                                    flexShrink:0,
-                                    cursor:'grab',
-                                    display:'flex',
-                                    alignItems:'center',
-                                    justifyContent:'center',
-                                    touchAction:'none',
-                                    color:'#94a3b8',
-                                    fontSize:'14px',
-                                    lineHeight:1,
-                                    opacity:.75,
-                                    userSelect:'none'
-                                  }}
-                                >⠿</span>
                                 <div style={{ flex:1, minWidth:0 }}>
-                                  <input
-                                    style={{ ...inp, width:'100%', minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
-                                    value={row.label}
-                                    onMouseDown={e=>e.stopPropagation()}
-                                    onChange={e=>renameItem(row.id, e.target.value)}
-                                  />
+                                  <div style={{ fontSize:'12.5px', fontWeight:600, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                    {row.label}
+                                  </div>
                                   {row.insight && (
-                                    <div style={{ marginTop:'2px', fontSize:'10.5px', lineHeight:1.35, color:'#64748b', fontWeight:500 }}>
-                                      {row.insight}
+                                    <div style={{ marginTop:'1px', fontSize:'10.5px', lineHeight:1.35, color:'#b45309', fontWeight:600 }}>
+                                      ⚠ {row.insight}
                                     </div>
                                   )}
                                 </div>
@@ -1019,24 +798,19 @@ function SetupBudgetModal({
                                     <div style={{ fontSize:'10px', color:row.previousActual > row.previousBudget && row.previousBudget > 0 ? '#b91c1c' : '#6b7280', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.previousActual ? Math.round(row.previousActual).toLocaleString('id-ID') : '-'}</div>
                                     <input
                                       style={{
-                                        ...inp,
+                                        ...budgetInp,
                                         fontSize:'11px',
                                         fontFamily:'var(--font-mono), monospace',
                                         color:'#111827',
                                         fontWeight:800,
                                         textAlign:'right',
                                         width:'100%',
-                                        padding:'3px 4px 2px',
-                                        borderBottom:`1.5px solid ${hovRow===rk ? clr : 'transparent'}`,
-                                        background:hovRow===rk ? 'rgba(255,255,255,.7)' : 'transparent',
-                                        borderRadius:'6px 6px 0 0',
-                                        transition:'border-color .14s, background .14s'
+                                        padding:'2px 3px',
                                       }}
                                       value={row.value ? Math.round(row.value).toLocaleString('id-ID') : ''}
                                       placeholder="0"
                                       onMouseDown={e=>e.stopPropagation()}
-                                      onFocus={e=>{ setHovRow(rk); e.currentTarget.select() }}
-                                      onBlur={()=>setHovRow(null)}
+                                      onFocus={e=>e.currentTarget.select()}
                                       onChange={e=>setRowValue(row.id, Number(String(e.currentTarget.value).replace(/\D/g,'')) || 0)}
                                     />
                                   </div>
@@ -1051,7 +825,7 @@ function SetupBudgetModal({
                                     <div style={{ width:'124px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'4px' }}>
                                       <input
                                         style={{
-                                          ...inp,
+                                          ...budgetInp,
                                           width: changed ? '84px' : '104px',
                                           flexShrink:0,
                                           fontSize:'12px',
@@ -1060,18 +834,12 @@ function SetupBudgetModal({
                                           fontFamily:'var(--font-mono), monospace',
                                           color:'#111827',
                                           whiteSpace:'nowrap',
-                                          padding:'3px 6px 2px',
-                                          borderBottom:`1.5px solid ${hovRow===rk ? clr : 'transparent'}`,
-                                          background:hovRow===rk ? '#fff' : 'transparent',
-                                          borderRadius:'7px 7px 0 0',
-                                          boxShadow:hovRow===rk ? '0 1px 0 rgba(15,23,42,.03)' : 'none',
-                                          transition:'border-color .14s, background .14s, box-shadow .14s'
+                                          padding:'2px 6px',
                                         }}
                                         value={row.value ? Math.round(row.value).toLocaleString('id-ID') : ''}
                                         placeholder="0"
                                         onMouseDown={e=>e.stopPropagation()}
-                                        onFocus={e=>{ setHovRow(rk); e.currentTarget.select() }}
-                                        onBlur={()=>setHovRow(null)}
+                                        onFocus={e=>e.currentTarget.select()}
                                         onChange={e=>setRowValue(row.id, Number(String(e.currentTarget.value).replace(/\D/g,'')) || 0)}
                                       />
                                       {changed && (
@@ -1080,21 +848,15 @@ function SetupBudgetModal({
                                     </div>
                                   </>
                                 )}
-
-                                <button style={{ ...delBtn, opacity:hovRow===rk ? 1 : 0 }} onMouseDown={e=>e.stopPropagation()} onClick={()=>removeItem(row.id, row.label)} aria-label="Remove">
-                                  <AppIcon name="trash" size={13} />
-                                </button>
                               </div>
                             )
                           })}
 
-                          {renderAddButton('+ add item', () => addItemToCategory(section, category))}
                         </div>
                       </div>
                     )
                   })}
 
-                  {renderAddButton('+ add category', () => addCategory(section))}
                 </div>
               )
             })}
@@ -1106,6 +868,16 @@ function SetupBudgetModal({
           </div>
         </div>
       </div>
+
+      {confirmRebuild && (
+        <ConfirmDialog
+          title="Rebuild from previous month?"
+          message={<>Rebuild the budget using <strong style={{ color:'#111827' }}>{previousInfo.label}</strong> activity? Current unsaved changes will be replaced.</>}
+          confirmLabel="Rebuild"
+          onConfirm={rebuildFromPrevious}
+          onCancel={()=>setConfirmRebuild(false)}
+        />
+      )}
     </div>
   )
 }
