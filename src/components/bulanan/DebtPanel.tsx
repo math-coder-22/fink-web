@@ -1,1 +1,217 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyBtZW1vLCB1c2VSZWYsIHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnCmltcG9ydCB7IHVzZVN1YnNjcmlwdGlvbiB9IGZyb20gJ0AvaG9va3MvdXNlU3Vic2NyaXB0aW9uJwppbXBvcnQgeyBGUkVFX1BMQU5fTElNSVRTLCB1cGdyYWRlTWVzc2FnZSB9IGZyb20gJ0AvbGliL3N1YnNjcmlwdGlvbi9saW1pdHMnCmltcG9ydCB0eXBlIHsgRGVidFJvdywgVHJhbnNhY3Rpb24gfSBmcm9tICdAL3R5cGVzL2RhdGFiYXNlJwppbXBvcnQgeyBBcHBJY29uIH0gZnJvbSAnQC9jb21wb25lbnRzL3VpL2Rlc2lnbicKaW1wb3J0IENvbmZpcm1EaWFsb2cgZnJvbSAnQC9jb21wb25lbnRzL3VpL0NvbmZpcm1EaWFsb2cnCgp0eXBlIFR4VHlwZSA9IFRyYW5zYWN0aW9uWyd0eXBlJ10KCnR5cGUgUHJvcHMgPSB7CiAgZGVidD86IERlYnRSb3dbXQogIG9uRGVidENoYW5nZTogKHJvd3M6IERlYnRSb3dbXSkgPT4gdm9pZAogIG9uUmVuYW1lPzogKG9sZExhYmVsOiBzdHJpbmcsIG5ld0xhYmVsOiBzdHJpbmcsIHR5cGU/OiBUeFR5cGUpID0+IHZvaWQKICBpc01vYmlsZT86IGJvb2xlYW4KfQoKY29uc3QgQUNDRU5UID0gJyMxYTVjNDInCmNvbnN0IGlucDogUmVhY3QuQ1NTUHJvcGVydGllcyA9IHsgYm9yZGVyOidub25lJywgYmFja2dyb3VuZDondHJhbnNwYXJlbnQnLCBvdXRsaW5lOidub25lJywgZm9udEZhbWlseTonaW5oZXJpdCcgfQpjb25zdCBwbGFuSW5wOiBSZWFjdC5DU1NQcm9wZXJ0aWVzID0geyAuLi5pbnAsIGJvcmRlckJvdHRvbTonMXB4IGRvdHRlZCAjY2JkNWUxJywgYm9yZGVyUmFkaXVzOicycHgnLCB0cmFuc2l0aW9uOidib3JkZXItY29sb3IgLjE0cywgYmFja2dyb3VuZCAuMTRzJyB9Cgpjb25zdCBmbXQgPSAobjpudW1iZXIpID0+ICdScCAnICsgTWF0aC5yb3VuZChNYXRoLmFicyhufHwwKSkudG9Mb2NhbGVTdHJpbmcoJ2lkLUlEJykKY29uc3QgZm10TnVtID0gKG46bnVtYmVyKSA9PiBNYXRoLnJvdW5kKG58fDApLnRvTG9jYWxlU3RyaW5nKCdpZC1JRCcpCmNvbnN0IHBOdW0gPSAodjpzdHJpbmcpID0+IE51bWJlcihTdHJpbmcodikucmVwbGFjZSgvXEQvZywnJykpIHx8IDAKCmZ1bmN0aW9uIERyYWdIYW5kbGUoeyB2aXNpYmxlIH06IHsgdmlzaWJsZTogYm9vbGVhbiB9KSB7CiAgcmV0dXJuICgKICAgIDxzcGFuCiAgICAgIHRpdGxlPSJEcmFnIHRvIHJlb3JkZXIiCiAgICAgIHN0eWxlPXt7CiAgICAgICAgd2lkdGg6JzE0cHgnLCBmbGV4U2hyaW5rOjAsIGN1cnNvcjonZ3JhYicsIGRpc3BsYXk6J2ZsZXgnLCBhbGlnbkl0ZW1zOidjZW50ZXInLCBqdXN0aWZ5Q29udGVudDonY2VudGVyJywKICAgICAgICB0b3VjaEFjdGlvbjonbm9uZScsIGNvbG9yOicjOTRhM2I4JywgZm9udFNpemU6JzEycHgnLCBsaW5lSGVpZ2h0OjEsCiAgICAgICAgb3BhY2l0eTogdmlzaWJsZSA/IC44IDogMCwgdHJhbnNpdGlvbjonb3BhY2l0eSAuMTNzJywgdXNlclNlbGVjdDonbm9uZScsCiAgICAgIH19CiAgICA+4qC/PC9zcGFuPgogICkKfQoKZnVuY3Rpb24gRGVsQnRuKHsgdmlzaWJsZSwgdGl0bGUsIG9uQ2xpY2ssIGlzTW9iaWxlIH06IHsKICB2aXNpYmxlOiBib29sZWFuOyB0aXRsZTogc3RyaW5nOyBvbkNsaWNrOiAoKSA9PiB2b2lkOyBpc01vYmlsZT86IGJvb2xlYW4KfSkgewogIGNvbnN0IHNob3cgPSB2aXNpYmxlIHx8ICEhaXNNb2JpbGUKICByZXR1cm4gKAogICAgPGJ1dHRvbgogICAgICB0eXBlPSJidXR0b24iCiAgICAgIHRpdGxlPXt0aXRsZX0KICAgICAgYXJpYS1sYWJlbD17dGl0bGV9CiAgICAgIG9uTW91c2VEb3duPXtlPT5lLnN0b3BQcm9wYWdhdGlvbigpfQogICAgICBvbkNsaWNrPXtvbkNsaWNrfQogICAgICBzdHlsZT17ewogICAgICAgIHdpZHRoOicyMnB4JywgaGVpZ2h0OicyMnB4JywgYm9yZGVyUmFkaXVzOic2cHgnLCBib3JkZXI6J25vbmUnLCBiYWNrZ3JvdW5kOidub25lJywKICAgICAgICBjb2xvcjonIzljYTNhZicsIGRpc3BsYXk6J2ZsZXgnLCBhbGlnbkl0ZW1zOidjZW50ZXInLCBqdXN0aWZ5Q29udGVudDonY2VudGVyJywKICAgICAgICBjdXJzb3I6J3BvaW50ZXInLCBmbGV4U2hyaW5rOjAsIG9wYWNpdHk6IHNob3cgPyAodmlzaWJsZSA/IDEgOiAuNDUpIDogMCwgdHJhbnNpdGlvbjonb3BhY2l0eSAuMTNzJywKICAgICAgICBwb2ludGVyRXZlbnRzOiBzaG93ID8gJ2F1dG8nIDogJ25vbmUnLAogICAgICB9fQogICAgPjxBcHBJY29uIG5hbWU9InRyYXNoIiBzaXplPXsxMn0gLz48L2J1dHRvbj4KICApCn0KCmZ1bmN0aW9uIEFkZEJ0bih7IGxhYmVsLCBvbkNsaWNrIH06IHsgbGFiZWw6IHN0cmluZzsgb25DbGljazogKCkgPT4gdm9pZCB9KSB7CiAgY29uc3QgW2hvdmVyLHNldEhvdmVyXT11c2VTdGF0ZShmYWxzZSkKICByZXR1cm4gKAogICAgPGJ1dHRvbgogICAgICB0eXBlPSJidXR0b24iCiAgICAgIG9uTW91c2VFbnRlcj17KCk9PnNldEhvdmVyKHRydWUpfSBvbk1vdXNlTGVhdmU9eygpPT5zZXRIb3ZlcihmYWxzZSl9IG9uQ2xpY2s9e29uQ2xpY2t9CiAgICAgIHN0eWxlPXt7IHdpZHRoOicxMDAlJywgcGFkZGluZzonN3B4IDEwcHgnLCBib3JkZXI6JzEuNXB4IGRhc2hlZCcsIGJvcmRlckNvbG9yOiBob3Zlcj9BQ0NFTlQ6JyNjOWQyZGUnLCBib3JkZXJSYWRpdXM6JzlweCcsIGJhY2tncm91bmQ6IGhvdmVyPycjZThmNWVmJzondHJhbnNwYXJlbnQnLCBjb2xvcjogaG92ZXI/QUNDRU5UOicjNmI3MjgwJywgZm9udFNpemU6JzEycHgnLCBmb250V2VpZ2h0OjgwMCwgY3Vyc29yOidwb2ludGVyJywgbWFyZ2luVG9wOic2cHgnLCB0cmFuc2l0aW9uOidhbGwgLjEzcycsIHRleHRBbGlnbjonY2VudGVyJyB9fQogICAgPntsYWJlbH08L2J1dHRvbj4KICApCn0KCmZ1bmN0aW9uIERlYnRQYW5lbCh7IGRlYnQsIG9uRGVidENoYW5nZSwgb25SZW5hbWUsIGlzTW9iaWxlIH06IFByb3BzKSB7CiAgY29uc3QgeyBpc1ByZW1pdW0sIGlzQWRtaW4sIGlzU3VwZXJBZG1pbiB9ID0gdXNlU3Vic2NyaXB0aW9uKCkKICBjb25zdCBoYXNQcmVtaXVtQWNjZXNzID0gaXNQcmVtaXVtIHx8IGlzQWRtaW4gfHwgaXNTdXBlckFkbWluCiAgY29uc3Qgcm93cyA9IEFycmF5LmlzQXJyYXkoZGVidCkgJiYgZGVidC5sZW5ndGggPyBkZWJ0IDogW3sgbGFiZWw6J0RlYnQnLCBwbGFuOjAsIGFjdHVhbDowIH1dCiAgY29uc3QgW2hvdlJvdywgc2V0SG92Um93XSA9IHVzZVN0YXRlPHN0cmluZ3xudWxsPihudWxsKQogIGNvbnN0IFtkcmFnT3Zlciwgc2V0RHJhZ092ZXJdID0gdXNlU3RhdGU8c3RyaW5nfG51bGw+KG51bGwpCiAgY29uc3QgW3BlbmRpbmdEZWxldGUsIHNldFBlbmRpbmdEZWxldGVdID0gdXNlU3RhdGU8bnVtYmVyIHwgbnVsbD4obnVsbCkKICBjb25zdCBkZWJ0RHJhZ1NyYyA9IHVzZVJlZjxudW1iZXJ8bnVsbD4obnVsbCkKCiAgY29uc3QgdG90RGVidFAgPSByb3dzLnJlZHVjZSgocyxyKT0+cysoci5wbGFufHwwKSwwKQogIGNvbnN0IHRvdERlYnRBID0gcm93cy5yZWR1Y2UoKHMscik9PnMrKHIuYWN0dWFsfHwwKSwwKQoKICBmdW5jdGlvbiBvbkRlYnREcmFnU3RhcnQoZTogUmVhY3QuRHJhZ0V2ZW50LCBpOiBudW1iZXIpIHsKICAgIGRlYnREcmFnU3JjLmN1cnJlbnQgPSBpCiAgICBlLmRhdGFUcmFuc2Zlci5lZmZlY3RBbGxvd2VkID0gJ21vdmUnCiAgICBlLmRhdGFUcmFuc2Zlci5zZXREYXRhKCd0eXBlJywnZGVidCcpCiAgICBlLnN0b3BQcm9wYWdhdGlvbigpCiAgfQoKICBmdW5jdGlvbiBvbkRlYnREcm9wKGU6IFJlYWN0LkRyYWdFdmVudCwgaTogbnVtYmVyKSB7CiAgICBlLnByZXZlbnREZWZhdWx0KCkKICAgIGUuc3RvcFByb3BhZ2F0aW9uKCkKICAgIHNldERyYWdPdmVyKG51bGwpCiAgICBjb25zdCBmcm9tID0gZGVidERyYWdTcmMuY3VycmVudAogICAgaWYgKGZyb20gPT09IG51bGwgfHwgZnJvbSA9PT0gaSkgcmV0dXJuCiAgICBjb25zdCBhcnIgPSBbLi4ucm93c10KICAgIGNvbnN0IFttXSA9IGFyci5zcGxpY2UoZnJvbSwxKQogICAgYXJyLnNwbGljZShpLDAsbSkKICAgIG9uRGVidENoYW5nZShhcnIpCiAgICBkZWJ0RHJhZ1NyYy5jdXJyZW50ID0gbnVsbAogIH0KCiAgZnVuY3Rpb24gdXBkYXRlUm93KGk6bnVtYmVyLCBwYXRjaDpQYXJ0aWFsPERlYnRSb3c+KSB7CiAgICBvbkRlYnRDaGFuZ2Uocm93cy5tYXAoKHIsaTIpPT5pMiE9PWk/cjp7Li4uciwuLi5wYXRjaH0pKQogIH0KCiAgZnVuY3Rpb24gcmVxdWVzdFJlbW92ZVJvdyhpOm51bWJlcikgewogICAgaWYgKHJvd3MubGVuZ3RoIDw9IDEpIHsKICAgICAgYWxlcnQoJ0F0IGxlYXN0IG9uZSBkZWJ0IGl0ZW0gaXMgcmVxdWlyZWQuJykKICAgICAgcmV0dXJuCiAgICB9CiAgICBzZXRQZW5kaW5nRGVsZXRlKGkpCiAgfQoKICBmdW5jdGlvbiBjb25maXJtUmVtb3ZlUm93KCkgewogICAgY29uc3QgaSA9IHBlbmRpbmdEZWxldGUKICAgIHNldFBlbmRpbmdEZWxldGUobnVsbCkKICAgIGlmIChpID09PSBudWxsKSByZXR1cm4KICAgIG9uRGVidENoYW5nZShyb3dzLmZpbHRlcigoXyxpMik9PmkyIT09aSkpCiAgfQoKICBmdW5jdGlvbiBoYW5kbGVBZGREZWJ0SXRlbSgpIHsKICAgIGNvbnN0IGRlYnRJdGVtQ291bnQgPSByb3dzLmZpbHRlcihpdGVtID0+IGl0ZW0ubGFiZWwgIT09ICdSZWtvbnNpbGlhc2knKS5sZW5ndGgKICAgIGlmICghaGFzUHJlbWl1bUFjY2VzcyAmJiBkZWJ0SXRlbUNvdW50ID49IEZSRUVfUExBTl9MSU1JVFMuZGVidEl0ZW1zKSB7CiAgICAgIGFsZXJ0KHVwZ3JhZGVNZXNzYWdlKGBEZWJ0IGl0ZW0gRnJlZSBtYWtzaW1hbCAke0ZSRUVfUExBTl9MSU1JVFMuZGVidEl0ZW1zfWApKQogICAgICByZXR1cm4KICAgIH0KICAgIG9uRGVidENoYW5nZShbLi4ucm93cyx7bGFiZWw6J05ldyBEZWJ0JyxwbGFuOjAsYWN0dWFsOjB9XSkKICB9CgogIGNvbnN0IHRvdGFsUm93OiBSZWFjdC5DU1NQcm9wZXJ0aWVzID0geyBkaXNwbGF5OidmbGV4JywgYWxpZ25JdGVtczonY2VudGVyJywgZ2FwOic2cHgnLCBib3JkZXI6JzFweCBzb2xpZCAjZTNlN2VlJywgYm9yZGVyUmFkaXVzOicxMHB4JywgcGFkZGluZzonN3B4IDlweCcsIG1hcmdpblRvcDonOHB4JywgYmFja2dyb3VuZDonI2Y3ZjhmYScgfQogIGNvbnN0IHNlY3Rpb25UaXRsZTogUmVhY3QuQ1NTUHJvcGVydGllcyA9IHsgZm9udFNpemU6JzEwcHgnLCBmb250V2VpZ2h0OjcwMCwgY29sb3I6JyM5Y2EzYWYnLCB0ZXh0VHJhbnNmb3JtOid1cHBlcmNhc2UnLCBsZXR0ZXJTcGFjaW5nOicuN3B4JywgbWFyZ2luQm90dG9tOic0cHgnIH0KCiAgcmV0dXJuICgKICAgIDxkaXY+CiAgICAgIDxkaXYgc3R5bGU9e3sgaGVpZ2h0OicxcHgnLCBiYWNrZ3JvdW5kOicjZTNlN2VlJywgbWFyZ2luOicxMnB4IDAgOHB4JyB9fSAvPgogICAgICA8ZGl2IHN0eWxlPXtzZWN0aW9uVGl0bGV9PkRlYnQgUGF5bWVudDwvZGl2PgoKICAgICAge3Jvd3MubWFwKChyLGkpPT57CiAgICAgICAgY29uc3QgZGsgPSBgZGVidC0ke2l9YAogICAgICAgIGNvbnN0IGRob3YgPSBob3ZSb3c9PT1kawogICAgICAgIHJldHVybiAoCiAgICAgICAgICA8ZGl2IGtleT17aX0gZHJhZ2dhYmxlPXshaXNNb2JpbGV9IG9uRHJhZ1N0YXJ0PXtlPT5vbkRlYnREcmFnU3RhcnQoZSxpKX0KICAgICAgICAgICAgb25EcmFnT3Zlcj17ZT0+eyBlLnByZXZlbnREZWZhdWx0KCk7IHNldERyYWdPdmVyKGRrKSB9fQogICAgICAgICAgICBvbkRyb3A9e2U9Pm9uRGVidERyb3AoZSxpKX0gb25EcmFnTGVhdmU9eygpPT5zZXREcmFnT3ZlcihudWxsKX0KICAgICAgICAgICAgb25Nb3VzZUVudGVyPXsoKT0+c2V0SG92Um93KGRrKX0gb25Nb3VzZUxlYXZlPXsoKT0+c2V0SG92Um93KG51bGwpfQogICAgICAgICAgICBzdHlsZT17eyBkaXNwbGF5OidmbGV4JywgYWxpZ25JdGVtczonY2VudGVyJywgZ2FwOic2cHgnLCBwYWRkaW5nOic2cHggMnB4JywgYm9yZGVyQm90dG9tOiBpPHJvd3MubGVuZ3RoLTE/JzFweCBzb2xpZCAjZjFmNGY4Jzonbm9uZScsIGJvcmRlclRvcDogZHJhZ092ZXI9PT1kaz9gMnB4IHNvbGlkICR7QUNDRU5UfWA6JzJweCBzb2xpZCB0cmFuc3BhcmVudCcsIGN1cnNvcjogaXNNb2JpbGU/J2RlZmF1bHQnOidncmFiJyB9fT4KICAgICAgICAgICAgeyFpc01vYmlsZSAmJiA8RHJhZ0hhbmRsZSB2aXNpYmxlPXtkaG92IHx8IGRyYWdPdmVyPT09ZGt9IC8+fQogICAgICAgICAgICA8aW5wdXQgc3R5bGU9e3sgLi4uaW5wLCBmbGV4OjEsIG1pbldpZHRoOjAsIGZvbnRTaXplOicxM3B4JywgZm9udFdlaWdodDo2MDAsIGNvbG9yOicjMTExODI3JywgY3Vyc29yOid0ZXh0JyB9fQogICAgICAgICAgICAgIHZhbHVlPXtyLmxhYmVsfSBvbk1vdXNlRG93bj17ZT0+ZS5zdG9wUHJvcGFnYXRpb24oKX0gb25Gb2N1cz17ZT0+eyBlLmN1cnJlbnRUYXJnZXQuZGF0YXNldC5vbGRMYWJlbCA9IHIubGFiZWwgfX0KICAgICAgICAgICAgICBvbkNoYW5nZT17ZT0+dXBkYXRlUm93KGkse2xhYmVsOmUudGFyZ2V0LnZhbHVlfSl9CiAgICAgICAgICAgICAgb25CbHVyPXtlPT57IGNvbnN0IG9sZD1lLmN1cnJlbnRUYXJnZXQuZGF0YXNldC5vbGRMYWJlbCB8fCAnJzsgaWYob2xkICYmIG9sZCE9PWUudGFyZ2V0LnZhbHVlICYmIG9uUmVuYW1lKSBvblJlbmFtZShvbGQsZS50YXJnZXQudmFsdWUsJ291dCcpIH19IC8+CiAgICAgICAgICAgIHtpc01vYmlsZSA/ICgKICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGZsZXg6JzInLCBtaW5XaWR0aDowLCBkaXNwbGF5OidmbGV4JywgZmxleERpcmVjdGlvbjonY29sdW1uJywgYWxpZ25JdGVtczonZmxleC1lbmQnLCBnYXA6JzAnLCBvdmVyZmxvdzonaGlkZGVuJyB9fT4KICAgICAgICAgICAgICAgIDxpbnB1dCBzdHlsZT17eyAuLi5wbGFuSW5wLCBmb250U2l6ZTonOS41cHgnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCBjb2xvcjonIzljYTNhZicsIHRleHRBbGlnbjoncmlnaHQnLCB3aWR0aDonMTAwJScsIHBhZGRpbmc6JzJweCAzcHgnIH19CiAgICAgICAgICAgICAgICAgIGRlZmF1bHRWYWx1ZT17ci5wbGFuP2ZtdE51bShyLnBsYW4pOicnfSBwbGFjZWhvbGRlcj0iMCIKICAgICAgICAgICAgICAgICAga2V5PXtgZHBsYW4tbS0ke2l9LSR7ci5wbGFufWB9CiAgICAgICAgICAgICAgICAgIG9uTW91c2VEb3duPXtlPT5lLnN0b3BQcm9wYWdhdGlvbigpfQogICAgICAgICAgICAgICAgICBvbkZvY3VzPXtlPT57IGUudGFyZ2V0LnZhbHVlPXIucGxhbj9TdHJpbmcoci5wbGFuKTonJzsgZS50YXJnZXQuc2VsZWN0KCkgfX0KICAgICAgICAgICAgICAgICAgb25CbHVyPXtlPT57IGNvbnN0IHY9cE51bShlLmN1cnJlbnRUYXJnZXQudmFsdWUpOyB1cGRhdGVSb3coaSx7cGxhbjp2fSk7IGUuY3VycmVudFRhcmdldC52YWx1ZT12P2ZtdE51bSh2KTonJyB9fQogICAgICAgICAgICAgICAgICBvbkNoYW5nZT17KCk9Pnt9fSAvPgogICAgICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBmb250U2l6ZTonMTEuNXB4JywgZm9udFdlaWdodDo2MDAsIGNvbG9yOkFDQ0VOVCwgZm9udEZhbWlseTondmFyKC0tZm9udC1tb25vKSwgbW9ub3NwYWNlJywgd2lkdGg6JzEwMCUnLCB0ZXh0QWxpZ246J3JpZ2h0Jywgd2hpdGVTcGFjZTonbm93cmFwJywgb3ZlcmZsb3c6J2hpZGRlbicsIHRleHRPdmVyZmxvdzonZWxsaXBzaXMnIH19PgogICAgICAgICAgICAgICAgICB7ci5hY3R1YWwgPyBmbXROdW0oci5hY3R1YWwpIDogJy0nfQogICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICkgOiAoCiAgICAgICAgICAgICAgPD4KICAgICAgICAgICAgICAgIDxpbnB1dCBzdHlsZT17eyAuLi5wbGFuSW5wLCB3aWR0aDonMTAwcHgnLCBmbGV4U2hyaW5rOjAsIGZvbnRTaXplOicxMnB4JywgZm9udFdlaWdodDo1MDAsIHRleHRBbGlnbjoncmlnaHQnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCBjb2xvcjonIzRiNTU2MycsIHdoaXRlU3BhY2U6J25vd3JhcCcsIHBhZGRpbmc6JzJweCA2cHgnIH19CiAgICAgICAgICAgICAgICAgIGRlZmF1bHRWYWx1ZT17ci5wbGFuP2ZtdE51bShyLnBsYW4pOicnfSBwbGFjZWhvbGRlcj0iMCIKICAgICAgICAgICAgICAgICAga2V5PXtgZHBsYW4tZC0ke2l9LSR7ci5wbGFufWB9CiAgICAgICAgICAgICAgICAgIG9uTW91c2VEb3duPXtlPT5lLnN0b3BQcm9wYWdhdGlvbigpfQogICAgICAgICAgICAgICAgICBvbkZvY3VzPXtlPT57IGUudGFyZ2V0LnZhbHVlPXIucGxhbj9TdHJpbmcoci5wbGFuKTonJzsgZS50YXJnZXQuc2VsZWN0KCkgfX0KICAgICAgICAgICAgICAgICAgb25CbHVyPXtlPT57IGNvbnN0IHY9cE51bShlLmN1cnJlbnRUYXJnZXQudmFsdWUpOyB1cGRhdGVSb3coaSx7cGxhbjp2fSk7IGUuY3VycmVudFRhcmdldC52YWx1ZT12P2ZtdE51bSh2KTonJyB9fQogICAgICAgICAgICAgICAgICBvbkNoYW5nZT17KCk9Pnt9fSAvPgogICAgICAgICAgICAgICAgPGRpdiBzdHlsZT17eyB3aWR0aDonMTAwcHgnLCBmbGV4U2hyaW5rOjAsIGZvbnRTaXplOicxMnB4JywgZm9udFdlaWdodDo1MDAsIHRleHRBbGlnbjoncmlnaHQnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCBjb2xvcjooci5hY3R1YWx8fDApPjA/QUNDRU5UOicjOWNhM2FmJywgd2hpdGVTcGFjZTonbm93cmFwJyB9fT4KICAgICAgICAgICAgICAgICAge3IuYWN0dWFsID8gZm10TnVtKHIuYWN0dWFsKSA6ICctJ30KICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgIDwvPgogICAgICAgICAgICApfQogICAgICAgICAgICA8RGVsQnRuIHZpc2libGU9e2Rob3Z9IGlzTW9iaWxlPXtpc01vYmlsZX0gdGl0bGU9IkRlbGV0ZSBkZWJ0IGl0ZW0iCiAgICAgICAgICAgICAgb25DbGljaz17KCk9PnJlcXVlc3RSZW1vdmVSb3coaSl9IC8+CiAgICAgICAgICA8L2Rpdj4KICAgICAgICApCiAgICAgIH0pfQoKICAgICAgPEFkZEJ0biBsYWJlbD0iKyBhZGQgZGVidCBpdGVtIiBvbkNsaWNrPXtoYW5kbGVBZGREZWJ0SXRlbX0gLz4KCiAgICAgIDxkaXYgc3R5bGU9e3RvdGFsUm93fT4KICAgICAgICA8ZGl2IHN0eWxlPXt7IGZsZXg6MSwgZm9udFNpemU6JzEycHgnLCBmb250V2VpZ2h0OjcwMCwgY29sb3I6JyMxMTE4MjcnIH19PlRvdGFsIERlYnQ8L2Rpdj4KICAgICAgICB7aXNNb2JpbGUgPyAoCiAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6J2ZsZXgnLCBmbGV4RGlyZWN0aW9uOidjb2x1bW4nLCBhbGlnbkl0ZW1zOidmbGV4LWVuZCcsIGdhcDonMCcgfX0+CiAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGZvbnRTaXplOicxMHB4JywgY29sb3I6JyM5Y2EzYWYnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnIH19PntmbXQodG90RGVidFApfTwvc3Bhbj4KICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZm9udFNpemU6JzEycHgnLCBmb250V2VpZ2h0OjcwMCwgY29sb3I6QUNDRU5ULCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnIH19PntmbXQodG90RGVidEEpfTwvc3Bhbj4KICAgICAgICAgIDwvZGl2PgogICAgICAgICkgOiAoCiAgICAgICAgICA8PgogICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IHdpZHRoOicxMDBweCcsIGZsZXhTaHJpbms6MCwgdGV4dEFsaWduOidyaWdodCcsIGZvbnRTaXplOicxMS41cHgnLCBjb2xvcjonIzljYTNhZicsIGZvbnRGYW1pbHk6J3ZhcigtLWZvbnQtbW9ubyksIG1vbm9zcGFjZScsIHdoaXRlU3BhY2U6J25vd3JhcCcgfX0+e2ZtdCh0b3REZWJ0UCl9PC9kaXY+CiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgd2lkdGg6JzEwMHB4JywgZmxleFNocmluazowLCB0ZXh0QWxpZ246J3JpZ2h0JywgZm9udFNpemU6JzExLjVweCcsIGZvbnRXZWlnaHQ6NzAwLCBjb2xvcjpBQ0NFTlQsIGZvbnRGYW1pbHk6J3ZhcigtLWZvbnQtbW9ubyksIG1vbm9zcGFjZScsIHdoaXRlU3BhY2U6J25vd3JhcCcgfX0+e2ZtdCh0b3REZWJ0QSl9PC9kaXY+CiAgICAgICAgICA8Lz4KICAgICAgICApfQogICAgICA8L2Rpdj4KCiAgICAgIHtwZW5kaW5nRGVsZXRlICE9PSBudWxsICYmICgKICAgICAgICA8Q29uZmlybURpYWxvZwogICAgICAgICAgdGl0bGU9IkRlbGV0ZSBkZWJ0IGl0ZW0/IgogICAgICAgICAgbWVzc2FnZT17PD5EZWxldGUgPHN0cm9uZyBzdHlsZT17eyBjb2xvcjonIzExMTgyNycgfX0+4oCce3Jvd3NbcGVuZGluZ0RlbGV0ZV0/LmxhYmVsfeKAnTwvc3Ryb25nPj8gVGhpcyBjYW5ub3QgYmUgdW5kb25lLjwvPn0KICAgICAgICAgIG9uQ29uZmlybT17Y29uZmlybVJlbW92ZVJvd30KICAgICAgICAgIG9uQ2FuY2VsPXsoKT0+c2V0UGVuZGluZ0RlbGV0ZShudWxsKX0KICAgICAgICAvPgogICAgICApfQogICAgPC9kaXY+CiAgKQp9CgovLyBNZW1vaXplZDogc2tpcHMgcmUtcmVuZGVyIHdoZW4gcGFyZW50IHJlLXJlbmRlcnMgd2l0aCB1bmNoYW5nZWQgcHJvcHMuCmV4cG9ydCBkZWZhdWx0IG1lbW8oRGVidFBhbmVsKQo=
+'use client'
+
+import { memo, useRef, useState } from 'react'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
+import type { DebtRow, Transaction } from '@/types/database'
+import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+
+type TxType = Transaction['type']
+
+type Props = {
+  debt?: DebtRow[]
+  onDebtChange: (rows: DebtRow[]) => void
+  onRename?: (oldLabel: string, newLabel: string, type?: TxType) => void
+  isMobile?: boolean
+}
+
+const ACCENT = '#1a5c42'
+const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
+const planInp: React.CSSProperties = { ...inp, borderBottom:'1px dotted #cbd5e1', borderRadius:'2px', transition:'border-color .14s, background .14s' }
+
+const fmt = (n:number) => 'Rp ' + Math.round(Math.abs(n||0)).toLocaleString('id-ID')
+const fmtNum = (n:number) => Math.round(n||0).toLocaleString('id-ID')
+const pNum = (v:string) => Number(String(v).replace(/\D/g,'')) || 0
+
+function DragHandle({ visible }: { visible: boolean }) {
+  return (
+    <span
+      title="Drag to reorder"
+      style={{
+        width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center',
+        touchAction:'none', color:'#94a3b8', fontSize:'12px', lineHeight:1,
+        opacity: visible ? .8 : 0, transition:'opacity .13s', userSelect:'none',
+      }}
+    >⠿</span>
+  )
+}
+
+function DelBtn({ visible, title, onClick, isMobile }: {
+  visible: boolean; title: string; onClick: () => void; isMobile?: boolean
+}) {
+  const show = visible || !!isMobile
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onMouseDown={e=>e.stopPropagation()}
+      onClick={onClick}
+      style={{
+        width:'22px', height:'22px', borderRadius:'6px', border:'none', background:'none',
+        color:'#9ca3af', display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', flexShrink:0, opacity: show ? (visible ? 1 : .45) : 0, transition:'opacity .13s',
+        pointerEvents: show ? 'auto' : 'none',
+      }}
+    ><AppIcon name="trash" size={12} /></button>
+  )
+}
+
+function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hover,setHover]=useState(false)
+  return (
+    <button
+      type="button"
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onClick={onClick}
+      style={{ width:'100%', padding:'7px 10px', border:'1.5px dashed', borderColor: hover?ACCENT:'#c9d2de', borderRadius:'9px', background: hover?'#e8f5ef':'transparent', color: hover?ACCENT:'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'6px', transition:'all .13s', textAlign:'center' }}
+    >{label}</button>
+  )
+}
+
+function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Props) {
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
+  const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt', plan:0, actual:0 }]
+  const [hovRow, setHovRow] = useState<string|null>(null)
+  const [dragOver, setDragOver] = useState<string|null>(null)
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null)
+  const debtDragSrc = useRef<number|null>(null)
+
+  const totDebtP = rows.reduce((s,r)=>s+(r.plan||0),0)
+  const totDebtA = rows.reduce((s,r)=>s+(r.actual||0),0)
+
+  function onDebtDragStart(e: React.DragEvent, i: number) {
+    debtDragSrc.current = i
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('type','debt')
+    e.stopPropagation()
+  }
+
+  function onDebtDrop(e: React.DragEvent, i: number) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(null)
+    const from = debtDragSrc.current
+    if (from === null || from === i) return
+    const arr = [...rows]
+    const [m] = arr.splice(from,1)
+    arr.splice(i,0,m)
+    onDebtChange(arr)
+    debtDragSrc.current = null
+  }
+
+  function updateRow(i:number, patch:Partial<DebtRow>) {
+    onDebtChange(rows.map((r,i2)=>i2!==i?r:{...r,...patch}))
+  }
+
+  function requestRemoveRow(i:number) {
+    if (rows.length <= 1) {
+      alert('At least one debt item is required.')
+      return
+    }
+    setPendingDelete(i)
+  }
+
+  function confirmRemoveRow() {
+    const i = pendingDelete
+    setPendingDelete(null)
+    if (i === null) return
+    onDebtChange(rows.filter((_,i2)=>i2!==i))
+  }
+
+  function handleAddDebtItem() {
+    const debtItemCount = rows.filter(item => item.label !== 'Rekonsiliasi').length
+    if (!hasPremiumAccess && debtItemCount >= FREE_PLAN_LIMITS.debtItems) {
+      alert(upgradeMessage(`Debt item Free maksimal ${FREE_PLAN_LIMITS.debtItems}`))
+      return
+    }
+    onDebtChange([...rows,{label:'New Debt',plan:0,actual:0}])
+  }
+
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'7px 9px', marginTop:'8px', background:'#f7f8fa' }
+  const sectionTitle: React.CSSProperties = { fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'4px' }
+
+  return (
+    <div>
+      <div style={{ height:'1px', background:'#e3e7ee', margin:'12px 0 8px' }} />
+      <div style={sectionTitle}>Debt Payment</div>
+
+      {rows.map((r,i)=>{
+        const dk = `debt-${i}`
+        const dhov = hovRow===dk
+        return (
+          <div key={i} draggable={!isMobile} onDragStart={e=>onDebtDragStart(e,i)}
+            onDragOver={e=>{ e.preventDefault(); setDragOver(dk) }}
+            onDrop={e=>onDebtDrop(e,i)} onDragLeave={()=>setDragOver(null)}
+            onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}
+            style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: i<rows.length-1?'1px solid #f1f4f8':'none', borderTop: dragOver===dk?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+            {!isMobile && <DragHandle visible={dhov || dragOver===dk} />}
+            <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
+              value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
+              onChange={e=>updateRow(i,{label:e.target.value})}
+              onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value,'out') }} />
+            {isMobile ? (
+              <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+                <input style={{ ...planInp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'2px 3px' }}
+                  defaultValue={r.plan?fmtNum(r.plan):''} placeholder="0"
+                  key={`dplan-m-${i}-${r.plan}`}
+                  onMouseDown={e=>e.stopPropagation()}
+                  onFocus={e=>{ e.target.value=r.plan?String(r.plan):''; e.target.select() }}
+                  onBlur={e=>{ const v=pNum(e.currentTarget.value); updateRow(i,{plan:v}); e.currentTarget.value=v?fmtNum(v):'' }}
+                  onChange={()=>{}} />
+                <div style={{ fontSize:'11.5px', fontWeight:600, color:ACCENT, fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  {r.actual ? fmtNum(r.actual) : '-'}
+                </div>
+              </div>
+            ) : (
+              <>
+                <input style={{ ...planInp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'2px 6px' }}
+                  defaultValue={r.plan?fmtNum(r.plan):''} placeholder="0"
+                  key={`dplan-d-${i}-${r.plan}`}
+                  onMouseDown={e=>e.stopPropagation()}
+                  onFocus={e=>{ e.target.value=r.plan?String(r.plan):''; e.target.select() }}
+                  onBlur={e=>{ const v=pNum(e.currentTarget.value); updateRow(i,{plan:v}); e.currentTarget.value=v?fmtNum(v):'' }}
+                  onChange={()=>{}} />
+                <div style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(r.actual||0)>0?ACCENT:'#9ca3af', whiteSpace:'nowrap' }}>
+                  {r.actual ? fmtNum(r.actual) : '-'}
+                </div>
+              </>
+            )}
+            <DelBtn visible={dhov} isMobile={isMobile} title="Delete debt item"
+              onClick={()=>requestRemoveRow(i)} />
+          </div>
+        )
+      })}
+
+      <AddBtn label="+ add debt item" onClick={handleAddDebtItem} />
+
+      <div style={totalRow}>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:700, color:'#111827' }}>Total Debt</div>
+        {isMobile ? (
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0' }}>
+            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtP)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtA)}</span>
+          </div>
+        ) : (
+          <>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
+          </>
+        )}
+      </div>
+
+      {pendingDelete !== null && (
+        <ConfirmDialog
+          title="Delete debt item?"
+          message={<>Delete <strong style={{ color:'#111827' }}>“{rows[pendingDelete]?.label}”</strong>? This cannot be undone.</>}
+          onConfirm={confirmRemoveRow}
+          onCancel={()=>setPendingDelete(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Memoized: skips re-render when parent re-renders with unchanged props.
+export default memo(DebtPanel)
