@@ -3,6 +3,7 @@
 import { memo, useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useSavings } from '@/hooks/useSavings'
 import type { Transaction, BudgetCategory, IncomeCategory, SavingRow, DebtRow } from '@/types/database'
@@ -783,45 +784,18 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
 
       {/* ── DELETE CONFIRMATION DIALOG ── */}
       {confirmTx && (
-        <div
-          onClick={() => setConfirmTx(null)}
-          style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(17,24,39,.45)', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', animation:'finkFadeIn .15s ease' }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            role="alertdialog"
-            aria-modal="true"
-            aria-label="Delete transaction"
-            style={{ ...baseFont, background:'#fff', borderRadius:'14px', padding:'20px', width:'100%', maxWidth:'340px', boxShadow:'0 20px 50px rgba(0,0,0,.25)', animation:'finkPopIn .15s ease' }}
-          >
-            <div style={{ fontSize:'15px', fontWeight:800, color:'#111827', marginBottom:'8px' }}>Delete transaction?</div>
-            <div style={{ fontSize:'12.5px', color:'#6b7280', lineHeight:1.5, marginBottom:'18px' }}>
-              Delete this {TYPE_LABELS[confirmTx.type] || 'transaction'} of <strong style={{ color:'#111827' }}>{fmt(confirmTx.amt)}</strong>
-              {confirmTx.note ? <> — “{confirmTx.note}”</> : confirmTx.cat ? <> ({confirmTx.cat})</> : <> (Uncategorized)</>}? This cannot be undone.
-            </div>
-            <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setConfirmTx(null)}
-                style={{ ...baseFont, border:'1.5px solid #e3e7ee', background:'#fff', color:'#374151', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteTx}
-                style={{ ...baseFont, border:'none', background:'#b91c1c', color:'#fff', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Delete transaction?"
+          message={<>
+            Delete this {TYPE_LABELS[confirmTx.type] || 'transaction'} of <strong style={{ color:'#111827' }}>{fmt(confirmTx.amt)}</strong>
+            {confirmTx.note ? <> — “{confirmTx.note}”</> : confirmTx.cat ? <> ({confirmTx.cat})</> : <> (Uncategorized)</>}? This cannot be undone.
+          </>}
+          onConfirm={confirmDeleteTx}
+          onCancel={() => setConfirmTx(null)}
+        />
       )}
 
       <style>{`
-        @keyframes finkFadeIn { from { opacity:0; } to { opacity:1; } }
-        @keyframes finkPopIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
         @media (max-width: 430px) {
           .fink-tx-row { grid-template-columns: 1fr !important; }
         }
