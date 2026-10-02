@@ -147,10 +147,10 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
               )}
               <button
                 style={{ ...delBtn, opacity: hovRow===hk?1:0 }}
-                title="Hapus kategori budget"
+                title="Delete budget category"
                 onMouseDown={e=>e.stopPropagation()}
                 onClick={()=>{
-                  const ok = confirm(`Hapus kategori budget "${cat.label}" beserta semua item di dalamnya?`)
+                  const ok = confirm(`Delete budget category "${cat.label}" and all its items?`)
                   if (!ok) return
                   onBudgetChange(budget.filter((_,ci2)=>ci2!==ci))
                 }}
@@ -197,7 +197,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                               e.stopPropagation()
                               if (onItemClick && (item.actual||0)>0) onItemClick(item.label)
                             }}
-                            title={(item.actual||0)>0?'Klik untuk lihat transaksi':undefined}
+                            title={(item.actual||0)>0?'Click to view transactions':undefined}
                             style={{
                               border:'none',
                               background:'transparent',
@@ -237,7 +237,7 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                         <div
                           onClick={e=>{ e.stopPropagation(); if(onItemClick && (item.actual||0)>0) onItemClick(item.label) }}
                           style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
-                          title={(item.actual||0)>0?'Klik untuk lihat transaksi':undefined}
+                          title={(item.actual||0)>0?'Click to view transactions':undefined}
                           onMouseEnter={e=>{ if((item.actual||0)>0) e.currentTarget.style.background='#fee2e2' }}
                           onMouseLeave={e=>{ e.currentTarget.style.background='transparent' }}>
                           {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
@@ -246,10 +246,10 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                     )}
                     <button
                       style={{ ...delBtn, opacity: hovRow===ik?1:0 }}
-                      title="Hapus item budget"
+                      title="Delete budget item"
                       onMouseDown={e=>e.stopPropagation()}
                       onClick={()=>{
-                        const ok = confirm(`Hapus item budget "${item.label}"?`)
+                        const ok = confirm(`Delete budget item "${item.label}"?`)
                         if (!ok) return
                         onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
                       }}
