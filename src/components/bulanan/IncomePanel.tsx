@@ -1,1 +1,257 @@
-J3VzZSBjbGllbnQnCgppbXBvcnQgeyBtZW1vLCB1c2VSZWYsIHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnCmltcG9ydCB7IGZtdCwgZm10TnVtLCBwTnVtIH0gZnJvbSAnQC9jb21wb25lbnRzL3VpL2hlbHBlcnMnCmltcG9ydCB7IHVzZVN1YnNjcmlwdGlvbiB9IGZyb20gJ0AvaG9va3MvdXNlU3Vic2NyaXB0aW9uJwppbXBvcnQgeyBGUkVFX1BMQU5fTElNSVRTLCB1cGdyYWRlTWVzc2FnZSB9IGZyb20gJ0AvbGliL3N1YnNjcmlwdGlvbi9saW1pdHMnCmltcG9ydCB0eXBlIHsgSW5jb21lQ2F0ZWdvcnksIFRyYW5zYWN0aW9uIH0gZnJvbSAnQC90eXBlcy9kYXRhYmFzZScKaW1wb3J0IHsgQXBwSWNvbiB9IGZyb20gJ0AvY29tcG9uZW50cy91aS9kZXNpZ24nCmltcG9ydCBDb25maXJtRGlhbG9nIGZyb20gJ0AvY29tcG9uZW50cy91aS9Db25maXJtRGlhbG9nJwoKdHlwZSBUeFR5cGUgPSBUcmFuc2FjdGlvblsndHlwZSddCgpjb25zdCBBQ0NFTlQgPSAnIzFhNWM0MicKY29uc3QgaW5wOiBSZWFjdC5DU1NQcm9wZXJ0aWVzID0geyBib3JkZXI6J25vbmUnLCBiYWNrZ3JvdW5kOid0cmFuc3BhcmVudCcsIG91dGxpbmU6J25vbmUnLCBmb250RmFtaWx5Oidpbmhlcml0JyB9CmNvbnN0IHBsYW5JbnA6IFJlYWN0LkNTU1Byb3BlcnRpZXMgPSB7IC4uLmlucCwgYm9yZGVyQm90dG9tOicxcHggZG90dGVkICNjYmQ1ZTEnLCBib3JkZXJSYWRpdXM6JzJweCcsIHRyYW5zaXRpb246J2JvcmRlci1jb2xvciAuMTRzLCBiYWNrZ3JvdW5kIC4xNHMnIH0KCmZ1bmN0aW9uIERyYWdIYW5kbGUoeyB2aXNpYmxlIH06IHsgdmlzaWJsZTogYm9vbGVhbiB9KSB7CiAgcmV0dXJuICgKICAgIDxzcGFuCiAgICAgIHRpdGxlPSJEcmFnIHRvIHJlb3JkZXIiCiAgICAgIHN0eWxlPXt7CiAgICAgICAgd2lkdGg6JzE0cHgnLCBmbGV4U2hyaW5rOjAsIGN1cnNvcjonZ3JhYicsIGRpc3BsYXk6J2ZsZXgnLCBhbGlnbkl0ZW1zOidjZW50ZXInLCBqdXN0aWZ5Q29udGVudDonY2VudGVyJywKICAgICAgICB0b3VjaEFjdGlvbjonbm9uZScsIGNvbG9yOicjOTRhM2I4JywgZm9udFNpemU6JzEycHgnLCBsaW5lSGVpZ2h0OjEsCiAgICAgICAgb3BhY2l0eTogdmlzaWJsZSA/IC44IDogMCwgdHJhbnNpdGlvbjonb3BhY2l0eSAuMTNzJywgdXNlclNlbGVjdDonbm9uZScsCiAgICAgIH19CiAgICA+4qC/PC9zcGFuPgogICkKfQoKZnVuY3Rpb24gRGVsQnRuKHsgdmlzaWJsZSwgdGl0bGUsIG9uQ2xpY2ssIGlzTW9iaWxlIH06IHsKICB2aXNpYmxlOiBib29sZWFuOyB0aXRsZTogc3RyaW5nOyBvbkNsaWNrOiAoKSA9PiB2b2lkOyBpc01vYmlsZT86IGJvb2xlYW4KfSkgewogIGNvbnN0IHNob3cgPSB2aXNpYmxlIHx8ICEhaXNNb2JpbGUKICByZXR1cm4gKAogICAgPGJ1dHRvbgogICAgICB0eXBlPSJidXR0b24iCiAgICAgIHRpdGxlPXt0aXRsZX0KICAgICAgYXJpYS1sYWJlbD17dGl0bGV9CiAgICAgIG9uTW91c2VEb3duPXtlPT5lLnN0b3BQcm9wYWdhdGlvbigpfQogICAgICBvbkNsaWNrPXtvbkNsaWNrfQogICAgICBzdHlsZT17ewogICAgICAgIHdpZHRoOicyMnB4JywgaGVpZ2h0OicyMnB4JywgYm9yZGVyUmFkaXVzOic2cHgnLCBib3JkZXI6J25vbmUnLCBiYWNrZ3JvdW5kOidub25lJywKICAgICAgICBjb2xvcjonIzljYTNhZicsIGRpc3BsYXk6J2ZsZXgnLCBhbGlnbkl0ZW1zOidjZW50ZXInLCBqdXN0aWZ5Q29udGVudDonY2VudGVyJywKICAgICAgICBjdXJzb3I6J3BvaW50ZXInLCBmbGV4U2hyaW5rOjAsIG9wYWNpdHk6IHNob3cgPyAodmlzaWJsZSA/IDEgOiAuNDUpIDogMCwgdHJhbnNpdGlvbjonb3BhY2l0eSAuMTNzJywKICAgICAgICBwb2ludGVyRXZlbnRzOiBzaG93ID8gJ2F1dG8nIDogJ25vbmUnLAogICAgICB9fQogICAgPjxBcHBJY29uIG5hbWU9InRyYXNoIiBzaXplPXsxMn0gLz48L2J1dHRvbj4KICApCn0KCmZ1bmN0aW9uIEFkZEJ0bih7IGxhYmVsLCBvbkNsaWNrIH06IHsgbGFiZWw6IHN0cmluZzsgb25DbGljazogKCkgPT4gdm9pZCB9KSB7CiAgY29uc3QgW2hvdmVyLCBzZXRIb3Zlcl0gPSB1c2VTdGF0ZShmYWxzZSkKICByZXR1cm4gKAogICAgPGJ1dHRvbgogICAgICB0eXBlPSJidXR0b24iCiAgICAgIG9uTW91c2VFbnRlcj17KCk9PnNldEhvdmVyKHRydWUpfSBvbk1vdXNlTGVhdmU9eygpPT5zZXRIb3ZlcihmYWxzZSl9IG9uQ2xpY2s9e29uQ2xpY2t9CiAgICAgIHN0eWxlPXt7IGRpc3BsYXk6J2ZsZXgnLCBhbGlnbkl0ZW1zOidjZW50ZXInLCBqdXN0aWZ5Q29udGVudDonY2VudGVyJywgZ2FwOic2cHgnLCB3aWR0aDonMTAwJScsIHBhZGRpbmc6JzdweCAxMHB4JywgYm9yZGVyUmFkaXVzOic5cHgnLCBib3JkZXI6JzEuNXB4IGRhc2hlZCcsIGJvcmRlckNvbG9yOiBob3Zlcj9BQ0NFTlQ6JyNjOWQyZGUnLCBiYWNrZ3JvdW5kOiBob3Zlcj8nI2U4ZjVlZic6J3RyYW5zcGFyZW50JywgY29sb3I6IGhvdmVyP0FDQ0VOVDonIzZiNzI4MCcsIGZvbnRTaXplOicxMnB4JywgZm9udFdlaWdodDo4MDAsIGN1cnNvcjoncG9pbnRlcicsIG1hcmdpblRvcDonNnB4JywgdHJhbnNpdGlvbjonYWxsIC4xM3MnIH19CiAgICA+e2xhYmVsfTwvYnV0dG9uPgogICkKfQoKZnVuY3Rpb24gTWluaUFkZEl0ZW0oeyBvbkNsaWNrIH06IHsgb25DbGljazogKCkgPT4gdm9pZCB9KSB7CiAgY29uc3QgW2hvdmVyLCBzZXRIb3Zlcl0gPSB1c2VTdGF0ZShmYWxzZSkKICByZXR1cm4gKAogICAgPGJ1dHRvbgogICAgICB0eXBlPSJidXR0b24iCiAgICAgIHRpdGxlPSJBZGQgaXRlbSB0byB0aGlzIGNhdGVnb3J5IgogICAgICBvbk1vdXNlRG93bj17ZT0+ZS5zdG9wUHJvcGFnYXRpb24oKX0KICAgICAgb25Nb3VzZUVudGVyPXsoKT0+c2V0SG92ZXIodHJ1ZSl9IG9uTW91c2VMZWF2ZT17KCk9PnNldEhvdmVyKGZhbHNlKX0KICAgICAgb25DbGljaz17b25DbGlja30KICAgICAgc3R5bGU9e3sgYm9yZGVyOidub25lJywgYmFja2dyb3VuZDonbm9uZScsIGNvbG9yOiBob3Zlcj9BQ0NFTlQ6JyM5Y2EzYWYnLCBmb250U2l6ZTonMTFweCcsIGZvbnRXZWlnaHQ6ODAwLCBjdXJzb3I6J3BvaW50ZXInLCBwYWRkaW5nOic0cHggNnB4JywgYm9yZGVyUmFkaXVzOic2cHgnLCB3aGl0ZVNwYWNlOidub3dyYXAnLCB0cmFuc2l0aW9uOidjb2xvciAuMTNzJyB9fQogICAgPisgSXRlbTwvYnV0dG9uPgogICkKfQoKaW50ZXJmYWNlIFByb3BzIHsKICBpbmNvbWU6ICAgICAgICAgSW5jb21lQ2F0ZWdvcnlbXQogIG9uSW5jb21lQ2hhbmdlOiAoY2F0czogSW5jb21lQ2F0ZWdvcnlbXSkgPT4gdm9pZAogIG9uUmVuYW1lOiAgICAgICAob2xkTGFiZWw6IHN0cmluZywgbmV3TGFiZWw6IHN0cmluZywgdHlwZT86IFR4VHlwZSkgPT4gdm9pZAogIGlzTW9iaWxlPzogICAgICBib29sZWFuCn0KCnR5cGUgUGVuZGluZ0RlbGV0ZSA9CiAgfCB7IGtpbmQ6ICdjYXQnLCBjaTogbnVtYmVyLCBsYWJlbDogc3RyaW5nIH0KICB8IHsga2luZDogJ2l0ZW0nLCBjaTogbnVtYmVyLCBpaTogbnVtYmVyLCBsYWJlbDogc3RyaW5nIH0KCmZ1bmN0aW9uIEluY29tZVBhbmVsKHsgaW5jb21lLCBvbkluY29tZUNoYW5nZSwgb25SZW5hbWUsIGlzTW9iaWxlIH06IFByb3BzKSB7CiAgY29uc3QgeyBpc1ByZW1pdW0sIGlzQWRtaW4sIGlzU3VwZXJBZG1pbiB9ID0gdXNlU3Vic2NyaXB0aW9uKCkKICBjb25zdCBoYXNQcmVtaXVtQWNjZXNzID0gaXNQcmVtaXVtIHx8IGlzQWRtaW4gfHwgaXNTdXBlckFkbWluCiAgY29uc3QgaW5jb21lSXRlbUNvdW50ID0gaW5jb21lLnJlZHVjZSgoc3VtLCBjYXQpID0+IHN1bSArIGNhdC5pdGVtcy5maWx0ZXIoaXRlbSA9PiBpdGVtLmxhYmVsICE9PSAnUmVrb25zaWxpYXNpJykubGVuZ3RoLCAwKQogIGNvbnN0IFtob3ZSb3csIHNldEhvdlJvd10gPSB1c2VTdGF0ZTxzdHJpbmd8bnVsbD4obnVsbCkKICBjb25zdCBbZHJhZ092ZXIsIHNldERyYWdPdmVyXSA9IHVzZVN0YXRlPHN0cmluZ3xudWxsPihudWxsKQogIGNvbnN0IFtwZW5kaW5nRGVsZXRlLCBzZXRQZW5kaW5nRGVsZXRlXSA9IHVzZVN0YXRlPFBlbmRpbmdEZWxldGUgfCBudWxsPihudWxsKQogIGNvbnN0IGNhdERyYWdTcmMgID0gdXNlUmVmPG51bWJlcnxudWxsPihudWxsKQogIGNvbnN0IGl0ZW1EcmFnU3JjID0gdXNlUmVmPHtjaTpudW1iZXI7aWk6bnVtYmVyfXxudWxsPihudWxsKQoKICBmdW5jdGlvbiBvbkNhdERyYWdTdGFydChlOiBSZWFjdC5EcmFnRXZlbnQsIGNpOiBudW1iZXIpIHsgY2F0RHJhZ1NyYy5jdXJyZW50PWNpOyBlLmRhdGFUcmFuc2Zlci5lZmZlY3RBbGxvd2VkPSdtb3ZlJzsgZS5kYXRhVHJhbnNmZXIuc2V0RGF0YSgndHlwZScsJ2NhdCcpOyBlLnN0b3BQcm9wYWdhdGlvbigpIH0KICBmdW5jdGlvbiBvbkNhdERyb3AoZTogUmVhY3QuRHJhZ0V2ZW50LCBjaTogbnVtYmVyKSB7IGUucHJldmVudERlZmF1bHQoKTsgZS5zdG9wUHJvcGFnYXRpb24oKTsgc2V0RHJhZ092ZXIobnVsbCk7IGNvbnN0IGZyb209Y2F0RHJhZ1NyYy5jdXJyZW50OyBpZihmcm9tPT09bnVsbHx8ZnJvbT09PWNpKSByZXR1cm47IGNvbnN0IG5leHQ9Wy4uLmluY29tZV07IGNvbnN0IFttXT1uZXh0LnNwbGljZShmcm9tLDEpOyBuZXh0LnNwbGljZShjaSwwLG0pOyBvbkluY29tZUNoYW5nZShuZXh0KTsgY2F0RHJhZ1NyYy5jdXJyZW50PW51bGwgfQogIGZ1bmN0aW9uIG9uSXRlbURyYWdTdGFydChlOiBSZWFjdC5EcmFnRXZlbnQsIGNpOiBudW1iZXIsIGlpOiBudW1iZXIpIHsgaXRlbURyYWdTcmMuY3VycmVudD17Y2ksaWl9OyBlLmRhdGFUcmFuc2Zlci5lZmZlY3RBbGxvd2VkPSdtb3ZlJzsgZS5kYXRhVHJhbnNmZXIuc2V0RGF0YSgndHlwZScsJ2l0ZW0nKTsgZS5zdG9wUHJvcGFnYXRpb24oKSB9CiAgZnVuY3Rpb24gb25JdGVtRHJvcChlOiBSZWFjdC5EcmFnRXZlbnQsIHRvQ2k6IG51bWJlciwgdG9JaTogbnVtYmVyKSB7IGUucHJldmVudERlZmF1bHQoKTsgZS5zdG9wUHJvcGFnYXRpb24oKTsgc2V0RHJhZ092ZXIobnVsbCk7IGNvbnN0IHNyYz1pdGVtRHJhZ1NyYy5jdXJyZW50OyBpZighc3JjKSByZXR1cm47IGlmKHNyYy5jaT09PXRvQ2kmJnNyYy5paT09PXRvSWkpIHJldHVybjsgY29uc3QgbmV4dD1pbmNvbWUubWFwKGM9Pih7Li4uYyxpdGVtczpbLi4uYy5pdGVtc119KSk7IGNvbnN0IFttXT1uZXh0W3NyYy5jaV0uaXRlbXMuc3BsaWNlKHNyYy5paSwxKTsgbmV4dFt0b0NpXS5pdGVtcy5zcGxpY2UodG9JaSwwLG0pOyBvbkluY29tZUNoYW5nZShuZXh0KTsgaXRlbURyYWdTcmMuY3VycmVudD1udWxsIH0KCiAgZnVuY3Rpb24gY2hlY2tJdGVtTGltaXQoKSB7CiAgICBpZiAoIWhhc1ByZW1pdW1BY2Nlc3MgJiYgaW5jb21lSXRlbUNvdW50ID49IEZSRUVfUExBTl9MSU1JVFMuaW5jb21lSXRlbXMpIHsKICAgICAgYWxlcnQodXBncmFkZU1lc3NhZ2UoYEluY29tZSBpdGVtIEZyZWUgbWFrc2ltYWwgJHtGUkVFX1BMQU5fTElNSVRTLmluY29tZUl0ZW1zfWApKQogICAgICByZXR1cm4gZmFsc2UKICAgIH0KICAgIHJldHVybiB0cnVlCiAgfQoKICBmdW5jdGlvbiBoYW5kbGVBZGRJbmNvbWVDYXRlZ29yeSgpIHsKICAgIGlmICghY2hlY2tJdGVtTGltaXQoKSkgcmV0dXJuCiAgICBvbkluY29tZUNoYW5nZShbLi4uaW5jb21lLHtsYWJlbDonTmV3IENhdGVnb3J5JyxpdGVtczpbe2xhYmVsOidOZXcgSXRlbScscGxhbjowLGFjdHVhbDowfV19XSkKICB9CgogIGZ1bmN0aW9uIGhhbmRsZUFkZEluY29tZUl0ZW0oY2k6IG51bWJlcikgewogICAgaWYgKCFjaGVja0l0ZW1MaW1pdCgpKSByZXR1cm4KICAgIG9uSW5jb21lQ2hhbmdlKGluY29tZS5tYXAoKGMsaSk9PmkhPT1jaT9jOnsuLi5jLGl0ZW1zOlsuLi5jLml0ZW1zLHtsYWJlbDonTmV3IEl0ZW0nLHBsYW46MCxhY3R1YWw6MH1dfSkpCiAgfQoKICBmdW5jdGlvbiBjb25maXJtRGVsZXRlKCkgewogICAgY29uc3QgcCA9IHBlbmRpbmdEZWxldGUKICAgIHNldFBlbmRpbmdEZWxldGUobnVsbCkKICAgIGlmICghcCkgcmV0dXJuCiAgICBpZiAocC5raW5kID09PSAnY2F0Jykgb25JbmNvbWVDaGFuZ2UoaW5jb21lLmZpbHRlcigoXyxpKT0+aSE9PXAuY2kpKQogICAgZWxzZSBvbkluY29tZUNoYW5nZShpbmNvbWUubWFwKChjLGNpKT0+Y2khPT1wLmNpP2M6ey4uLmMsaXRlbXM6Yy5pdGVtcy5maWx0ZXIoKF8saWkpPT5paSE9PXAuaWkpfSkpCiAgfQoKICBjb25zdCB0b3RQID0gaW5jb21lLnJlZHVjZSgocyxjKT0+cytjLml0ZW1zLnJlZHVjZSgoc3MsaSk9PnNzKyhpLnBsYW58fDApLDApLDApCiAgY29uc3QgdG90QSA9IGluY29tZS5yZWR1Y2UoKHMsYyk9PnMrYy5pdGVtcy5yZWR1Y2UoKHNzLGkpPT5zcysoaS5hY3R1YWx8fDApLDApLDApCgogIGNvbnN0IHRvdGFsUm93OiBSZWFjdC5DU1NQcm9wZXJ0aWVzID0geyBkaXNwbGF5OidmbGV4JywgYWxpZ25JdGVtczonY2VudGVyJywgZ2FwOic2cHgnLCBiYWNrZ3JvdW5kOicjZjdmOGZhJywgYm9yZGVyOicxcHggc29saWQgI2UzZTdlZScsIGJvcmRlclJhZGl1czonMTBweCcsIHBhZGRpbmc6JzdweCA5cHgnLCBtYXJnaW5Ub3A6JzhweCcgfQoKICBjb25zdCByZW5kZXJQbGFuQWN0dWFsID0gKHBsYW5Ob2RlOiBSZWFjdC5SZWFjdE5vZGUsIGFjdHVhbE5vZGU6IFJlYWN0LlJlYWN0Tm9kZSkgPT4gaXNNb2JpbGUgPyAoCiAgICA8ZGl2IHN0eWxlPXt7IGZsZXg6JzInLCBtaW5XaWR0aDowLCBkaXNwbGF5OidmbGV4JywgZmxleERpcmVjdGlvbjonY29sdW1uJywgYWxpZ25JdGVtczonZmxleC1lbmQnLCBnYXA6JzAnLCBvdmVyZmxvdzonaGlkZGVuJyB9fT4KICAgICAge3BsYW5Ob2RlfXthY3R1YWxOb2RlfQogICAgPC9kaXY+CiAgKSA6ICg8PntwbGFuTm9kZX17YWN0dWFsTm9kZX08Lz4pCgogIHJldHVybiAoCiAgICA8ZGl2PgogICAgICB7aW5jb21lLm1hcCgoY2F0LCBjaSkgPT4gewogICAgICAgIGNvbnN0IGNhdFAgPSBjYXQuaXRlbXMucmVkdWNlKChzLGkpPT5zKyhpLnBsYW58fDApLDApCiAgICAgICAgY29uc3QgY2F0QSA9IGNhdC5pdGVtcy5yZWR1Y2UoKHMsaSk9PnMrKGkuYWN0dWFsfHwwKSwwKQogICAgICAgIGNvbnN0IHBjdCAgPSBjYXRQPjAgPyBNYXRoLm1pbigxMjAsKGNhdEEvY2F0UCkqMTAwKSA6IChjYXRBPjA/MTAwOjApCiAgICAgICAgY29uc3QgY2xyICA9IHBjdD49ODUgJiYgcGN0PDEwMCA/ICcjYTE2MjA3JyA6IEFDQ0VOVAogICAgICAgIGNvbnN0IGhrICAgPSBgY2F0LSR7Y2l9YAogICAgICAgIGNvbnN0IGhvdiAgPSBob3ZSb3c9PT1oawoKICAgICAgICByZXR1cm4gKAogICAgICAgICAgPGRpdiBrZXk9e2NpfSBzdHlsZT17eyBtYXJnaW5Cb3R0b206JzEwcHgnIH19CiAgICAgICAgICAgIG9uRHJhZ092ZXI9e2U9PnsgZS5wcmV2ZW50RGVmYXVsdCgpOyBlLnN0b3BQcm9wYWdhdGlvbigpOyBzZXREcmFnT3ZlcihoaykgfX0KICAgICAgICAgICAgb25Ecm9wPXtlPT57IGlmKGUuZGF0YVRyYW5zZmVyLmdldERhdGEoJ3R5cGUnKT09PSdjYXQnKSBvbkNhdERyb3AoZSxjaSk7IGVsc2UgZS5zdG9wUHJvcGFnYXRpb24oKSB9fQogICAgICAgICAgICBvbkRyYWdMZWF2ZT17KCk9PnNldERyYWdPdmVyKG51bGwpfT4KCiAgICAgICAgICAgIHsvKiBDYXRlZ29yeSBoZWFkZXIg4oCUIHNsaW0sIG5vIGNhcmQgKi99CiAgICAgICAgICAgIDxkaXYgZHJhZ2dhYmxlPXshaXNNb2JpbGV9IG9uRHJhZ1N0YXJ0PXtlPT5vbkNhdERyYWdTdGFydChlLGNpKX0KICAgICAgICAgICAgICBvbk1vdXNlRW50ZXI9eygpPT5zZXRIb3ZSb3coaGspfSBvbk1vdXNlTGVhdmU9eygpPT5zZXRIb3ZSb3cobnVsbCl9CiAgICAgICAgICAgICAgc3R5bGU9e3sgZGlzcGxheTonZmxleCcsIGFsaWduSXRlbXM6J2NlbnRlcicsIGdhcDonNnB4JywgcGFkZGluZzonNXB4IDJweCcsIGJvcmRlckJvdHRvbTogZHJhZ092ZXI9PT1oaz9gMnB4IHNvbGlkICR7QUNDRU5UfWA6JzJweCBzb2xpZCB0cmFuc3BhcmVudCcsIGN1cnNvcjogaXNNb2JpbGU/J2RlZmF1bHQnOidncmFiJyB9fT4KICAgICAgICAgICAgICB7IWlzTW9iaWxlICYmIDxEcmFnSGFuZGxlIHZpc2libGU9e2hvdiB8fCBkcmFnT3Zlcj09PWhrfSAvPn0KICAgICAgICAgICAgICA8aW5wdXQgc3R5bGU9e3sgLi4uaW5wLCBmbGV4OjEsIG1pbldpZHRoOjAsIGZvbnRTaXplOicxM3B4JywgZm9udFdlaWdodDo3MDAsIGNvbG9yOicjMTExODI3JywgY3Vyc29yOid0ZXh0JyB9fQogICAgICAgICAgICAgICAgdmFsdWU9e2NhdC5sYWJlbH0gb25Nb3VzZURvd249e2U9PmUuc3RvcFByb3BhZ2F0aW9uKCl9CiAgICAgICAgICAgICAgICBvbkNoYW5nZT17ZT0+b25JbmNvbWVDaGFuZ2UoaW5jb21lLm1hcCgoYyxjaTIpPT5jaTIhPT1jaT9jOnsuLi5jLGxhYmVsOmUudGFyZ2V0LnZhbHVlfSkpfSAvPgogICAgICAgICAgICAgIHtyZW5kZXJQbGFuQWN0dWFsKAogICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgd2lkdGg6IGlzTW9iaWxlPycxMDAlJzonMTAwcHgnLCBmbGV4U2hyaW5rOjAsIGZvbnRTaXplOiBpc01vYmlsZT8nOS41cHgnOicxMS41cHgnLCBjb2xvcjonIzljYTNhZicsIHRleHRBbGlnbjoncmlnaHQnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCB3aGl0ZVNwYWNlOidub3dyYXAnLCBvdmVyZmxvdzonaGlkZGVuJywgdGV4dE92ZXJmbG93OidlbGxpcHNpcycgfX0+e2ZtdChjYXRQKX08L3NwYW4+LAogICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgd2lkdGg6IGlzTW9iaWxlPycxMDAlJzonMTAwcHgnLCBmbGV4U2hyaW5rOjAsIGZvbnRTaXplOicxMS41cHgnLCBmb250V2VpZ2h0OjcwMCwgdGV4dEFsaWduOidyaWdodCcsIGZvbnRGYW1pbHk6J3ZhcigtLWZvbnQtbW9ubyksIG1vbm9zcGFjZScsIGNvbG9yOmNsciwgd2hpdGVTcGFjZTonbm93cmFwJywgb3ZlcmZsb3c6J2hpZGRlbicsIHRleHRPdmVyZmxvdzonZWxsaXBzaXMnIH19PntmbXQoY2F0QSl9PC9zcGFuPgogICAgICAgICAgICAgICl9CiAgICAgICAgICAgICAgPE1pbmlBZGRJdGVtIG9uQ2xpY2s9eygpPT5oYW5kbGVBZGRJbmNvbWVJdGVtKGNpKX0gLz4KICAgICAgICAgICAgICA8RGVsQnRuIHZpc2libGU9e2hvdn0gaXNNb2JpbGU9e2lzTW9iaWxlfSB0aXRsZT0iRGVsZXRlIGluY29tZSBjYXRlZ29yeSIKICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpPT5zZXRQZW5kaW5nRGVsZXRlKHsga2luZDonY2F0JywgY2ksIGxhYmVsOmNhdC5sYWJlbCB9KX0gLz4KICAgICAgICAgICAgPC9kaXY+CgogICAgICAgICAgICB7LyogUHJvZ3Jlc3MgYmFyICovfQogICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGhlaWdodDonM3B4JywgYmFja2dyb3VuZDonI2VlZjFmNScsIGJvcmRlclJhZGl1czonMnB4JywgbWFyZ2luOicwIDAgMnB4JyB9fT4KICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGhlaWdodDonM3B4JywgYm9yZGVyUmFkaXVzOicycHgnLCBiYWNrZ3JvdW5kOmNsciwgd2lkdGg6YCR7TWF0aC5taW4oMTAwLHBjdCl9JWAsIHRyYW5zaXRpb246J3dpZHRoIC4zcycgfX0gLz4KICAgICAgICAgICAgPC9kaXY+CgogICAgICAgICAgICB7LyogSXRlbXMg4oCUIGNsZWFuIGRpdmlkZXIgcm93cyAqL30KICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBwYWRkaW5nTGVmdDonMTRweCcgfX0+CiAgICAgICAgICAgICAge2NhdC5pdGVtcy5tYXAoKGl0ZW0sIGlpKSA9PiB7CiAgICAgICAgICAgICAgICBjb25zdCBpayA9IGBpdGVtLSR7Y2l9LSR7aWl9YAogICAgICAgICAgICAgICAgY29uc3QgaWhvdiA9IGhvdlJvdz09PWlrCiAgICAgICAgICAgICAgICBjb25zdCBpc1Jla29uID0gaXRlbS5sYWJlbCA9PT0gJ1JlY29uY2lsaWF0aW9uJyB8fCBpdGVtLmxhYmVsID09PSAnUmVrb25zaWxpYXNpJwogICAgICAgICAgICAgICAgY29uc3QgYWN0Q29sb3IgPSAoaXRlbS5hY3R1YWx8fDApPjAgPyAoaXNSZWtvbj8nI2ExNjIwNyc6QUNDRU5UKSA6ICcjOWNhM2FmJwogICAgICAgICAgICAgICAgcmV0dXJuICgKICAgICAgICAgICAgICAgICAgPGRpdiBrZXk9e2lpfSBkcmFnZ2FibGU9eyFpc01vYmlsZX0gb25EcmFnU3RhcnQ9e2U9Pm9uSXRlbURyYWdTdGFydChlLGNpLGlpKX0KICAgICAgICAgICAgICAgICAgICBvbkRyYWdPdmVyPXtlPT57IGUucHJldmVudERlZmF1bHQoKTsgZS5zdG9wUHJvcGFnYXRpb24oKTsgc2V0RHJhZ092ZXIoaWspIH19CiAgICAgICAgICAgICAgICAgICAgb25Ecm9wPXtlPT57IGUuc3RvcFByb3BhZ2F0aW9uKCk7IG9uSXRlbURyb3AoZSxjaSxpaSkgfX0KICAgICAgICAgICAgICAgICAgICBvbkRyYWdMZWF2ZT17KCk9PnNldERyYWdPdmVyKG51bGwpfQogICAgICAgICAgICAgICAgICAgIG9uTW91c2VFbnRlcj17KCk9PnNldEhvdlJvdyhpayl9IG9uTW91c2VMZWF2ZT17KCk9PnNldEhvdlJvdyhudWxsKX0KICAgICAgICAgICAgICAgICAgICBzdHlsZT17eyBkaXNwbGF5OidmbGV4JywgYWxpZ25JdGVtczonY2VudGVyJywgZ2FwOic2cHgnLCBwYWRkaW5nOic2cHggMnB4JywgYm9yZGVyQm90dG9tOiBpaTxjYXQuaXRlbXMubGVuZ3RoLTE/JzFweCBzb2xpZCAjZjFmNGY4Jzonbm9uZScsIGJvcmRlclRvcDogZHJhZ092ZXI9PT1paz9gMnB4IHNvbGlkICR7QUNDRU5UfWA6JzJweCBzb2xpZCB0cmFuc3BhcmVudCcsIGN1cnNvcjogaXNNb2JpbGU/J2RlZmF1bHQnOidncmFiJyB9fT4KICAgICAgICAgICAgICAgICAgICB7IWlzTW9iaWxlICYmIDxEcmFnSGFuZGxlIHZpc2libGU9e2lob3YgfHwgZHJhZ092ZXI9PT1pa30gLz59CiAgICAgICAgICAgICAgICAgICAgPGlucHV0IHN0eWxlPXt7IC4uLmlucCwgZmxleDoxLCBtaW5XaWR0aDowLCBmb250U2l6ZTonMTIuNXB4JywgY29sb3I6JyM0YjU1NjMnLCBjdXJzb3I6J3RleHQnIH19CiAgICAgICAgICAgICAgICAgICAgICB2YWx1ZT17aXRlbS5sYWJlbH0gb25Nb3VzZURvd249e2U9PmUuc3RvcFByb3BhZ2F0aW9uKCl9IG9uRm9jdXM9e2U9PnsgZS5jdXJyZW50VGFyZ2V0LmRhdGFzZXQub2xkTGFiZWwgPSBpdGVtLmxhYmVsIH19CiAgICAgICAgICAgICAgICAgICAgICBvbkNoYW5nZT17ZT0+b25JbmNvbWVDaGFuZ2UoaW5jb21lLm1hcCgoYyxjaTIpPT5jaTIhPT1jaT9jOnsuLi5jLGl0ZW1zOmMuaXRlbXMubWFwKChpdCxpaTIpPT5paTIhPT1paT9pdDp7Li4uaXQsbGFiZWw6ZS50YXJnZXQudmFsdWV9KX0pKX0KICAgICAgICAgICAgICAgICAgICAgIG9uQmx1cj17ZT0+eyBjb25zdCBvbGQ9ZS5jdXJyZW50VGFyZ2V0LmRhdGFzZXQub2xkTGFiZWwgfHwgJyc7IGlmKG9sZCAmJiBvbGQhPT1lLnRhcmdldC52YWx1ZSkgb25SZW5hbWUob2xkLGUudGFyZ2V0LnZhbHVlLCdpbm4nKSB9fSAvPgogICAgICAgICAgICAgICAgICAgIHtpc01vYmlsZSA/ICgKICAgICAgICAgICAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZmxleDonMicsIG1pbldpZHRoOjAsIGRpc3BsYXk6J2ZsZXgnLCBmbGV4RGlyZWN0aW9uOidjb2x1bW4nLCBhbGlnbkl0ZW1zOidmbGV4LWVuZCcsIGdhcDonMCcsIG92ZXJmbG93OidoaWRkZW4nIH19PgogICAgICAgICAgICAgICAgICAgICAgICA8aW5wdXQgc3R5bGU9e3sgLi4ucGxhbklucCwgZm9udFNpemU6JzkuNXB4JywgZm9udEZhbWlseTondmFyKC0tZm9udC1tb25vKSwgbW9ub3NwYWNlJywgY29sb3I6JyM5Y2EzYWYnLCB0ZXh0QWxpZ246J3JpZ2h0Jywgd2lkdGg6JzEwMCUnLCBwYWRkaW5nOicycHggM3B4JyB9fQogICAgICAgICAgICAgICAgICAgICAgICAgIGRlZmF1bHRWYWx1ZT17aXRlbS5wbGFuP2ZtdE51bShpdGVtLnBsYW4pOicnfSBwbGFjZWhvbGRlcj0iMCIKICAgICAgICAgICAgICAgICAgICAgICAgICBrZXk9e2BpbmNwbGFuLSR7Y2l9LSR7aWl9LSR7aXRlbS5wbGFufWB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgb25Nb3VzZURvd249e2U9PmUuc3RvcFByb3BhZ2F0aW9uKCl9CiAgICAgICAgICAgICAgICAgICAgICAgICAgb25Gb2N1cz17ZT0+eyBlLnRhcmdldC52YWx1ZT1pdGVtLnBsYW4/U3RyaW5nKGl0ZW0ucGxhbik6Jyc7IGUudGFyZ2V0LnNlbGVjdCgpIH19CiAgICAgICAgICAgICAgICAgICAgICAgICAgb25CbHVyPXtlPT57IGNvbnN0IHY9cE51bShlLnRhcmdldC52YWx1ZSk7IG9uSW5jb21lQ2hhbmdlKGluY29tZS5tYXAoKGMsY2kyKT0+Y2kyIT09Y2k/Yzp7Li4uYyxpdGVtczpjLml0ZW1zLm1hcCgoaXQsaWkyKT0+aWkyIT09aWk/aXQ6ey4uLml0LHBsYW46dn0pfSkpOyBlLnRhcmdldC52YWx1ZT12P2ZtdE51bSh2KTonJyB9fQogICAgICAgICAgICAgICAgICAgICAgICAgIG9uQ2hhbmdlPXsoKT0+e319IC8+CiAgICAgICAgICAgICAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZm9udFNpemU6JzExLjVweCcsIGZvbnRXZWlnaHQ6NjAwLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCBjb2xvcjphY3RDb2xvciwgd2lkdGg6JzEwMCUnLCB0ZXh0QWxpZ246J3JpZ2h0Jywgd2hpdGVTcGFjZTonbm93cmFwJywgb3ZlcmZsb3c6J2hpZGRlbicsIHRleHRPdmVyZmxvdzonZWxsaXBzaXMnIH19PgogICAgICAgICAgICAgICAgICAgICAgICAgIHsoaXRlbS5hY3R1YWx8fDApPjAgPyBmbXROdW0oaXRlbS5hY3R1YWwpIDogJy0nfQogICAgICAgICAgICAgICAgICAgICAgICA8L2Rpdj4KICAgICAgICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgICAgICkgOiAoCiAgICAgICAgICAgICAgICAgICAgICA8PgogICAgICAgICAgICAgICAgICAgICAgICA8aW5wdXQgc3R5bGU9e3sgLi4ucGxhbklucCwgbWluV2lkdGg6JzEwMHB4JywgZm9udFNpemU6JzEycHgnLCBmb250V2VpZ2h0OjUwMCwgdGV4dEFsaWduOidyaWdodCcsIGZvbnRGYW1pbHk6J3ZhcigtLWZvbnQtbW9ubyksIG1vbm9zcGFjZScsIGNvbG9yOicjNGI1NTYzJywgd2hpdGVTcGFjZTonbm93cmFwJywgcGFkZGluZzonMnB4IDZweCcgfX0KICAgICAgICAgICAgICAgICAgICAgICAgICBkZWZhdWx0VmFsdWU9e2l0ZW0ucGxhbj9mbXROdW0oaXRlbS5wbGFuKTonJ30gcGxhY2Vob2xkZXI9IjAiCiAgICAgICAgICAgICAgICAgICAgICAgICAga2V5PXtgaXBsYW4tJHtjaX0tJHtpaX0tJHtpdGVtLnBsYW59YH0KICAgICAgICAgICAgICAgICAgICAgICAgICBvbk1vdXNlRG93bj17ZT0+ZS5zdG9wUHJvcGFnYXRpb24oKX0KICAgICAgICAgICAgICAgICAgICAgICAgICBvbkZvY3VzPXtlPT57IGUudGFyZ2V0LnZhbHVlPWl0ZW0ucGxhbj9TdHJpbmcoaXRlbS5wbGFuKTonJzsgZS50YXJnZXQuc2VsZWN0KCkgfX0KICAgICAgICAgICAgICAgICAgICAgICAgICBvbkJsdXI9e2U9PnsgY29uc3Qgdj1wTnVtKGUudGFyZ2V0LnZhbHVlKTsgb25JbmNvbWVDaGFuZ2UoaW5jb21lLm1hcCgoYyxjaTIpPT5jaTIhPT1jaT9jOnsuLi5jLGl0ZW1zOmMuaXRlbXMubWFwKChpdCxpaTIpPT5paTIhPT1paT9pdDp7Li4uaXQscGxhbjp2fSl9KSk7IGUudGFyZ2V0LnZhbHVlPXY/Zm10TnVtKHYpOicnIH19CiAgICAgICAgICAgICAgICAgICAgICAgICAgb25DaGFuZ2U9eygpPT57fX0gLz4KICAgICAgICAgICAgICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBtaW5XaWR0aDonMTAwcHgnLCBmb250U2l6ZTonMTJweCcsIGZvbnRXZWlnaHQ6NjAwLCB0ZXh0QWxpZ246J3JpZ2h0JywgZm9udEZhbWlseTondmFyKC0tZm9udC1tb25vKSwgbW9ub3NwYWNlJywgd2hpdGVTcGFjZTonbm93cmFwJywgY29sb3I6YWN0Q29sb3IgfX0+CiAgICAgICAgICAgICAgICAgICAgICAgICAgeyhpdGVtLmFjdHVhbHx8MCk+MCA/IGZtdE51bShpdGVtLmFjdHVhbCkgOiAnLSd9CiAgICAgICAgICAgICAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgICAgICAgICAgICAgPC8+CiAgICAgICAgICAgICAgICAgICAgKX0KICAgICAgICAgICAgICAgICAgICA8RGVsQnRuIHZpc2libGU9e2lob3Z9IGlzTW9iaWxlPXtpc01vYmlsZX0gdGl0bGU9IkRlbGV0ZSBpbmNvbWUgaXRlbSIKICAgICAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpPT5zZXRQZW5kaW5nRGVsZXRlKHsga2luZDonaXRlbScsIGNpLCBpaSwgbGFiZWw6aXRlbS5sYWJlbCB9KX0gLz4KICAgICAgICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgfSl9CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgICAgPC9kaXY+CiAgICAgICAgKQogICAgICB9KX0KCiAgICAgIDxBZGRCdG4gbGFiZWw9IisgYWRkIGNhdGVnb3J5IiBvbkNsaWNrPXtoYW5kbGVBZGRJbmNvbWVDYXRlZ29yeX0gLz4KCiAgICAgIHsvKiBUb3RhbCAqL30KICAgICAgPGRpdiBzdHlsZT17dG90YWxSb3d9PgogICAgICAgIDxkaXYgc3R5bGU9e3sgZmxleDoxLCBmb250U2l6ZTonMTJweCcsIGZvbnRXZWlnaHQ6NzAwLCBjb2xvcjonIzExMTgyNycgfX0+VG90YWwgSW5jb21lPC9kaXY+CiAgICAgICAge3JlbmRlclBsYW5BY3R1YWwoCiAgICAgICAgICA8ZGl2IHN0eWxlPXt7IHdpZHRoOiBpc01vYmlsZT8nYXV0byc6JzEwMHB4JywgZmxleFNocmluazowLCB0ZXh0QWxpZ246J3JpZ2h0JywgZm9udFNpemU6IGlzTW9iaWxlPycxMHB4JzonMTEuNXB4JywgY29sb3I6JyM5Y2EzYWYnLCBmb250RmFtaWx5Oid2YXIoLS1mb250LW1vbm8pLCBtb25vc3BhY2UnLCB3aGl0ZVNwYWNlOidub3dyYXAnIH19PntmbXQodG90UCl9PC9kaXY+LAogICAgICAgICAgPGRpdiBzdHlsZT17eyB3aWR0aDogaXNNb2JpbGU/J2F1dG8nOicxMDBweCcsIGZsZXhTaHJpbms6MCwgdGV4dEFsaWduOidyaWdodCcsIGZvbnRTaXplOiBpc01vYmlsZT8nMTJweCc6JzExLjVweCcsIGZvbnRXZWlnaHQ6NzAwLCBjb2xvcjpBQ0NFTlQsIGZvbnRGYW1pbHk6J3ZhcigtLWZvbnQtbW9ubyksIG1vbm9zcGFjZScsIHdoaXRlU3BhY2U6J25vd3JhcCcgfX0+e2ZtdCh0b3RBKX08L2Rpdj4KICAgICAgICApfQogICAgICA8L2Rpdj4KCiAgICAgIHtwZW5kaW5nRGVsZXRlICYmICgKICAgICAgICA8Q29uZmlybURpYWxvZwogICAgICAgICAgdGl0bGU9e3BlbmRpbmdEZWxldGUua2luZD09PSdjYXQnID8gJ0RlbGV0ZSBpbmNvbWUgY2F0ZWdvcnk/JyA6ICdEZWxldGUgaW5jb21lIGl0ZW0/J30KICAgICAgICAgIG1lc3NhZ2U9ezw+RGVsZXRlIDxzdHJvbmcgc3R5bGU9e3sgY29sb3I6JyMxMTE4MjcnIH19PuKAnHtwZW5kaW5nRGVsZXRlLmxhYmVsfeKAnTwvc3Ryb25nPntwZW5kaW5nRGVsZXRlLmtpbmQ9PT0nY2F0JyA/ICcgYW5kIGFsbCBpdHMgaXRlbXMnIDogJyd9PyBUaGlzIGNhbm5vdCBiZSB1bmRvbmUuPC8+fQogICAgICAgICAgb25Db25maXJtPXtjb25maXJtRGVsZXRlfQogICAgICAgICAgb25DYW5jZWw9eygpPT5zZXRQZW5kaW5nRGVsZXRlKG51bGwpfQogICAgICAgIC8+CiAgICAgICl9CiAgICA8L2Rpdj4KICApCn0KCi8vIE1lbW9pemVkOiBza2lwcyByZS1yZW5kZXIgd2hlbiBwYXJlbnQgcmUtcmVuZGVycyB3aXRoIHVuY2hhbmdlZCBwcm9wcy4KZXhwb3J0IGRlZmF1bHQgbWVtbyhJbmNvbWVQYW5lbCkK
+'use client'
+
+import { memo, useRef, useState } from 'react'
+import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
+import type { IncomeCategory, Transaction } from '@/types/database'
+import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+
+type TxType = Transaction['type']
+
+const ACCENT = '#1a5c42'
+const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
+const planInp: React.CSSProperties = { ...inp, borderBottom:'1px dotted #cbd5e1', borderRadius:'2px', transition:'border-color .14s, background .14s' }
+
+function DragHandle({ visible }: { visible: boolean }) {
+  return (
+    <span
+      title="Drag to reorder"
+      style={{
+        width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center',
+        touchAction:'none', color:'#94a3b8', fontSize:'12px', lineHeight:1,
+        opacity: visible ? .8 : 0, transition:'opacity .13s', userSelect:'none',
+      }}
+    >⠿</span>
+  )
+}
+
+function DelBtn({ visible, title, onClick, isMobile }: {
+  visible: boolean; title: string; onClick: () => void; isMobile?: boolean
+}) {
+  const show = visible || !!isMobile
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onMouseDown={e=>e.stopPropagation()}
+      onClick={onClick}
+      style={{
+        width:'22px', height:'22px', borderRadius:'6px', border:'none', background:'none',
+        color:'#9ca3af', display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', flexShrink:0, opacity: show ? (visible ? 1 : .45) : 0, transition:'opacity .13s',
+        pointerEvents: show ? 'auto' : 'none',
+      }}
+    ><AppIcon name="trash" size={12} /></button>
+  )
+}
+
+function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      type="button"
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onClick={onClick}
+      style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', width:'100%', padding:'7px 10px', borderRadius:'9px', border:'1.5px dashed', borderColor: hover?ACCENT:'#c9d2de', background: hover?'#e8f5ef':'transparent', color: hover?ACCENT:'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'6px', transition:'all .13s' }}
+    >{label}</button>
+  )
+}
+
+function MiniAddItem({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      type="button"
+      title="Add item to this category"
+      onMouseDown={e=>e.stopPropagation()}
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      onClick={onClick}
+      style={{ border:'none', background:'none', color: hover?ACCENT:'#9ca3af', fontSize:'11px', fontWeight:800, cursor:'pointer', padding:'4px 6px', borderRadius:'6px', whiteSpace:'nowrap', transition:'color .13s' }}
+    >+ Item</button>
+  )
+}
+
+interface Props {
+  income:         IncomeCategory[]
+  onIncomeChange: (cats: IncomeCategory[]) => void
+  onRename:       (oldLabel: string, newLabel: string, type?: TxType) => void
+  isMobile?:      boolean
+}
+
+type PendingDelete =
+  | { kind: 'cat', ci: number, label: string }
+  | { kind: 'item', ci: number, ii: number, label: string }
+
+function IncomePanel({ income, onIncomeChange, onRename, isMobile }: Props) {
+  const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
+  const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
+  const incomeItemCount = income.reduce((sum, cat) => sum + cat.items.filter(item => item.label !== 'Rekonsiliasi').length, 0)
+  const [hovRow, setHovRow] = useState<string|null>(null)
+  const [dragOver, setDragOver] = useState<string|null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
+  const catDragSrc  = useRef<number|null>(null)
+  const itemDragSrc = useRef<{ci:number;ii:number}|null>(null)
+
+  function onCatDragStart(e: React.DragEvent, ci: number) { catDragSrc.current=ci; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','cat'); e.stopPropagation() }
+  function onCatDrop(e: React.DragEvent, ci: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const from=catDragSrc.current; if(from===null||from===ci) return; const next=[...income]; const [m]=next.splice(from,1); next.splice(ci,0,m); onIncomeChange(next); catDragSrc.current=null }
+  function onItemDragStart(e: React.DragEvent, ci: number, ii: number) { itemDragSrc.current={ci,ii}; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','item'); e.stopPropagation() }
+  function onItemDrop(e: React.DragEvent, toCi: number, toIi: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const src=itemDragSrc.current; if(!src) return; if(src.ci===toCi&&src.ii===toIi) return; const next=income.map(c=>({...c,items:[...c.items]})); const [m]=next[src.ci].items.splice(src.ii,1); next[toCi].items.splice(toIi,0,m); onIncomeChange(next); itemDragSrc.current=null }
+
+  function checkItemLimit() {
+    if (!hasPremiumAccess && incomeItemCount >= FREE_PLAN_LIMITS.incomeItems) {
+      alert(upgradeMessage(`Income item Free maksimal ${FREE_PLAN_LIMITS.incomeItems}`))
+      return false
+    }
+    return true
+  }
+
+  function handleAddIncomeCategory() {
+    if (!checkItemLimit()) return
+    onIncomeChange([...income,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
+  }
+
+  function handleAddIncomeItem(ci: number) {
+    if (!checkItemLimit()) return
+    onIncomeChange(income.map((c,i)=>i!==ci?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]}))
+  }
+
+  function confirmDelete() {
+    const p = pendingDelete
+    setPendingDelete(null)
+    if (!p) return
+    if (p.kind === 'cat') onIncomeChange(income.filter((_,i)=>i!==p.ci))
+    else onIncomeChange(income.map((c,ci)=>ci!==p.ci?c:{...c,items:c.items.filter((_,ii)=>ii!==p.ii)}))
+  }
+
+  const totP = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
+  const totA = income.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
+
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'7px 9px', marginTop:'8px' }
+
+  const renderPlanActual = (planNode: React.ReactNode, actualNode: React.ReactNode) => isMobile ? (
+    <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+      {planNode}{actualNode}
+    </div>
+  ) : (<>{planNode}{actualNode}</>)
+
+  return (
+    <div>
+      {income.map((cat, ci) => {
+        const catP = cat.items.reduce((s,i)=>s+(i.plan||0),0)
+        const catA = cat.items.reduce((s,i)=>s+(i.actual||0),0)
+        const pct  = catP>0 ? Math.min(120,(catA/catP)*100) : (catA>0?100:0)
+        const clr  = pct>=85 && pct<100 ? '#a16207' : ACCENT
+        const hk   = `cat-${ci}`
+        const hov  = hovRow===hk
+
+        return (
+          <div key={ci} style={{ marginBottom:'10px' }}
+            onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(hk) }}
+            onDrop={e=>{ if(e.dataTransfer.getData('type')==='cat') onCatDrop(e,ci); else e.stopPropagation() }}
+            onDragLeave={()=>setDragOver(null)}>
+
+            {/* Category header — slim, no card */}
+            <div draggable={!isMobile} onDragStart={e=>onCatDragStart(e,ci)}
+              onMouseEnter={()=>setHovRow(hk)} onMouseLeave={()=>setHovRow(null)}
+              style={{ display:'flex', alignItems:'center', gap:'6px', padding:'5px 2px', borderBottom: dragOver===hk?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+              {!isMobile && <DragHandle visible={hov || dragOver===hk} />}
+              <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:700, color:'#111827', cursor:'text' }}
+                value={cat.label} onMouseDown={e=>e.stopPropagation()}
+                onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,label:e.target.value}))} />
+              {renderPlanActual(
+                <span style={{ width: isMobile?'100%':'100px', flexShrink:0, fontSize: isMobile?'9.5px':'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{fmt(catP)}</span>,
+                <span style={{ width: isMobile?'100%':'100px', flexShrink:0, fontSize:'11.5px', fontWeight:700, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{fmt(catA)}</span>
+              )}
+              <MiniAddItem onClick={()=>handleAddIncomeItem(ci)} />
+              <DelBtn visible={hov} isMobile={isMobile} title="Delete income category"
+                onClick={()=>setPendingDelete({ kind:'cat', ci, label:cat.label })} />
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ height:'3px', background:'#eef1f5', borderRadius:'2px', margin:'0 0 2px' }}>
+              <div style={{ height:'3px', borderRadius:'2px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
+            </div>
+
+            {/* Items — clean divider rows */}
+            <div style={{ paddingLeft:'14px' }}>
+              {cat.items.map((item, ii) => {
+                const ik = `item-${ci}-${ii}`
+                const ihov = hovRow===ik
+                const isRekon = item.label === 'Reconciliation' || item.label === 'Rekonsiliasi'
+                const actColor = (item.actual||0)>0 ? (isRekon?'#a16207':ACCENT) : '#9ca3af'
+                return (
+                  <div key={ii} draggable={!isMobile} onDragStart={e=>onItemDragStart(e,ci,ii)}
+                    onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(ik) }}
+                    onDrop={e=>{ e.stopPropagation(); onItemDrop(e,ci,ii) }}
+                    onDragLeave={()=>setDragOver(null)}
+                    onMouseEnter={()=>setHovRow(ik)} onMouseLeave={()=>setHovRow(null)}
+                    style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: ii<cat.items.length-1?'1px solid #f1f4f8':'none', borderTop: dragOver===ik?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+                    {!isMobile && <DragHandle visible={ihov || dragOver===ik} />}
+                    <input style={{ ...inp, flex:1, minWidth:0, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
+                      value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
+                      onChange={e=>onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
+                      onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'inn') }} />
+                    {isMobile ? (
+                      <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+                        <input style={{ ...planInp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'2px 3px' }}
+                          defaultValue={item.plan?fmtNum(item.plan):''} placeholder="0"
+                          key={`incplan-${ci}-${ii}-${item.plan}`}
+                          onMouseDown={e=>e.stopPropagation()}
+                          onFocus={e=>{ e.target.value=item.plan?String(item.plan):''; e.target.select() }}
+                          onBlur={e=>{ const v=pNum(e.target.value); onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:v})})); e.target.value=v?fmtNum(v):'' }}
+                          onChange={()=>{}} />
+                        <div style={{ fontSize:'11.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:actColor, width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <input style={{ ...planInp, minWidth:'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'2px 6px' }}
+                          defaultValue={item.plan?fmtNum(item.plan):''} placeholder="0"
+                          key={`iplan-${ci}-${ii}-${item.plan}`}
+                          onMouseDown={e=>e.stopPropagation()}
+                          onFocus={e=>{ e.target.value=item.plan?String(item.plan):''; e.target.select() }}
+                          onBlur={e=>{ const v=pNum(e.target.value); onIncomeChange(income.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:v})})); e.target.value=v?fmtNum(v):'' }}
+                          onChange={()=>{}} />
+                        <div style={{ minWidth:'100px', fontSize:'12px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', color:actColor }}>
+                          {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
+                        </div>
+                      </>
+                    )}
+                    <DelBtn visible={ihov} isMobile={isMobile} title="Delete income item"
+                      onClick={()=>setPendingDelete({ kind:'item', ci, ii, label:item.label })} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+
+      <AddBtn label="+ add category" onClick={handleAddIncomeCategory} />
+
+      {/* Total */}
+      <div style={totalRow}>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:700, color:'#111827' }}>Total Income</div>
+        {renderPlanActual(
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'10px':'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totP)}</div>,
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'12px':'11.5px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totA)}</div>
+        )}
+      </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title={pendingDelete.kind==='cat' ? 'Delete income category?' : 'Delete income item?'}
+          message={<>Delete <strong style={{ color:'#111827' }}>“{pendingDelete.label}”</strong>{pendingDelete.kind==='cat' ? ' and all its items' : ''}? This cannot be undone.</>}
+          onConfirm={confirmDelete}
+          onCancel={()=>setPendingDelete(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Memoized: skips re-render when parent re-renders with unchanged props.
+export default memo(IncomePanel)
