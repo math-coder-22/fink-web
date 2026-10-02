@@ -26,14 +26,14 @@ export function TxDetailModal({ label, tx, onClose }: {
         <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div>
             <div style={{ fontSize:'13px', fontWeight:700, color:'#111827' }}>{label}</div>
-            <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'1px' }}>{filtered.length} transaksi · total {fmt(total)}</div>
+            <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'1px' }}>{filtered.length} transaction{filtered.length !== 1 ? 's' : ''} · total {fmt(total)}</div>
           </div>
           <button aria-label="Close" onClick={onClose} style={{ width:'26px', height:'26px', border:'none', background:'#f3f4f6', borderRadius:'6px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={15} /></button>
         </div>
         {/* List */}
         <div style={{ overflowY:'auto', flex:1 }}>
           {filtered.length === 0 ? (
-            <div style={{ padding:'28px 16px', textAlign:'center', color:'#9ca3af', fontSize:'13px' }}>Belum ada transaksi</div>
+            <div style={{ padding:'28px 16px', textAlign:'center', color:'#9ca3af', fontSize:'13px' }}>No transactions yet</div>
           ) : (
             filtered.map(t => (
               <div key={t.id} style={{ display:'flex', alignItems:'center', gap:'10px', padding:'10px 16px', borderBottom:'1px solid #f3f4f6' }}>

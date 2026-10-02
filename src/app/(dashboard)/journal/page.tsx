@@ -147,7 +147,7 @@ function ReviewModal({
             <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:'17px', fontWeight:950, color:'#111827' }}>
               <AppIcon name="mirror" size={18} /> Financial Review
             </div>
-            <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'2px' }}>{monthLabel} · ringkasan kondisi + investigasi pengeluaran</div>
+            <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'2px' }}>{monthLabel} · spending health + deep dive</div>
           </div>
           <button aria-label="Close review" onClick={onClose} style={{ width:'32px', height:'32px', border:'none', background:'#f7f8fa', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <AppIcon name="close" size={16} />
@@ -159,7 +159,7 @@ function ReviewModal({
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px', marginBottom:'10px' }}>
               <div>
                 <div style={{ fontSize:'13px', fontWeight:950, color:'#111827' }}>Financial Snapshot</div>
-                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>Ringkasan umum sebelum mengecek detail pengeluaran.</div>
+                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>High-level summary before digging into the details.</div>
               </div>
               <div style={{ fontSize:'11px', fontWeight:950, color:statusColor, background:review.budgetUsed > 100 ? '#fef2f2' : review.budgetUsed >= 80 ? '#fffbeb' : '#ecfdf5', border:`1px solid ${review.budgetUsed > 100 ? '#fecaca' : review.budgetUsed >= 80 ? '#fde68a' : '#bbf7d0'}`, borderRadius:'999px', padding:'5px 9px', whiteSpace:'nowrap' }}>
                 {statusText}
@@ -190,15 +190,15 @@ function ReviewModal({
             <div style={{ fontSize:'12.5px', fontWeight:950, color:'#111827', marginBottom:'7px' }}>Review Insight</div>
             {review.alerts.length === 0 ? (
               <div style={{ fontSize:'12px', color:'#64748b', lineHeight:1.5 }}>
-                Kondisi budget masih relatif aman. Belum ada kategori expense yang mendekati atau melewati batas budget bulan ini.
+                Budget looks relatively safe. No expense category is near or over its limit this month.
               </div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
                 {review.alerts.slice(0, 3).map((cat:any) => (
                   <div key={cat.label} style={{ fontSize:'12px', color:cat.over ? '#b91c1c' : '#b45309', background:cat.over ? '#fef2f2' : '#fffbeb', border:`1px solid ${cat.over ? '#fecaca' : '#fde68a'}`, borderRadius:'11px', padding:'8px 9px', lineHeight:1.45 }}>
                     {cat.over
-                      ? `${cat.label} sudah melewati budget sebesar ${money(cat.spent - cat.planned)}. Cek item di bawah untuk melihat penyebab utamanya.`
-                      : `${cat.label} sudah memakai ${cat.pct}% dari budget. Kategori ini perlu dipantau agar tidak melewati batas.`}
+                      ? `${cat.label} is over budget by ${money(cat.spent - cat.planned)}. Check the items below to see the main cause.`
+                      : `${cat.label} has used ${cat.pct}% of its budget. Keep an eye on this category so it stays within limit.`}
                   </div>
                 ))}
               </div>
@@ -209,14 +209,14 @@ function ReviewModal({
             <div style={{ padding:'11px 12px', borderBottom:'1px solid #e3e7ee', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px' }}>
               <div>
                 <div style={{ fontSize:'13px', fontWeight:950, color:'#111827' }}>Expense Breakdown</div>
-                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'1px' }}>Klik kategori → item → transaksi terbesar.</div>
+                <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'1px' }}>Click a category → item → biggest transactions.</div>
               </div>
               <div style={{ fontSize:'11px', color:'#64748b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{money(review.regularExpenseActual)}</div>
             </div>
 
             <div style={{ display:'flex', flexDirection:'column' }}>
               {review.categories.length === 0 ? (
-                <div style={{ padding:'18px 13px', color:'#94a3b8', fontSize:'12.5px', textAlign:'center' }}>Belum ada budget atau transaksi expense bulan ini.</div>
+                <div style={{ padding:'18px 13px', color:'#94a3b8', fontSize:'12.5px', textAlign:'center' }}>No budget or expense transactions this month.</div>
               ) : review.categories.map((cat:any) => {
                 const isOpen = openCategory === cat.label
                 const color = cat.over ? '#b91c1c' : cat.near ? '#b45309' : '#15803d'
@@ -256,7 +256,7 @@ function ReviewModal({
                                 {itemOpen && (
                                   <div style={{ borderTop:'1px solid #f6f8fb', padding:'8px 10px', display:'flex', flexDirection:'column', gap:'6px', background:'#fcfcfd' }}>
                                     {item.transactions.length === 0 ? (
-                                      <div style={{ fontSize:'11.5px', color:'#94a3b8', padding:'6px 0' }}>Belum ada transaksi untuk item ini.</div>
+                                      <div style={{ fontSize:'11.5px', color:'#94a3b8', padding:'6px 0' }}>No transactions for this item yet.</div>
                                     ) : item.transactions.map((t:any) => (
                                       <div key={t.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:'8px', alignItems:'center', padding:'7px 8px', borderRadius:'9px', background:'#fff', border:'1px solid #f1f5f9' }}>
                                         <div style={{ fontSize:'10.5px', color:'#94a3b8', fontFamily:'var(--font-mono), monospace', fontWeight:750 }}>{t.date}</div>
@@ -339,10 +339,10 @@ function setupBudgetInsight(previousBudget: number, previousActual: number, sect
   const actual = Number(previousActual || 0)
   if (section !== 'budget' || budget <= 0) return undefined
   const ratio = actual / budget
-  if (ratio > 1.4) return 'Spending jauh melewati budget bulan lalu. Gunakan angka ini sebagai titik awal, bukan pembenaran overspending.'
-  if (ratio > 1.1) return 'Spending melewati budget bulan lalu. Budget bulan berjalan dinaikkan secara konservatif.'
-  if (ratio < 0.65 && actual > 0) return 'Budget bulan lalu banyak tersisa. Pertimbangkan apakah alokasi ini masih terlalu longgar.'
-  if (ratio >= 0.9 && ratio <= 1.1) return 'Spending relatif stabil terhadap budget bulan lalu.'
+  if (ratio > 1.4) return 'Spending was far over last month\'s budget. Use this figure as a starting point, not a justification for overspending.'
+  if (ratio > 1.1) return 'Spending exceeded last month\'s budget. This month\'s budget is raised conservatively.'
+  if (ratio < 0.65 && actual > 0) return 'A lot of last month\'s budget was left unused. Consider whether this allocation is still too loose.'
+  if (ratio >= 0.9 && ratio <= 1.1) return 'Spending is relatively stable against last month\'s budget.'
   return undefined
 }
 
@@ -621,13 +621,13 @@ function SetupBudgetModal({
   }
 
   const removeCategory = (section: SetupBudgetSectionKey, category: string) => {
-    const ok = confirm(`Hapus kategori "${category}" beserta semua item di dalamnya?`)
+    const ok = confirm(`Delete category "${category}" and all its items?`)
     if (!ok) return
     setRows(prev => prev.filter(row => !(row.section === section && row.category === category)))
   }
 
   const removeItem = (id: string, label: string) => {
-    const ok = confirm(`Hapus item "${label}"?`)
+    const ok = confirm(`Delete item "${label}"?`)
     if (!ok) return
     setRows(prev => prev.filter(row => row.id !== id))
   }
@@ -1178,11 +1178,11 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
     const nextY = idx === 11 ? curYear + 1 : curYear
     const nextLabel = `${MONTH_NAMES[nextM]} ${nextY}`
     const confirmed = confirm(
-      `Copy budget ke ${nextLabel}?\n\nPerhatian: Budget yang sudah ada di ${nextLabel} akan ditimpa dan diganti dengan budget bulan ini.`
+      `Copy budget to ${nextLabel}?\n\nNote: the existing budget in ${nextLabel} will be overwritten with this month's budget.`
     )
     if (!confirmed) return
     await copyBudgetToNext()
-    alert(`Budget berhasil disalin ke ${nextLabel}!`)
+    alert(`Budget copied to ${nextLabel}!`)
   }
 
 
@@ -1232,10 +1232,10 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const dailyRecommendation = Math.floor(Math.max(0, journalSummary.outcome) / remainingDays)
   const outcomeMessage =
     journalSummary.outcome > 0
-      ? `≈ ${fmt(dailyRecommendation)} / hari`
+      ? `≈ ${fmt(dailyRecommendation)} / day`
       : journalSummary.outcome < 0
-        ? `Defisit ${fmt(Math.abs(journalSummary.outcome))}`
-        : 'Budget bulan ini telah habis'
+        ? `Deficit ${fmt(Math.abs(journalSummary.outcome))}`
+        : "This month's budget is fully used"
   const outcomeSubMessage = ''
 
   const SummaryMetric = ({ label, value, actual, plan, color }: { label:string; value:number; actual:number; plan:number; color:string }) => {
@@ -1361,7 +1361,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
             <div style={{ marginTop:7, fontSize:isMobile ? 20 : 22, fontWeight:950, color:outcomeTone, letterSpacing:'-.9px', fontFamily:'var(--font-mono), monospace', lineHeight:1.05, whiteSpace:isMobile ? 'normal' : 'nowrap' }}>
               {outcomeText(journalSummary.outcome)}
             </div>
-            <div style={{ marginTop:8, fontSize:isMobile ? 11.5 : 12.5, color:'#374151', lineHeight:1.45, fontWeight:700, color: journalSummary.outcome < 0 ? '#dc2626' : '#374151' }}>
+            <div style={{ marginTop:8, fontSize:isMobile ? 11.5 : 12.5, lineHeight:1.45, fontWeight:700, color: journalSummary.outcome < 0 ? '#dc2626' : '#374151' }}>
               {outcomeMessage}
             </div>
           </div>
@@ -1404,6 +1404,7 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
         </span>
       </div>
       <CatatanHarian tx={tx} budget={budget} income={plan.income} saving={savingComputed} debt={debtComputed}
+        curMonth={curMonth} curYear={curYear}
         onAdd={addTx} onUpdate={updateTx} onDelete={deleteTx} />
     </div>
   )

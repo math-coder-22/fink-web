@@ -153,7 +153,7 @@ export default function DashboardShell({ user, children }: { user: User; childre
   const todayLabel = (() => {
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
     const last = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()
-    const rem  = last - now.getDate()
+    const rem  = last - now.getDate() + 1 // today still counts — the day isn't over yet
     return isMobile
       ? `${days[now.getDay()]} ${now.getDate()} · ${rem}d`
       : `${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]}, ${now.getDate()} · ${rem} days left`
