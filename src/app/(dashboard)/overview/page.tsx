@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useMonthContext, MONTH_NAMES, MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
@@ -873,9 +873,26 @@ const DailyProgressCard = memo(function DailyProgressCard({
   } | null>(null)
   const data = useMemo(() => buildDailyProgressData({ tx, income, saving, debt, curDay, daysInMonth, currentBalance }), [tx, income, saving, debt, curDay, daysInMonth, currentBalance])
   const visibleDay = Math.max(1, Math.min(curDay || daysInMonth, daysInMonth))
-  const width = 980
-  const height = 310
-  const pad = { l:54, r:24, t:24, b:32 }
+  // Responsive chart: measure the card width so the chart renders full-width and crisp on any screen.
+  const chartWrapRef = useRef<HTMLDivElement | null>(null)
+  const [measuredW, setMeasuredW] = useState(980)
+  useEffect(() => {
+    const el = chartWrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setMeasuredW(prev => (Math.abs(prev - w) < 1 ? prev : w))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const width = Math.max(320, Math.round(measuredW))
+  const height = width < 600 ? 300 : 310
+  const pad = width < 600 ? { l:50, r:12, t:24, b:32 } : { l:54, r:24, t:24, b:32 }
+  const axisFs = width < 600 ? 9 : 10
+  const axisLabelX = pad.l - 8
   const plotW = width - pad.l - pad.r
   const plotH = height - pad.t - pad.b
 
@@ -931,8 +948,19 @@ const DailyProgressCard = memo(function DailyProgressCard({
     })
   }
 
+  // Touch support for mobile: tap a day band to toggle its tooltip.
+  const touchDailyTooltip = (e:any, item:DailyPoint) => {
+    if (hoveredDaily && hoveredDaily.day === item.day) {
+      setHoveredDaily(null)
+      return
+    }
+    const t = e.touches?.[0] || e.changedTouches?.[0]
+    if (!t) return
+    showDailyTooltip({ currentTarget:e.currentTarget, clientX:t.clientX, clientY:t.clientY }, item)
+  }
+
   return (
-    <Card style={{ borderRadius:20, overflow:'hidden', minHeight:520, height:520, display:'flex', flexDirection:'column' }}>
+    <Card style={{ borderRadius:20, overflow:'hidden', minHeight:520, display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'15px 16px 10px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, borderBottom:'1px solid #eef2f7', flexWrap:'wrap' }}>
         <div>
           <div style={{ fontSize:16, fontWeight:950, color:'#111827', letterSpacing:'-.25px' }}>Daily Progress</div>
@@ -975,11 +1003,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
       <div
         className="daily-progress-summary"
         style={{
-          height:86,
-          minHeight:86,
-          maxHeight:86,
-          overflow:'hidden',
-          padding:'13px 16px 2px',
+          padding:'13px 16px 10px',
           display:'grid',
           gridTemplateColumns:'repeat(4, minmax(0, 1fr))',
           gap:12,
@@ -1014,8 +1038,8 @@ const DailyProgressCard = memo(function DailyProgressCard({
         )}
       </div>
 
-      <div style={{ padding:'0 8px 4px', height:310, minHeight:310, maxHeight:310, overflow:'hidden', position:'relative' }}>
-        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ width:'100%', height:300, display:'block', minHeight:300, maxHeight:300 }}>
+      <div ref={chartWrapRef} style={{ padding:'0 8px 4px', position:'relative' }}>
+        <svg viewBox={`0 0 ${width} ${height}`} style={{ width:'100%', height:height, display:'block' }}>
           <defs>
             <linearGradient id="balanceAreaFiNK" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#15803d" stopOpacity=".20" />
@@ -1037,9 +1061,9 @@ const DailyProgressCard = memo(function DailyProgressCard({
             return (
               <g key={i}>
                 <line x1={pad.l} x2={width-pad.r} y1={yy} y2={yy} stroke={tick === 0 && mode === 'cashflow' ? '#dbe3ef' : '#edf1f5'} strokeWidth={tick === 0 && mode === 'cashflow' ? '1.4' : '1'} />
-                {mode === 'balance' && <text x={pad.l-12} y={yy+4} textAnchor="end" fontSize="10" fill="#64748b">{fmtShort(maxValue * (tick as number))}</text>}
-                {mode === 'cashflow' && tick === 1 && <text x={pad.l-12} y={yy+4} textAnchor="end" fontSize="10" fill="#15803d">Income</text>}
-                {mode === 'cashflow' && tick === -1 && <text x={pad.l-12} y={yy+4} textAnchor="end" fontSize="10" fill="#b91c1c">Expense</text>}
+                {mode === 'balance' && <text x={axisLabelX} y={yy+4} textAnchor="end" fontSize={axisFs} fill="#64748b">{fmtShort(maxValue * (tick as number))}</text>}
+                {mode === 'cashflow' && tick === 1 && <text x={axisLabelX} y={yy+4} textAnchor="end" fontSize={axisFs} fill="#15803d">Income</text>}
+                {mode === 'cashflow' && tick === -1 && <text x={axisLabelX} y={yy+4} textAnchor="end" fontSize={axisFs} fill="#b91c1c">Expense</text>}
               </g>
             )
           })}
@@ -1063,8 +1087,15 @@ const DailyProgressCard = memo(function DailyProgressCard({
             />
           )}
           <g>
-            <rect x={x(visibleDay)-22} y={pad.t+4} width="44" height="20" rx="10" fill="#1a5c42" />
-            <text x={x(visibleDay)} y={pad.t+18} textAnchor="middle" fontSize="10" fontWeight="800" fill="#fff">Today</text>
+            {(() => {
+              const todayX = Math.min(Math.max(x(visibleDay), 26), width - 26)
+              return (
+                <>
+                  <rect x={todayX-22} y={pad.t+4} width="44" height="20" rx="10" fill="#1a5c42" />
+                  <text x={todayX} y={pad.t+18} textAnchor="middle" fontSize="10" fontWeight="800" fill="#fff">Today</text>
+                </>
+              )
+            })()}
           </g>
 
           <g>
@@ -1194,6 +1225,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
                   onMouseEnter={e => showDailyTooltip(e, d)}
                   onMouseMove={e => showDailyTooltip(e, d)}
                   onMouseLeave={() => setHoveredDaily(null)}
+                  onTouchStart={e => touchDailyTooltip(e, d)}
                   style={{ cursor:'default' }}
                 />
               )
@@ -1204,9 +1236,9 @@ const DailyProgressCard = memo(function DailyProgressCard({
           <div
             style={{
               position:'absolute',
-              left: Math.min(Math.max(hoveredDaily.x + 14, 12), 820),
+              left: Math.min(Math.max(hoveredDaily.x + 14, 12), Math.max(12, width - 202)),
               top: Math.max(hoveredDaily.y - 118, 10),
-              transform: hoveredDaily.x > 700 ? 'translateX(-100%)' : 'none',
+              transform: hoveredDaily.x > width - 212 ? 'translateX(-100%)' : 'none',
               background:'#111827',
               color:'#fff',
               borderRadius:12,
@@ -1230,7 +1262,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
         )}
       </div>
 
-      <div style={{ borderTop:'1px solid #eef2f7', padding:'11px 16px', minHeight:48, height:48, maxHeight:48, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'nowrap', fontSize:11.5, color:'#64748b' }}>
+      <div style={{ borderTop:'1px solid #eef2f7', padding:'11px 16px', minHeight:48, display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap', fontSize:11.5, color:'#64748b' }}>
         <span>{mode === 'balance' ? 'Balance menunjukkan dampak aktivitas harian terhadap kondisi uang.' : 'Cashflow memakai skala visual yang dikompresi agar spike besar tetap terbaca tanpa menutupi transaksi kecil.'}</span>
         <Link href="/journal" style={{ color:'#1a5c42', fontWeight:850, textDecoration:'none' }}>Review Journal →</Link>
       </div>
@@ -1239,9 +1271,6 @@ const DailyProgressCard = memo(function DailyProgressCard({
         @media (max-width: 720px) {
           .daily-progress-summary {
             grid-template-columns: 1fr 1fr !important;
-            height: 116px !important;
-            min-height: 116px !important;
-            max-height: 116px !important;
           }
           .daily-progress-summary > div:first-child {
             grid-column: span 2 !important;
@@ -1250,6 +1279,9 @@ const DailyProgressCard = memo(function DailyProgressCard({
         @media (max-width: 440px) {
           .daily-progress-summary {
             grid-template-columns: 1fr !important;
+          }
+          .daily-progress-summary > div:first-child {
+            grid-column: span 1 !important;
           }
         }
       `}</style>
