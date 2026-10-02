@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { DebtRow, Transaction } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 type TxType = Transaction['type']
 
@@ -15,41 +16,56 @@ type Props = {
   isMobile?: boolean
 }
 
+const ACCENT = '#1a5c42'
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
-const delBtn: React.CSSProperties = { width:'18px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
+const planInp: React.CSSProperties = { ...inp, borderBottom:'1px dotted #cbd5e1', borderRadius:'2px', transition:'border-color .14s, background .14s' }
 
 const fmt = (n:number) => 'Rp ' + Math.round(Math.abs(n||0)).toLocaleString('id-ID')
 const fmtNum = (n:number) => Math.round(n||0).toLocaleString('id-ID')
 const pNum = (v:string) => Number(String(v).replace(/\D/g,'')) || 0
 
-function DragHandle() {
+function DragHandle({ visible }: { visible: boolean }) {
   return (
     <span
-      title="Drag"
+      title="Drag to reorder"
       style={{
-        width:'18px',
-        flexShrink:0,
-        cursor:'grab',
-        display:'flex',
-        alignItems:'center',
-        justifyContent:'center',
-        touchAction:'none',
-        color:'#94a3b8',
-        fontSize:'14px',
-        lineHeight:1,
-        opacity:.75,
-        userSelect:'none'
+        width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center',
+        touchAction:'none', color:'#94a3b8', fontSize:'12px', lineHeight:1,
+        opacity: visible ? .8 : 0, transition:'opacity .13s', userSelect:'none',
       }}
     >⠿</span>
+  )
+}
+
+function DelBtn({ visible, title, onClick, isMobile }: {
+  visible: boolean; title: string; onClick: () => void; isMobile?: boolean
+}) {
+  const show = visible || !!isMobile
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onMouseDown={e=>e.stopPropagation()}
+      onClick={onClick}
+      style={{
+        width:'22px', height:'22px', borderRadius:'6px', border:'none', background:'none',
+        color:'#9ca3af', display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', flexShrink:0, opacity: show ? (visible ? 1 : .45) : 0, transition:'opacity .13s',
+        pointerEvents: show ? 'auto' : 'none',
+      }}
+    ><AppIcon name="trash" size={12} /></button>
   )
 }
 
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const [hover,setHover]=useState(false)
   return (
-    <button style={{ width:'100%', padding:'9px 10px', border:'1.5px dashed #cbd5e1', borderRadius:'10px', background:hover?'#e8f5ef':'#fff', color:hover?'#1a5c42':'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s', textAlign:'center' }}
-      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      onClick={onClick}>{label}</button>
+    <button
+      type="button"
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onClick={onClick}
+      style={{ width:'100%', padding:'7px 10px', border:'1.5px dashed', borderColor: hover?ACCENT:'#c9d2de', borderRadius:'9px', background: hover?'#e8f5ef':'transparent', color: hover?ACCENT:'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'6px', transition:'all .13s', textAlign:'center' }}
+    >{label}</button>
   )
 }
 
@@ -59,6 +75,7 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
   const rows = Array.isArray(debt) && debt.length ? debt : [{ label:'Debt', plan:0, actual:0 }]
   const [hovRow, setHovRow] = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null)
   const debtDragSrc = useRef<number|null>(null)
 
   const totDebtP = rows.reduce((s,r)=>s+(r.plan||0),0)
@@ -88,13 +105,18 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
     onDebtChange(rows.map((r,i2)=>i2!==i?r:{...r,...patch}))
   }
 
-  function removeRow(i:number) {
+  function requestRemoveRow(i:number) {
     if (rows.length <= 1) {
-      alert('Minimal harus ada satu Debt Payment.')
+      alert('At least one debt item is required.')
       return
     }
-    const ok = confirm(`Hapus debt item "${rows[i].label}"?`)
-    if (!ok) return
+    setPendingDelete(i)
+  }
+
+  function confirmRemoveRow() {
+    const i = pendingDelete
+    setPendingDelete(null)
+    if (i === null) return
     onDebtChange(rows.filter((_,i2)=>i2!==i))
   }
 
@@ -107,51 +129,53 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
     onDebtChange([...rows,{label:'New Debt',plan:0,actual:0}])
   }
 
-  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'10px', background:'#f7f8fa' }
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'7px 9px', marginTop:'8px', background:'#f7f8fa' }
+  const sectionTitle: React.CSSProperties = { fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'4px' }
 
   return (
     <div>
-      <div style={{ height:'1px', background:'#e3e7ee', margin:'14px 0 10px' }} />
-      <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>Debt Payment</div>
+      <div style={{ height:'1px', background:'#e3e7ee', margin:'12px 0 8px' }} />
+      <div style={sectionTitle}>Debt Payment</div>
 
       {rows.map((r,i)=>{
         const dk = `debt-${i}`
+        const dhov = hovRow===dk
         return (
-          <div key={i} draggable onDragStart={e=>onDebtDragStart(e,i)}
+          <div key={i} draggable={!isMobile} onDragStart={e=>onDebtDragStart(e,i)}
             onDragOver={e=>{ e.preventDefault(); setDragOver(dk) }}
             onDrop={e=>onDebtDrop(e,i)} onDragLeave={()=>setDragOver(null)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===dk?'#92400e':hovRow===dk?'#cbd5e1':'#e3e7ee', background:hovRow===dk?'#fff':'#f7f8fa', cursor:'grab', transition:'border-color .13s, background .13s, box-shadow .13s', boxShadow:hovRow===dk?'0 8px 18px rgba(15,23,42,.06)':'none' }}
-            onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}>
-            <DragHandle />
+            onMouseEnter={()=>setHovRow(dk)} onMouseLeave={()=>setHovRow(null)}
+            style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: i<rows.length-1?'1px solid #f1f4f8':'none', borderTop: dragOver===dk?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+            {!isMobile && <DragHandle visible={dhov || dragOver===dk} />}
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>updateRow(i,{label:e.target.value})}
               onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value && onRename) onRename(old,e.target.value,'out') }} />
             {isMobile ? (
-              <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===dk ? '#92400e' : 'transparent'}`, background:hovRow===dk ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
+              <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+                <input style={{ ...planInp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'2px 3px' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
-                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
+                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
                   onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
-                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                <div style={{ fontSize:'11.5px', fontWeight:600, color:ACCENT, fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </div>
             ) : (
               <>
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===dk ? '#92400e' : 'transparent'}`, background:hovRow===dk ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===dk ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }}
+                <input style={{ ...planInp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'2px 6px' }}
                   value={r.plan?fmtNum(r.plan):''} placeholder="0"
-                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.currentTarget.select()}
+                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
                   onBlur={e=>{ const v=pNum(e.currentTarget.value); e.currentTarget.value=v?fmtNum(v):'' }}
                   onChange={e=>updateRow(i,{plan:pNum(e.currentTarget.value)})} />
-                <div style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(r.actual||0)>0?'#8a5f2b':'#9ca3af', whiteSpace:'nowrap' }}>
+                <div style={{ width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(r.actual||0)>0?ACCENT:'#9ca3af', whiteSpace:'nowrap' }}>
                   {r.actual ? fmtNum(r.actual) : '-'}
                 </div>
               </>
             )}
-            <button style={{ ...delBtn, opacity: hovRow===dk?1:0 }} onMouseDown={e=>e.stopPropagation()}
-              onClick={()=>removeRow(i)} aria-label="Remove"><AppIcon name="trash" size={13} /></button>
+            <DelBtn visible={dhov} isMobile={isMobile} title="Delete debt item"
+              onClick={()=>requestRemoveRow(i)} />
           </div>
         )
       })}
@@ -159,21 +183,28 @@ export default function DebtPanel({ debt, onDebtChange, onRename, isMobile }: Pr
       <AddBtn label="+ add debt item" onClick={handleAddDebtItem} />
 
       <div style={totalRow}>
-        <div style={{ width:'14px' }}/>
-        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Debt</div>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:700, color:'#111827' }}>Total Debt</div>
         {isMobile ? (
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0' }}>
             <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtA)}</span>
+            <span style={{ fontSize:'12px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace' }}>{fmt(totDebtA)}</span>
           </div>
         ) : (
           <>
             <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtP)}</div>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#8a5f2b', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
+            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totDebtA)}</div>
           </>
         )}
-        <div style={{ width:'18px' }}/>
       </div>
+
+      {pendingDelete !== null && (
+        <ConfirmDialog
+          title="Delete debt item?"
+          message={<>Delete <strong style={{ color:'#111827' }}>“{rows[pendingDelete]?.label}”</strong>? This cannot be undone.</>}
+          onConfirm={confirmRemoveRow}
+          onCancel={()=>setPendingDelete(null)}
+        />
+      )}
     </div>
   )
 }
