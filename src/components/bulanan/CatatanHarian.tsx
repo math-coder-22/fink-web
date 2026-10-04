@@ -139,6 +139,10 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [calcExpr, setCalcExpr] = useState('')
   const [calcResult, setCalcResult] = useState<number|null>(null)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [typePickerOpen, setTypePickerOpen] = useState(false)
+  const [catPickerOpen, setCatPickerOpen] = useState(false)
+  const [catSearch, setCatSearch] = useState('')
+  const [calcHistory, setCalcHistory] = useState<{ expr: string; result: number }[]>([])
   const [errors, setErrors] = useState<{ amt?: string; note?: string }>({})
   const [confirmTx, setConfirmTx] = useState<Transaction | null>(null)
 
@@ -283,8 +287,29 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   function applyCalculatorResult() {
     const result = calcResult ?? safeCalculateExpression(calcExpr)
     if (result === null) return
+    setCalcHistory(prev => [{ expr: calcExpr, result }, ...prev.filter(h => h.expr !== calcExpr)].slice(0, 5))
     setAmt(fmtInput(String(result)))
     setCalcOpen(false)
+  }
+
+  function reuseCalcHistory(h: { expr: string; result: number }) {
+    setCalcExpr(h.expr)
+    setCalcResult(h.result)
+  }
+
+  const CALC_KEYS: { k: string; tone: 'num' | 'op' | 'clear' | 'util' }[] = [
+    { k:'7', tone:'num' }, { k:'8', tone:'num' }, { k:'9', tone:'num' }, { k:'÷', tone:'op' },
+    { k:'4', tone:'num' }, { k:'5', tone:'num' }, { k:'6', tone:'num' }, { k:'×', tone:'op' },
+    { k:'1', tone:'num' }, { k:'2', tone:'num' }, { k:'3', tone:'num' }, { k:'-', tone:'op' },
+    { k:'0', tone:'num' }, { k:'000', tone:'num' }, { k:'.', tone:'num' }, { k:'+', tone:'op' },
+    { k:'C', tone:'clear' }, { k:'⌫', tone:'util' }, { k:'(', tone:'util' }, { k:')', tone:'util' },
+  ]
+  const calcKeyStyle = (tone: 'num' | 'op' | 'clear' | 'util'): React.CSSProperties => {
+    const base: React.CSSProperties = { padding:'13px 0', borderRadius:'12px', fontSize:'15px', fontWeight:800, cursor:'pointer', border:'1px solid' }
+    if (tone === 'op') return { ...base, background:'#f0fdf4', borderColor:'#bbf7d0', color:'#1a5c42' }
+    if (tone === 'clear') return { ...base, background:'#fef2f2', borderColor:'#fecaca', color:'#991b1b' }
+    if (tone === 'util') return { ...base, background:'#f7f8fa', borderColor:'#e3e7ee', color:'#4b5563' }
+    return { ...base, background:'#fff', borderColor:'#e3e7ee', color:'#111827' }
   }
 
   function openDeleteConfirm(t: Transaction) {
@@ -309,6 +334,23 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const err: React.CSSProperties = { fontSize:'11px', color:'#b91c1c', marginTop:'4px' }
 
   const TYPE_LABELS: Record<string, string> = { out: 'Expense', inn: 'Income', save: 'Savings' }
+  const TYPE_DOT: Record<string, string> = { out: '#991b1b', inn: '#1a5c42', save: '#1e40af' }
+
+  function pickType(v: 'out'|'inn'|'save') {
+    setType(v); setCat(''); setErrors({})
+  }
+
+  function pickCat(v: string) {
+    setCat(v); setErrors(p => ({ ...p, note: undefined }))
+  }
+
+  const filteredCatGroups = useMemo(() => {
+    const q = catSearch.trim().toLowerCase()
+    if (!q) return catGroups
+    return catGroups
+      .map(g => ({ group: g.group, items: g.items.filter(i => i.toLowerCase().includes(q)) }))
+      .filter(g => g.items.length > 0)
+  }, [catGroups, catSearch])
 
   return (
     <div>
@@ -340,28 +382,98 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
               </>
             )}
           </div>
-          <div style={{ minWidth:0 }}>
+          <div style={{ position:'relative', minWidth:0 }}>
             <span style={lbl}>Type</span>
-            <select style={sel} value={type} onChange={e => { setType(e.target.value as 'out'|'inn'|'save'); setCat(''); setErrors({}) }}>
-              <option value="out">Expense</option>
-              <option value="inn">Income</option>
-              <option value="save">Savings</option>
-            </select>
+            <button
+              type="button"
+              onClick={() => setTypePickerOpen(v => !v)}
+              aria-label="Pick type"
+              style={{ ...inp, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'6px' }}
+            >
+              <span style={{ display:'flex', alignItems:'center', gap:'8px', overflow:'hidden' }}>
+                <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:TYPE_DOT[type], flexShrink:0 }} />
+                <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{TYPE_LABELS[type]}</span>
+              </span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink:0 }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </button>
+            {typePickerOpen && (
+              <>
+                <div onClick={() => setTypePickerOpen(false)} style={{ position:'fixed', inset:0, zIndex:70 }} />
+                <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 6px)', zIndex:71, background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 12px 32px rgba(15,23,42,.12)', overflow:'hidden', padding:'4px' }}>
+                  {(['out','inn','save'] as const).map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => { pickType(v); setTypePickerOpen(false) }}
+                      style={{ width:'100%', display:'flex', alignItems:'center', gap:'9px', padding:'9px 10px', border:'none', borderRadius:'7px', background: v === type ? '#f0fdf4' : 'transparent', cursor:'pointer', fontFamily:'Inter, system-ui, sans-serif', fontSize:'13px', fontWeight: v === type ? 700 : 500, color:'#111827', textAlign:'left' }}
+                    >
+                      <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:TYPE_DOT[v], flexShrink:0 }} />
+                      <span style={{ flex:1 }}>{TYPE_LABELS[v]}</span>
+                      {v === type && <AppIcon name="check" size={14} />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Row 2: Category + Amount */}
         <div className="fink-tx-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div style={{ minWidth:0 }}>
+          <div style={{ position:'relative', minWidth:0 }}>
             <span style={lbl}>Category</span>
-            <select style={sel} value={cat} onChange={e => { setCat(e.target.value); setErrors(p => ({ ...p, note: undefined })) }}>
-              <option value="">— Select category —</option>
-              {catGroups.map(g => (
-                <optgroup key={g.group} label={g.group}>
-                  {g.items.map(item => <option key={item} value={item}>{item}</option>)}
-                </optgroup>
-              ))}
-            </select>
+            <button
+              type="button"
+              onClick={() => { setCatSearch(''); setCatPickerOpen(v => !v) }}
+              aria-label="Pick category"
+              style={{ ...inp, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'6px' }}
+            >
+              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color: cat ? '#111827' : '#9ca3af' }}>
+                {cat || '— Select category —'}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink:0 }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </button>
+            {catPickerOpen && (
+              <>
+                <div onClick={() => setCatPickerOpen(false)} style={{ position:'fixed', inset:0, zIndex:70 }} />
+                <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 6px)', zIndex:71, background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 12px 32px rgba(15,23,42,.12)', overflow:'hidden' }}>
+                  <div style={{ padding:'8px', borderBottom:'1px solid #eef1f5' }}>
+                    <input
+                      autoFocus
+                      placeholder="Search category..."
+                      value={catSearch}
+                      onChange={e => setCatSearch(e.target.value)}
+                      style={{ width:'100%', padding:'7px 10px', border:'1.5px solid #e3e7ee', borderRadius:'7px', outline:'none', background:'#f7f8fa', fontFamily:'Inter, system-ui, sans-serif', fontSize:'12.5px', color:'#111827' }}
+                    />
+                  </div>
+                  <div style={{ maxHeight:'230px', overflowY:'auto', padding:'4px' }}>
+                    {filteredCatGroups.length === 0 && (
+                      <div style={{ padding:'14px', textAlign:'center', fontSize:'12.5px', color:'#9ca3af' }}>No categories found</div>
+                    )}
+                    {filteredCatGroups.map(g => (
+                      <div key={g.group}>
+                        <div style={{ padding:'7px 10px 3px', fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }}>{g.group}</div>
+                        {g.items.map(item => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => { pickCat(item); setCatPickerOpen(false) }}
+                            style={{ width:'100%', display:'flex', alignItems:'center', gap:'8px', padding:'8px 10px', border:'none', borderRadius:'7px', background: item === cat ? '#f0fdf4' : 'transparent', cursor:'pointer', fontFamily:'Inter, system-ui, sans-serif', fontSize:'13px', fontWeight: item === cat ? 700 : 500, color:'#111827', textAlign:'left' }}
+                          >
+                            <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item}</span>
+                            {item === cat && <AppIcon name="check" size={14} />}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <div style={{ minWidth:0 }}>
             <span style={lbl}>Amount (Rp)</span>
@@ -488,64 +600,67 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
           onClick={e => { if (e.currentTarget === e.target) setCalcOpen(false) }}
           style={{ position:'fixed', inset:0, background:'rgba(17,24,39,.42)', zIndex:950, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}
         >
-          <div style={{ width:'100%', maxWidth:'340px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
-            <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:800, color:'#111827' }}><AppIcon name="calculator" size={16} />Expense Calculator</div>
-                <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>Calculate, then insert into Amount</div>
+          <div style={{ width:'100%', maxWidth:'360px', background:'#fff', borderRadius:'20px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
+            <div style={{ padding:'16px 18px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:9, fontSize:'15px', fontWeight:800, color:'#111827' }}>
+                <span style={{ width:'32px', height:'32px', borderRadius:'10px', background:'#f0fdf4', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#1a5c42' }}>
+                  <AppIcon name="calculator" size={17} />
+                </span>
+                Calculator
               </div>
               <button type="button" aria-label="Close" onClick={()=>setCalcOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f3f4f6', borderRadius:'8px', color:'#4b5563', cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
             </div>
 
-            <div style={{ padding:'14px 16px' }}>
-              <input
-                readOnly
-                inputMode="none"
-                value={calcExpr}
-                onChange={e => {
-                  const formatted = formatCalcExpression(e.target.value)
-                  setCalcExpr(formatted)
-                  setCalcResult(safeCalculateExpression(formatted))
-                }}
-                placeholder="E.g. 12.000+35.000"
-                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'var(--font-mono), monospace', fontSize:'15px', fontWeight:700, color:'#111827', cursor:'default', caretColor:'transparent' }}
-              />
-
-              <div style={{ marginTop:'8px', padding:'10px 12px', borderRadius:'10px', background:'#f0fdf4', border:'1px solid #bbf7d0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
-                <span style={{ fontSize:'11px', fontWeight:800, color:'#15803d', textTransform:'uppercase', letterSpacing:'.5px' }}>Result</span>
-                <span style={{ fontFamily:'var(--font-mono), monospace', fontSize:'16px', fontWeight:900, color:'#1a5c42' }}>
-                  {calcResult === null ? '-' : fmt(calcResult)}
-                </span>
+            <div style={{ margin:'0 18px', padding:'14px 16px', borderRadius:'14px', background:'#111827' }}>
+              <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'13.5px', color:'#9ca3af', textAlign:'right', minHeight:'20px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {calcExpr || ' '}
               </div>
+              <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'26px', fontWeight:800, color:'#fff', textAlign:'right', marginTop:'4px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {calcResult === null ? '—' : fmt(calcResult)}
+              </div>
+            </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'8px', marginTop:'12px' }}>
-                {['7','8','9','÷','4','5','6','×','1','2','3','-','0','000','.','+'].map(k => (
+            {calcHistory.length > 0 && (
+              <div style={{ margin:'10px 18px 0' }}>
+                <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'2px' }}>Recent</div>
+                <div style={{ display:'flex', flexDirection:'column', maxHeight:'92px', overflowY:'auto' }}>
+                  {calcHistory.map((h, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => reuseCalcHistory(h)}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', padding:'6px 10px', border:'none', borderRadius:'8px', background:'transparent', cursor:'pointer', fontFamily:'var(--font-mono), monospace', fontSize:'12px', color:'#4b5563', textAlign:'left' }}
+                    >
+                      <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{h.expr}</span>
+                      <span style={{ fontWeight:700, color:'#1a5c42', flexShrink:0 }}>= {fmt(h.result)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ padding:'14px 18px 18px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'10px' }}>
+                {CALC_KEYS.map(({ k, tone }) => (
                   <button
                     key={k}
                     type="button"
                     onClick={()=>handleCalcInput(k)}
-                    style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:['+','-','×','÷'].includes(k)?'#f0fdf4':'#fff', color:['+','-','×','÷'].includes(k)?'#1a5c42':'#111827', fontSize:'14px', fontWeight:800, cursor:'pointer' }}
+                    style={calcKeyStyle(tone)}
                   >
                     {k}
                   </button>
                 ))}
-                <button type="button" onClick={()=>handleCalcInput('C')} style={{ padding:'11px 0', border:'1px solid #fecaca', borderRadius:'10px', background:'#fef2f2', color:'#991b1b', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>C</button>
-                <button type="button" onClick={()=>handleCalcInput('⌫')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>⌫</button>
-                <button type="button" onClick={()=>handleCalcInput('(')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>(</button>
-                <button type="button" onClick={()=>handleCalcInput(')')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>)</button>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop:'14px' }}>
-                <button type="button" onClick={()=>setCalcOpen(false)} style={{ padding:'10px', borderRadius:'10px', border:'1px solid #e3e7ee', background:'#fff', color:'#4b5563', fontWeight:800, cursor:'pointer' }}>Cancel</button>
-                <button
-                  type="button"
-                  onClick={applyCalculatorResult}
-                  disabled={calcResult === null}
-                  style={{ padding:'10px', borderRadius:'10px', border:'none', background:calcResult===null?'#9ca3af':'#1a5c42', color:'#fff', fontWeight:900, cursor:calcResult===null?'not-allowed':'pointer' }}
-                >
-                  Use Result
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={applyCalculatorResult}
+                disabled={calcResult === null}
+                style={{ width:'100%', marginTop:'12px', padding:'12px', borderRadius:'12px', border:'none', background:calcResult===null?'#9ca3af':'#1a5c42', color:'#fff', fontSize:'14px', fontWeight:800, cursor:calcResult===null?'not-allowed':'pointer', fontFamily:'Inter, system-ui, sans-serif' }}
+              >
+                Use Result{calcResult !== null ? ` · ${fmt(calcResult)}` : ''}
+              </button>
             </div>
           </div>
         </div>
