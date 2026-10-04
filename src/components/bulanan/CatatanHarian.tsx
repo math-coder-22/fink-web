@@ -4,6 +4,7 @@ import { memo, useMemo, useState } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { TypePicker, CategoryPicker, TYPE_LABELS } from '@/components/bulanan/TxPickers'
 import { MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useSavings } from '@/hooks/useSavings'
 import type { Transaction, BudgetCategory, IncomeCategory, SavingRow, DebtRow } from '@/types/database'
@@ -139,25 +140,25 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [calcExpr, setCalcExpr] = useState('')
   const [calcResult, setCalcResult] = useState<number|null>(null)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
-  const [typePickerOpen, setTypePickerOpen] = useState(false)
-  const [catPickerOpen, setCatPickerOpen] = useState(false)
-  const [catSearch, setCatSearch] = useState('')
   const [calcHistory, setCalcHistory] = useState<{ expr: string; result: number }[]>([])
   const [errors, setErrors] = useState<{ amt?: string; note?: string }>({})
   const [confirmTx, setConfirmTx] = useState<Transaction | null>(null)
 
-  // Category options grouped by category. Memoized agar input form tidak menghitung ulang opsi setiap render.
-  const catGroups = useMemo(() => {
-    if (type === 'out') {
+  // Category options grouped by category. Shared by the add form and the edit form.
+  function catOptsFor(t: 'out' | 'inn' | 'save') {
+    if (t === 'out') {
       const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
       const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
       return debtItems.length
         ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
         : budgetGroups
     }
-    if (type === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+    if (t === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
     return [{ group: 'Savings', items: saving.map(r => r.label) }]
-  }, [type, budget, income, saving, debt])
+  }
+
+  // Memoized so the add form does not recompute options every render.
+  const catGroups = useMemo(() => catOptsFor(type), [type, budget, income, saving, debt])
 
   async function commitAddTransaction(goalId?: string | null) {
     setLoading(true)
@@ -196,19 +197,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     setActionMenuId(null)
     setEditId(t.id)
     setEditData({ ...t })
-        const opts = (() => {
-      if (t.type === 'out') {
-        const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-        const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
-        return debtItems.length
-          ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
-          : budgetGroups
-      }
-      if (t.type === 'inn')
-        return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-      return [{ group: 'Savings', items: saving.map(r => r.label) }]
-    })()
-    setEditCatOpts(opts)
+    setEditCatOpts(catOptsFor(t.type as 'out' | 'inn' | 'save'))
   }
 
   async function saveEdit() {
@@ -333,9 +322,6 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const lbl: React.CSSProperties = { display:'block', fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'4px' }
   const err: React.CSSProperties = { fontSize:'11px', color:'#b91c1c', marginTop:'4px' }
 
-  const TYPE_LABELS: Record<string, string> = { out: 'Expense', inn: 'Income', save: 'Savings' }
-  const TYPE_DOT: Record<string, string> = { out: '#991b1b', inn: '#1a5c42', save: '#1e40af' }
-
   function pickType(v: 'out'|'inn'|'save') {
     setType(v); setCat(''); setErrors({})
   }
@@ -343,14 +329,6 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   function pickCat(v: string) {
     setCat(v); setErrors(p => ({ ...p, note: undefined }))
   }
-
-  const filteredCatGroups = useMemo(() => {
-    const q = catSearch.trim().toLowerCase()
-    if (!q) return catGroups
-    return catGroups
-      .map(g => ({ group: g.group, items: g.items.filter(i => i.toLowerCase().includes(q)) }))
-      .filter(g => g.items.length > 0)
-  }, [catGroups, catSearch])
 
   return (
     <div>
@@ -382,99 +360,12 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
               </>
             )}
           </div>
-          <div style={{ position:'relative', minWidth:0 }}>
-            <span style={lbl}>Type</span>
-            <button
-              type="button"
-              onClick={() => setTypePickerOpen(v => !v)}
-              aria-label="Pick type"
-              style={{ ...inp, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'6px' }}
-            >
-              <span style={{ display:'flex', alignItems:'center', gap:'8px', overflow:'hidden' }}>
-                <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:TYPE_DOT[type], flexShrink:0 }} />
-                <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{TYPE_LABELS[type]}</span>
-              </span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink:0 }}>
-                <path d="M2 4l4 4 4-4" />
-              </svg>
-            </button>
-            {typePickerOpen && (
-              <>
-                <div onClick={() => setTypePickerOpen(false)} style={{ position:'fixed', inset:0, zIndex:70 }} />
-                <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 6px)', zIndex:71, background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 12px 32px rgba(15,23,42,.12)', overflow:'hidden', padding:'4px' }}>
-                  {(['out','inn','save'] as const).map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => { pickType(v); setTypePickerOpen(false) }}
-                      style={{ width:'100%', display:'flex', alignItems:'center', gap:'9px', padding:'9px 10px', border:'none', borderRadius:'7px', background: v === type ? '#f0fdf4' : 'transparent', cursor:'pointer', fontFamily:'Inter, system-ui, sans-serif', fontSize:'13px', fontWeight: v === type ? 700 : 500, color:'#111827', textAlign:'left' }}
-                    >
-                      <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:TYPE_DOT[v], flexShrink:0 }} />
-                      <span style={{ flex:1 }}>{TYPE_LABELS[v]}</span>
-                      {v === type && <AppIcon name="check" size={14} />}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <TypePicker value={type} onPick={pickType} />
         </div>
 
         {/* Row 2: Category + Amount */}
         <div className="fink-tx-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div style={{ position:'relative', minWidth:0 }}>
-            <span style={lbl}>Category</span>
-            <button
-              type="button"
-              onClick={() => { setCatSearch(''); setCatPickerOpen(v => !v) }}
-              aria-label="Pick category"
-              style={{ ...inp, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'6px' }}
-            >
-              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color: cat ? '#111827' : '#9ca3af' }}>
-                {cat || '— Select category —'}
-              </span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink:0 }}>
-                <path d="M2 4l4 4 4-4" />
-              </svg>
-            </button>
-            {catPickerOpen && (
-              <>
-                <div onClick={() => setCatPickerOpen(false)} style={{ position:'fixed', inset:0, zIndex:70 }} />
-                <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 6px)', zIndex:71, background:'#fff', border:'1px solid #e3e7ee', borderRadius:'10px', boxShadow:'0 12px 32px rgba(15,23,42,.12)', overflow:'hidden' }}>
-                  <div style={{ padding:'8px', borderBottom:'1px solid #eef1f5' }}>
-                    <input
-                      autoFocus
-                      placeholder="Search category..."
-                      value={catSearch}
-                      onChange={e => setCatSearch(e.target.value)}
-                      style={{ width:'100%', padding:'7px 10px', border:'1.5px solid #e3e7ee', borderRadius:'7px', outline:'none', background:'#f7f8fa', fontFamily:'Inter, system-ui, sans-serif', fontSize:'12.5px', color:'#111827' }}
-                    />
-                  </div>
-                  <div style={{ maxHeight:'230px', overflowY:'auto', padding:'4px' }}>
-                    {filteredCatGroups.length === 0 && (
-                      <div style={{ padding:'14px', textAlign:'center', fontSize:'12.5px', color:'#9ca3af' }}>No categories found</div>
-                    )}
-                    {filteredCatGroups.map(g => (
-                      <div key={g.group}>
-                        <div style={{ padding:'7px 10px 3px', fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px' }}>{g.group}</div>
-                        {g.items.map(item => (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => { pickCat(item); setCatPickerOpen(false) }}
-                            style={{ width:'100%', display:'flex', alignItems:'center', gap:'8px', padding:'8px 10px', border:'none', borderRadius:'7px', background: item === cat ? '#f0fdf4' : 'transparent', cursor:'pointer', fontFamily:'Inter, system-ui, sans-serif', fontSize:'13px', fontWeight: item === cat ? 700 : 500, color:'#111827', textAlign:'left' }}
-                          >
-                            <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item}</span>
-                            {item === cat && <AppIcon name="check" size={14} />}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <CategoryPicker value={cat} onPick={pickCat} groups={catGroups} />
           <div style={{ minWidth:0 }}>
             <span style={lbl}>Amount (Rp)</span>
             <div style={{ display:'flex', gap:'6px', alignItems:'stretch', position:'relative' }}>
@@ -710,36 +601,20 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
                   <input type="number" min="1" max="31" style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
                     value={editData.date || ''} onChange={e => setEditData(p => ({ ...p, date: e.target.value }))} />
                 </div>
-                <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
-                  <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
-                    value={editData.type || 'out'}
-                    onChange={e => {
-                      const v = e.target.value as 'out'|'inn'|'save'
-                      setEditData(p => ({ ...p, type: v, cat: '' }))
-                      const opts = v === 'out' ? budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-                        : v === 'inn' ? income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-                        : [{ group: 'Savings', items: saving.map(r => r.label) }]
-                      setEditCatOpts(opts)
-                    }}>
-                    <option value="out">Expense</option>
-                    <option value="inn">Income</option>
-                    <option value="save">Savings</option>
-                  </select>
-                </div>
+                <TypePicker
+                  value={(editData.type || 'out') as 'out' | 'inn' | 'save'}
+                  onPick={v => {
+                    setEditData(p => ({ ...p, type: v, cat: '' }))
+                    setEditCatOpts(catOptsFor(v))
+                  }}
+                />
               </div>
               <div style={{ marginBottom: '6px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Category</div>
-                <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
+                <CategoryPicker
                   value={editData.cat || ''}
-                  onChange={e => setEditData(p => ({ ...p, cat: e.target.value }))}>
-                  <option value="">— Select —</option>
-                  {editCatOpts.map(g => (
-                    <optgroup key={g.group} label={g.group}>
-                      {g.items.map(item => <option key={item} value={item}>{item}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
+                  onPick={v => setEditData(p => ({ ...p, cat: v }))}
+                  groups={editCatOpts}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
