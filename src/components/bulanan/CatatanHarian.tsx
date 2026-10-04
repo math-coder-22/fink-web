@@ -129,6 +129,9 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [editId,  setEditId]  = useState<string|null>(null)
   const [editData,setEditData]= useState<Partial<Transaction>>({})
   const [editCatOpts, setEditCatOpts] = useState<{group:string;items:string[]}[]>([])
+  const [editAmtInput, setEditAmtInput] = useState('')
+  const [histQuery, setHistQuery] = useState('')
+  const [histType, setHistType] = useState<'all' | 'out' | 'inn' | 'save'>('all')
   const { goals, topupGoal } = useSavings()
   const activeGoals = useMemo(() => goals.filter(g => g.status === 'active' || g.status === 'pending'), [goals])
   const [savingModalOpen, setSavingModalOpen] = useState(false)
@@ -197,18 +200,33 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     setActionMenuId(null)
     setEditId(t.id)
     setEditData({ ...t })
+    setEditAmtInput(t.amt ? Number(t.amt).toLocaleString('id-ID') : '')
     setEditCatOpts(catOptsFor(t.type as 'out' | 'inn' | 'save'))
   }
 
   async function saveEdit() {
     if (!editId) return
-    await onUpdate(editId, editData.date ? { ...editData, date: String(editData.date).padStart(2, '0') } : editData)
+    const amt = parseInputAmount(editAmtInput)
+    const data = { ...editData, amt }
+    await onUpdate(editId, data.date ? { ...data, date: String(data.date).padStart(2, '0') } : data)
     setEditId(null)
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
+  const filteredTx = useMemo(() => {
+    const q = histQuery.trim().toLowerCase()
+    return tx.filter(t => {
+      if (histType !== 'all' && t.type !== histType) return false
+      if (!q) return true
+      const qDigits = q.replace(/\D/g, '')
+      return (t.note || '').toLowerCase().includes(q)
+        || (t.cat || '').toLowerCase().includes(q)
+        || (qDigits !== '' && String(t.amt || '').includes(qDigits))
+    })
+  }, [tx, histQuery, histType])
+
   const debtCount = useMemo(() => tx.filter(t => t.debt && !t.settled).length, [tx])
-  const sortedTx = useMemo(() => tx.slice().sort((a, b) => Number(b.date) - Number(a.date)), [tx])
+  const sortedTx = useMemo(() => filteredTx.slice().sort((a, b) => Number(b.date) - Number(a.date)), [filteredTx])
 
   // Group transactions by day (descending) for the history list.
   const txGroups = useMemo(() => {
@@ -221,12 +239,17 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     return [...map.entries()]
   }, [sortedTx])
 
-  // Day header label in fixed format, e.g. "2 Oct 2026".
+  // Day header label in fixed format, e.g. "Sun · 5 Oct 2026".
   const monthIdx = curMonth ? MONTHS_ORDER.indexOf(curMonth as any) : -1
   const dayLabel = (day: string) => {
     const m = monthIdx >= 0 ? SHORT_MONTHS[monthIdx] : ''
     const y = curYear || ''
-    return `${Number(day)}${m ? ` ${m}` : ''}${y ? ` ${y}` : ''}`.trim()
+    const base = `${Number(day)}${m ? ` ${m}` : ''}${y ? ` ${y}` : ''}`.trim()
+    if (monthIdx >= 0 && curYear) {
+      const wd = new Date(curYear, monthIdx, Number(day)).toLocaleDateString('en-US', { weekday: 'short' })
+      return `${wd} · ${base}`
+    }
+    return base
   }
   const dayNet = (items: Transaction[]) =>
     items.reduce((s, t) => s + (t.type === 'inn' ? Number(t.amt || 0) : -Number(t.amt || 0)), 0)
@@ -567,12 +590,52 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
         )}
       </div>
 
+      {(tx.length > 0) && (
+        <div style={{ padding: '8px 16px 0', display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <input
+            placeholder="Search note, category, amount..."
+            value={histQuery}
+            onChange={e => setHistQuery(e.target.value)}
+            style={{ flex:1, minWidth:0, padding: '7px 10px', border: '1.5px solid #e3e7ee', borderRadius: '8px', outline: 'none', background: '#f7f8fa', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', color: '#111827' }}
+          />
+          <div style={{ display: 'flex', gap: '3px', background: '#f7f8fa', border: '1px solid #e3e7ee', borderRadius: '8px', padding: '2px', flexShrink: 0 }}>
+            {([['all','All'],['out','Out'],['inn','In'],['save','Sav']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setHistType(v)}
+                style={{ border: 'none', borderRadius: '6px', padding: '5px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer', background: histType === v ? '#1a5c42' : 'transparent', color: histType === v ? '#fff' : '#6b7280', fontFamily: 'Inter, system-ui, sans-serif' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── TX LIST (grouped by day, with daily subtotal) ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 16px' }}>
         {tx.length === 0 && (
           <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:'6px' }}><AppIcon name="transactions" size={24} /></div>
             No transactions yet
+          </div>
+        )}
+
+        {tx.length > 0 && txGroups.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
+            No transactions match your search
+            {(histQuery || histType !== 'all') && (
+              <div style={{ marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setHistQuery(''); setHistType('all') }}
+                  style={{ border: '1px solid #e3e7ee', background: '#fff', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, color: '#4b5563', cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -625,7 +688,13 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
                   <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'var(--font-mono), monospace' }}
-                    value={editData.amt ? Number(editData.amt).toLocaleString('id-ID') : ''} onChange={e => setEditData(p => ({ ...p, amt: parseInputAmount(e.target.value) }))} />
+                    value={editAmtInput}
+                    onChange={e => setEditAmtInput(e.target.value)}
+                    onBlur={() => {
+                      const n = parseInputAmount(editAmtInput)
+                      setEditData(p => ({ ...p, amt: n }))
+                      setEditAmtInput(n ? n.toLocaleString('id-ID') : '')
+                    }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
@@ -658,6 +727,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.4px' }}>{TYPE_LABELS[t.type]}</span>
                   <span style={{ fontSize:'9.5px', fontWeight:600, background: catUn ? '#f1f5f9' : bc, color: catUn ? '#64748b' : tc, padding:'2px 7px', borderRadius:'20px', letterSpacing:'.3px', border: catUn ? '1px dashed #cbd5e1' : 'none' }}>{catLabel}</span>
                   {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="warning" size={10} />Unpaid</span></span>}
                   {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="check" size={10} />Settled</span></span>}
