@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, useEffect } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -119,19 +119,51 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     const dd = String(d.getDate()).padStart(2,'0')
     return `${y}-${m}-${dd}`
   })()
-  const [date,    setDate]    = useState(today)
-  const [type,    setType]    = useState<'out'|'inn'|'save'>('out')
-  const [cat,     setCat]     = useState('')
-  const [note,    setNote]    = useState('')
-  const [amt,     setAmt]     = useState('')
-  const [isDebt,  setIsDebt]  = useState(false)
+
+  // Draft preservation: if the page remounts (e.g. month switch), restore the
+  // in-progress form — but only when the draft belongs to the current month.
+  const DRAFT_KEY = 'fink-tx-draft-v1'
+  function readDraft(): { date?: string; type?: 'out'|'inn'|'save'; cat?: string; note?: string; amt?: string; isDebt?: boolean } | null {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY)
+      if (!raw) return null
+      const d = JSON.parse(raw)
+      if (d.curMonth !== curMonth || d.curYear !== curYear) return null
+      return d
+    } catch {
+      return null
+    }
+  }
+  // Lazy initializer: read the draft once on mount.
+  const [draft] = useState(readDraft)
+
+  const [date,    setDate]    = useState(draft?.date || today)
+  const [type,    setType]    = useState<'out'|'inn'|'save'>(draft?.type || 'out')
+  const [cat,     setCat]     = useState(draft?.cat || '')
+  const [note,    setNote]    = useState(draft?.note || '')
+  const [amt,     setAmt]     = useState(draft?.amt || '')
+  const [isDebt,  setIsDebt]  = useState(!!draft?.isDebt)
   const [loading, setLoading] = useState(false)
+
+  // Persist the in-progress form so it survives a page remount (month switch).
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ curMonth, curYear, date, type, cat, note, amt, isDebt }))
+    } catch { /* storage unavailable — draft simply won't survive */ }
+  }, [curMonth, curYear, date, type, cat, note, amt, isDebt])
+
+  function clearDraft() {
+    try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+  }
   const [editId,  setEditId]  = useState<string|null>(null)
   const [editData,setEditData]= useState<Partial<Transaction>>({})
   const [editCatOpts, setEditCatOpts] = useState<{group:string;items:string[]}[]>([])
   const [editAmtInput, setEditAmtInput] = useState('')
   const [histQuery, setHistQuery] = useState('')
   const [histType, setHistType] = useState<'all' | 'out' | 'inn' | 'save'>('all')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const { goals, topupGoal } = useSavings()
   const activeGoals = useMemo(() => goals.filter(g => g.status === 'active' || g.status === 'pending'), [goals])
   const [savingModalOpen, setSavingModalOpen] = useState(false)
@@ -174,6 +206,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
       await topupGoal(goalId, amount, goalNote || note || `Setoran dari Monthly - ${goal?.name || cat || 'Smart Saving'}`)
     }
     setAmt(''); setNote(''); setCat(''); setIsDebt(false); setGoalNote('')
+    clearDraft()
     setLoading(false)
     setSavingModalOpen(false)
     window.dispatchEvent(new Event('hutang-refresh'))
@@ -334,6 +367,17 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     const t = confirmTx
     setConfirmTx(null)
     await onDelete(t.id)
+    window.dispatchEvent(new Event('hutang-refresh'))
+  }
+
+  async function confirmBulkDeleteTx() {
+    const ids = selectedIds
+    setConfirmBulkDelete(false)
+    setSelectedIds([])
+    setSelectMode(false)
+    for (const id of ids) {
+      await onDelete(id)
+    }
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
@@ -610,6 +654,28 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => { setSelectMode(v => !v); setSelectedIds([]) }}
+            style={{ border: '1.5px solid #e3e7ee', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: selectMode ? '#1a5c42' : '#fff', color: selectMode ? '#fff' : '#4b5563', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}
+          >
+            {selectMode ? 'Done' : 'Select'}
+          </button>
+        </div>
+      )}
+
+      {selectMode && selectedIds.length > 0 && (
+        <div style={{ padding: '8px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '8px 12px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#1a5c42' }}>{selectedIds.length} selected</span>
+            <button
+              type="button"
+              onClick={() => setConfirmBulkDelete(true)}
+              style={{ border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', background: '#b91c1c', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              Delete
+            </button>
+          </div>
         </div>
       )}
 
@@ -720,9 +786,18 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
             <div key={t.id} style={{
               display: 'flex', alignItems: 'flex-start', gap: '7px',
               background: t.debt && !t.settled ? '#fffbeb' : '#f7f8fa',
-              border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
+              border: `1px solid ${selectedIds.includes(t.id) ? '#1a5c42' : t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(t.id)}
+                  onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, t.id] : prev.filter(id => id !== t.id))}
+                  aria-label={`Select ${t.note || 'transaction'}`}
+                  style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: '#1a5c42', cursor: 'pointer', flexShrink: 0 }}
+                />
+              )}
               <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace' }}>{t.date}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
@@ -852,6 +927,17 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
           </>}
           onConfirm={confirmDeleteTx}
           onCancel={() => setConfirmTx(null)}
+        />
+      )}
+
+      {/* ── BULK DELETE CONFIRMATION DIALOG ── */}
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Delete ${selectedIds.length} transactions?`}
+          message={<>Delete <strong style={{ color:'#111827' }}>{selectedIds.length} selected transactions</strong>? This cannot be undone.</>}
+          confirmLabel="Delete All"
+          onConfirm={confirmBulkDeleteTx}
+          onCancel={() => setConfirmBulkDelete(false)}
         />
       )}
 
