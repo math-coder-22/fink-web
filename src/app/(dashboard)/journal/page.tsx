@@ -54,7 +54,8 @@ function ReviewModal({
   const [openItem, setOpenItem] = useState<string | null>(null)
 
   const review = useMemo(() => {
-    const expenseTx = tx.filter((t:any) => t.type === 'out' && !t.debt)
+    // Unpaid expenses count toward Actual immediately, so they are included here too.
+    const expenseTx = tx.filter((t:any) => t.type === 'out')
 
     const totalIncomePlan = income.reduce((s:number, c:any) => s + (c.items || []).reduce((ss:number, i:any) => ss + Number(i.plan || 0), 0), 0)
     const totalIncomeActual = income.reduce((s:number, c:any) => s + (c.items || []).reduce((ss:number, i:any) => ss + Number(i.actual || 0), 0), 0)
@@ -261,7 +262,10 @@ function ReviewModal({
                                     ) : item.transactions.map((t:any) => (
                                       <div key={t.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:'8px', alignItems:'center', padding:'7px 8px', borderRadius:'9px', background:'#fff', border:'1px solid #f1f5f9' }}>
                                         <div style={{ fontSize:'10.5px', color:'#94a3b8', fontFamily:'var(--font-mono), monospace', fontWeight:750 }}>{t.date}</div>
-                                        <div style={{ fontSize:'11.5px', color:'#111827', fontWeight:650, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || item.label}</div>
+                                        <div style={{ display:'flex', alignItems:'center', gap:'6px', minWidth:0 }}>
+                                          <div style={{ fontSize:'11.5px', color:'#111827', fontWeight:650, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.note || item.label}</div>
+                                          {t.debt && !t.settled && <span style={{ fontSize:'9px', fontWeight:700, background:'#fef3c7', color:'#92400e', border:'1px solid #fde68a', padding:'1px 6px', borderRadius:'10px', flexShrink:0 }}>Unpaid</span>}
+                                        </div>
                                         <div style={{ fontSize:'11.5px', color:'#b91c1c', fontWeight:950, fontFamily:'var(--font-mono), monospace' }}>{money(Number(t.amt || 0))}</div>
                                       </div>
                                     ))}
@@ -901,6 +905,8 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
   const [setupBudgetOpen, setSetupBudgetOpen] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [txDetailLabel, setTxDetailLabel] = useState<string|null>(null)
+  const [copyTarget, setCopyTarget] = useState<string|null>(null)
+  const [copyToast, setCopyToast] = useState<string|null>(null)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
@@ -949,18 +955,24 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       : 'This month has not started yet · FiNK System'
   })()
 
-  async function handleCopyBudget() {
-    // Hitung bulan berikutnya untuk tampil di konfirmasi
+  const nextMonthLabel = (() => {
     const idx   = MONTHS_ORDER.indexOf(curMonth)
     const nextM = MONTHS_ORDER[(idx + 1) % 12]
     const nextY = idx === 11 ? curYear + 1 : curYear
-    const nextLabel = `${MONTH_NAMES[nextM]} ${nextY}`
-    const confirmed = confirm(
-      `Copy budget to ${nextLabel}?\n\nNote: the existing budget in ${nextLabel} will be overwritten with this month's budget.`
-    )
-    if (!confirmed) return
+    return `${MONTH_NAMES[nextM]} ${nextY}`
+  })()
+
+  function handleCopyBudget() {
+    setCopyTarget(nextMonthLabel)
+  }
+
+  async function confirmCopyBudget() {
+    const label = copyTarget
+    setCopyTarget(null)
+    if (!label) return
     await copyBudgetToNext()
-    alert(`Budget copied to ${nextLabel}!`)
+    setCopyToast(`Budget copied to ${label}!`)
+    window.setTimeout(() => setCopyToast(null), 3200)
   }
 
 
@@ -1064,6 +1076,9 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
           </button>
           <button onClick={()=>{ setRekonOpen(true); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:500, color:'#374151', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
             Reconcile
+          </button>
+          <button onClick={()=>{ handleCopyBudget(); setToolsOpen(false) }} style={{ width:'100%', border:'none', background:'#fff', borderRadius:'9px', padding:'9px 10px', textAlign:'left', fontSize:'12px', fontWeight:500, color:'#374151', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
+            Copy Budget to Next Month
           </button>
         </div>
       )}
@@ -1390,6 +1405,25 @@ function BulananContent({ curMonth, curYear }: { curMonth: MonthKey; curYear: nu
       {/* RECONCILIATION MODAL */}
       {rekonOpen && (
         <RekonModal sisaApp={sisaApp} onClose={()=>setRekonOpen(false)} onSave={handleRekon} />
+      )}
+
+      {/* COPY BUDGET CONFIRMATION */}
+      {copyTarget && (
+        <ConfirmDialog
+          title={`Copy budget to ${copyTarget}?`}
+          message={<>The existing budget in <strong style={{ color:'#111827' }}>{copyTarget}</strong> will be overwritten with this month's budget.</>}
+          confirmLabel="Copy Budget"
+          onConfirm={confirmCopyBudget}
+          onCancel={()=>setCopyTarget(null)}
+        />
+      )}
+
+      {/* COPY BUDGET SUCCESS TOAST */}
+      {copyToast && (
+        <div style={{ position:'fixed', left:'50%', bottom:'max(24px, env(safe-area-inset-bottom))', transform:'translateX(-50%)', zIndex:1200, background:'#1a5c42', color:'#fff', fontSize:'13px', fontWeight:700, padding:'10px 16px', borderRadius:'12px', boxShadow:'0 12px 32px rgba(15,23,42,.25)', display:'flex', alignItems:'center', gap:'8px', whiteSpace:'nowrap' }}>
+          <AppIcon name="check" size={15} />
+          {copyToast}
+        </div>
       )}
 
       <style>{`
