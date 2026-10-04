@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useState, useEffect } from 'react'
+import { memo, useMemo, useState, useEffect, useRef } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -120,16 +120,14 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     return `${y}-${m}-${dd}`
   })()
 
-  // Draft preservation: if the page remounts (e.g. month switch), restore the
-  // in-progress form — but only when the draft belongs to the current month.
-  const DRAFT_KEY = 'fink-tx-draft-v1'
+  // Draft preservation: one session-storage slot per viewed month, so a draft
+  // typed in October survives a detour to September and back.
+  const DRAFT_KEY = `fink-tx-draft-v1:${curYear}-${curMonth}`
   function readDraft(): { date?: string; type?: 'out'|'inn'|'save'; cat?: string; note?: string; amt?: string; isDebt?: boolean } | null {
     try {
       const raw = sessionStorage.getItem(DRAFT_KEY)
       if (!raw) return null
-      const d = JSON.parse(raw)
-      if (d.curMonth !== curMonth || d.curYear !== curYear) return null
-      return d
+      return JSON.parse(raw)
     } catch {
       return null
     }
@@ -146,11 +144,18 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [loading, setLoading] = useState(false)
 
   // Persist the in-progress form so it survives a page remount (month switch).
+  // The first run is skipped so mounting a fresh month never overwrites the
+  // stored draft with an empty form.
+  const draftSaveStarted = useRef(false)
   useEffect(() => {
+    if (!draftSaveStarted.current) {
+      draftSaveStarted.current = true
+      return
+    }
     try {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ curMonth, curYear, date, type, cat, note, amt, isDebt }))
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ date, type, cat, note, amt, isDebt }))
     } catch { /* storage unavailable — draft simply won't survive */ }
-  }, [curMonth, curYear, date, type, cat, note, amt, isDebt])
+  }, [DRAFT_KEY, date, type, cat, note, amt, isDebt])
 
   function clearDraft() {
     try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
