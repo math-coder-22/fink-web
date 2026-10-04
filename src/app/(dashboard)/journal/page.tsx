@@ -348,7 +348,7 @@ function setupBudgetInsight(previousBudget: number, previousActual: number, sect
 function computeActualMapFromTx(items: any[]) {
   const map = new Map<string, number>()
   for (const t of Array.isArray(items) ? items : []) {
-    if (t?.type === 'out' && t?.debt && !t?.settled) continue
+    // Unpaid expenses count toward Actual immediately (same rule as the journal panel).
     const key = `${t?.type}:${t?.cat}`
     map.set(key, (map.get(key) || 0) + Number(t?.amt || 0))
   }
