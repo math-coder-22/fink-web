@@ -301,7 +301,8 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   const actualByTypeAndCategory = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of tx) {
-      if (t.type === 'out' && t.debt && !t.settled) continue
+      // Unpaid expenses count toward the budget immediately (recorded when spent,
+      // not when cash moves). The Unpaid badge still tracks what hasn't been paid.
       const key = `${t.type}:${t.cat}`
       map.set(key, (map.get(key) || 0) + Number(t.amt || 0))
     }
@@ -448,7 +449,9 @@ export function useBulanan({ curMonth, curYear }: UseBulananProps) {
   }, [curMonth, curYear, plan, readOnly, blockReadOnly])
 
   const rawSisa = useMemo(() => tx.reduce((s, t) => {
-    if (t.debt && !t.settled) return s
+    // Unpaid expenses reduce "Left to Spend" immediately (money already committed).
+    // Unpaid income/savings keep previous behavior (counted only when settled).
+    if (t.type !== 'out' && t.debt && !t.settled) return s
     if (t.type === 'inn')  return s + t.amt
     if (t.type === 'out')  return s - t.amt
     if (t.type === 'save') return s - t.amt
