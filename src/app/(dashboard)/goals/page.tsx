@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
@@ -9,12 +9,14 @@ import {
   TopupModal,
   WithdrawModal,
   ReconcileModal,
+  type GoalPlanData,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FREE_PLAN_LIMITS, upgradeMessage } from "@/lib/subscription/limits";
+import { MONTHS_ORDER } from "@/components/layout/DashboardShell";
 import type { SavingsGoal } from "@/types/savings";
-import { buildGoalAdvisorItem, sortGoalsByAdvisor } from "@/lib/finance/goals";
+import { sortGoalsByAdvisor } from "@/lib/finance/goals";
 
 type TabKey = "active" | "pending" | "complete" | "archived";
 
@@ -47,6 +49,25 @@ export default function TabunganPage() {
   const [reconcileId, setReconcileId] = useState<string | null>(null);
   const { isPremium } = useSubscription();
 
+  // Monthly allocation plan (income-aware): replaces the demotivating
+  // "total ideal needed per month" figure with a realistic plan.
+  const [planData, setPlanData] = useState<GoalPlanData | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const mk = MONTHS_ORDER[now.getMonth()];
+    fetch(`/api/advisor/summary?month=${mk}&year=${now.getFullYear()}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.data?.goalPlan) setPlanData({ items: j.data.goalInsights || [], plan: j.data.goalPlan });
+      })
+      .catch(() => {});
+  }, []);
+
+  const suggestedById = useMemo(
+    () => new Map((planData?.items || []).map((i) => [i.id, i.suggestedMonthly])),
+    [planData]
+  );
+
   const tabCounts = useMemo(() => {
     return goals.reduce<Record<TabKey, number>>((acc, goal) => {
       acc[goal.status] = (acc[goal.status] || 0) + 1;
@@ -54,44 +75,12 @@ export default function TabunganPage() {
     }, { active: 0, pending: 0, complete: 0, archived: 0 });
   }, [goals]);
 
-  const { sortedGoals, focusGoals, priorityGoals, longTermGoals, otherGoals } = useMemo(() => {
+  const { sortedGoals, focusGoals, restGoals } = useMemo(() => {
     const filtered = goals.filter((g) => g.status === tab);
     const sorted = sortGoalsByAdvisor(filtered, calcGoal);
-    const advisorCache = new Map<string, ReturnType<typeof buildGoalAdvisorItem>>();
-    const goalAdvisor = (g: SavingsGoal) => {
-      const cached = advisorCache.get(g.id);
-      if (cached) return cached;
-      const advisor = buildGoalAdvisorItem(g, calcGoal(g), goals);
-      advisorCache.set(g.id, advisor);
-      return advisor;
-    };
-
-    const focus = sorted.filter((g) => g.focus && g.status === tab);
-    const regular = sorted.filter((g) => !g.focus);
-    const priority = tab === "active"
-      ? regular.filter((g) => {
-          const a = goalAdvisor(g);
-          return a.priority === "critical" || a.priority === "high";
-        })
-      : [];
-    const priorityIds = new Set(priority.map((g) => g.id));
-    const longTerm = tab === "active"
-      ? regular.filter((g) => {
-          const a = goalAdvisor(g);
-          return !priorityIds.has(g.id) && (
-            g.type === "pensiun" ||
-            g.type === "investasi" ||
-            a.priority === "low" ||
-            a.priority === "maintain"
-          );
-        })
-      : [];
-    const longTermIds = new Set(longTerm.map((g) => g.id));
-    const other = tab === "active"
-      ? regular.filter((g) => !priorityIds.has(g.id) && !longTermIds.has(g.id))
-      : regular;
-
-    return { sortedGoals: sorted, focusGoals: focus, priorityGoals: priority, longTermGoals: longTerm, otherGoals: other };
+    const focus = sorted.filter((g) => g.focus);
+    const rest = sorted.filter((g) => !g.focus);
+    return { sortedGoals: sorted, focusGoals: focus, restGoals: rest };
   }, [goals, tab]);
 
   const calcById = useMemo(() => new Map(goals.map((g) => [g.id, calcGoal(g)])), [goals]);
@@ -106,6 +95,7 @@ export default function TabunganPage() {
       key={goal.id}
       goal={goal}
       calc={calcById.get(goal.id) ?? calcGoal(goal)}
+      suggestedMonthly={suggestedById.get(goal.id) ?? null}
       onEdit={setEditGoal}
       onTopup={setTopupId}
       onWithdraw={setWithdrawId}
@@ -114,7 +104,7 @@ export default function TabunganPage() {
       onDelete={deleteGoal}
       allGoals={goals}
     />
-  ), [calcById, changeStatus, deleteGoal, goals]);
+  ), [calcById, suggestedById, changeStatus, deleteGoal, goals]);
 
   function GoalSection({
     title,
@@ -198,7 +188,7 @@ export default function TabunganPage() {
         </div>
       )}
 
-      <SummaryCard summary={summary} />
+      <SummaryCard summary={summary} plan={planData} />
 
 
       {!isPremium && (
@@ -250,32 +240,20 @@ export default function TabunganPage() {
       ) : tab === "active" ? (
         <>
           <GoalSection
-            title="Focus Goals"
-            subtitle="Your 1–3 main planning priorities. These goals are surfaced in Advisor first."
+            title="Focus"
+            subtitle="Your main planning priorities this period."
             items={focusGoals}
             tone="focus"
           />
           <GoalSection
-            title="Priority Goals"
-            subtitle="Auto-prioritized by FiNK because they are urgent, foundational, or behind schedule."
-            items={priorityGoals}
-            tone="priority"
-          />
-          <GoalSection
-            title="Aktif Goals"
-            subtitle="Goals that are still active but not currently marked as focus or high priority."
-            items={otherGoals}
+            title="All Goals"
+            subtitle="Sorted automatically by priority — most urgent first."
+            items={restGoals}
             tone="neutral"
-          />
-          <GoalSection
-            title="Long-Term / Maintain"
-            subtitle="Background goals that should continue steadily without taking over your monthly focus."
-            items={longTermGoals}
-            tone="muted"
           />
         </>
       ) : (
-        <div className="savings-goal-list">{otherGoals.map(renderGoal)}</div>
+        <div className="savings-goal-list">{restGoals.map(renderGoal)}</div>
       )}
 
       {showNew && (
