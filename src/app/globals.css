@@ -333,9 +333,10 @@ html, body {
 /* Minimalist Goals list rows */
 .goal-row {
   padding: 14px 2px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
   cursor: pointer;
 }
+.goal-row:hover { background: #f8fafc; }
 .goal-row:last-child { border-bottom: none; }
 .goal-row-top {
   display: flex;
