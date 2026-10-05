@@ -1,45 +1,76 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { fmt, fmtNum, pNum } from '@/components/ui/helpers'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FREE_PLAN_LIMITS, upgradeMessage } from '@/lib/subscription/limits'
 import type { BudgetCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 type TxType = Transaction['type']
 
+const ACCENT = '#1a5c42'
 const inp: React.CSSProperties = { border:'none', background:'transparent', outline:'none', fontFamily:'inherit' }
-const delBtn: React.CSSProperties = { width:'18px', height:'20px', borderRadius:'4px', border:'none', background:'none', color:'#9ca3af', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, opacity:0, transition:'opacity .13s' }
+/* plan inputs: persistent dotted underline so it's clear they're editable */
+const planInp: React.CSSProperties = { ...inp, borderBottom:'1px dotted #cbd5e1', borderRadius:'2px', transition:'border-color .14s, background .14s' }
 
-function DragHandle() {
+function DragHandle({ visible }: { visible: boolean }) {
   return (
     <span
-      title="Drag"
+      title="Drag to reorder"
       style={{
-        width:'18px',
-        flexShrink:0,
-        cursor:'grab',
-        display:'flex',
-        alignItems:'center',
-        justifyContent:'center',
-        touchAction:'none',
-        color:'#94a3b8',
-        fontSize:'14px',
-        lineHeight:1,
-        opacity:.75,
-        userSelect:'none'
+        width:'14px', flexShrink:0, cursor:'grab', display:'flex', alignItems:'center', justifyContent:'center',
+        touchAction:'none', color:'#94a3b8', fontSize:'12px', lineHeight:1,
+        opacity: visible ? .8 : 0, transition:'opacity .13s', userSelect:'none',
       }}
     >⠿</span>
+  )
+}
+
+function DelBtn({ visible, title, onClick, alwaysShowOnMobile, isMobile }: {
+  visible: boolean; title: string; onClick: () => void; alwaysShowOnMobile?: boolean; isMobile?: boolean
+}) {
+  const show = visible || (alwaysShowOnMobile && isMobile)
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onMouseDown={e=>e.stopPropagation()}
+      onClick={onClick}
+      style={{
+        width:'22px', height:'22px', borderRadius:'6px', border:'none', background:'none',
+        color:'#9ca3af', display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', flexShrink:0, opacity: show ? (visible ? 1 : .45) : 0, transition:'opacity .13s',
+        pointerEvents: show ? 'auto' : 'none',
+      }}
+    ><AppIcon name="trash" size={12} /></button>
   )
 }
 
 function AddBtn({ label, onClick }: { label: string; onClick: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <button style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', width:'100%', padding:'9px 10px', borderRadius:'10px', border:'1.5px dashed', borderColor: hover?'#1a5c42':'#c9d2de', background: hover?'#e8f5ef':'#fff', color: hover?'#1a5c42':'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'8px', transition:'all .13s' }}
+    <button
+      type="button"
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onClick={onClick}
+      style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', width:'100%', padding:'7px 10px', borderRadius:'9px', border:'1.5px dashed', borderColor: hover?ACCENT:'#c9d2de', background: hover?'#e8f5ef':'transparent', color: hover?ACCENT:'#6b7280', fontSize:'12px', fontWeight:800, cursor:'pointer', marginTop:'6px', transition:'all .13s' }}
+    >{label}</button>
+  )
+}
+
+function MiniAddItem({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      type="button"
+      title="Add item to this category"
+      onMouseDown={e=>e.stopPropagation()}
       onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      onClick={onClick}>{label}</button>
+      onClick={onClick}
+      style={{ border:'none', background:'none', color: hover?ACCENT:'#9ca3af', fontSize:'11px', fontWeight:800, cursor:'pointer', padding:'4px 6px', borderRadius:'6px', whiteSpace:'nowrap', transition:'color .13s' }}
+    >+ Item</button>
   )
 }
 
@@ -54,18 +85,24 @@ interface Props {
   isMobile?:      boolean
 }
 
-export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
+type PendingDelete =
+  | { kind: 'cat', ci: number, label: string }
+  | { kind: 'item', ci: number, ii: number, label: string }
+  | { kind: 'saving', i: number, label: string }
+
+function BudgetPanel({ budget, saving, debt = [], onBudgetChange, onSavingChange, onRename, onItemClick, isMobile }: Props) {
   const { isPremium, isAdmin, isSuperAdmin } = useSubscription()
   const hasPremiumAccess = isPremium || isAdmin || isSuperAdmin
   const expenseItemCount = budget.reduce((sum, cat) => sum + cat.items.filter(item => item.label !== 'Rekonsiliasi').length, 0)
   const savingItemCount = saving.filter(item => item.label !== 'Rekonsiliasi').length
-  const [hovRow,   setHovRow]   = useState<string|null>(null)
+  const [hovRow, setHovRow] = useState<string|null>(null)
   const [dragOver, setDragOver] = useState<string|null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const catDragSrc  = useRef<number|null>(null)
   const itemDragSrc = useRef<{ci:number;ii:number}|null>(null)
   const savDragSrc  = useRef<number|null>(null)
 
-  /* ── Drag helpers ── */
+  /* ── Drag helpers (unchanged behavior) ── */
   function onCatDragStart(e: React.DragEvent, ci: number) { catDragSrc.current=ci; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','cat'); e.stopPropagation() }
   function onCatDrop(e: React.DragEvent, ci: number) { e.preventDefault(); e.stopPropagation(); setDragOver(null); const from=catDragSrc.current; if(from===null||from===ci) return; const next=[...budget]; const [m]=next.splice(from,1); next.splice(ci,0,m); onBudgetChange(next); catDragSrc.current=null }
   function onItemDragStart(e: React.DragEvent, ci: number, ii: number) { itemDragSrc.current={ci,ii}; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','item'); e.stopPropagation() }
@@ -73,23 +110,22 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
   function onSavDragStart(e: React.DragEvent, i: number) { savDragSrc.current=i; e.dataTransfer.effectAllowed='move' }
   function onSavDrop(e: React.DragEvent, i: number) { e.preventDefault(); const from=savDragSrc.current; if(from===null||from===i) return; const next=[...saving]; const [m]=next.splice(from,1); next.splice(i,0,m); onSavingChange(next); savDragSrc.current=null; setDragOver(null) }
 
-
-  function handleAddBudgetCategory() {
+  function checkItemLimit() {
     if (!hasPremiumAccess && expenseItemCount >= FREE_PLAN_LIMITS.expenseItems) {
       alert(upgradeMessage(`Expense item Free maksimal ${FREE_PLAN_LIMITS.expenseItems}`))
-      return
+      return false
     }
+    return true
+  }
+
+  function handleAddBudgetCategory() {
+    if (!checkItemLimit()) return
     onBudgetChange([...budget,{label:'New Category',items:[{label:'New Item',plan:0,actual:0}]}])
   }
 
-  function handleAddBudgetItem() {
-    if (!budget.length) return
-    if (!hasPremiumAccess && expenseItemCount >= FREE_PLAN_LIMITS.expenseItems) {
-      alert(upgradeMessage(`Expense item Free maksimal ${FREE_PLAN_LIMITS.expenseItems}`))
-      return
-    }
-    const last = budget.length - 1
-    onBudgetChange(budget.map((c,ci)=>ci!==last?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]}))
+  function handleAddBudgetItem(ci: number) {
+    if (!checkItemLimit()) return
+    onBudgetChange(budget.map((c,i)=>i!==ci?c:{...c,items:[...c.items,{label:'New Item',plan:0,actual:0}]}))
   }
 
   function handleAddSavingItem() {
@@ -100,15 +136,29 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
     onSavingChange([...saving,{label:'New Allocation',plan:0,actual:0}])
   }
 
+  function confirmDelete() {
+    const p = pendingDelete
+    setPendingDelete(null)
+    if (!p) return
+    if (p.kind === 'cat') onBudgetChange(budget.filter((_,i)=>i!==p.ci))
+    else if (p.kind === 'item') onBudgetChange(budget.map((c,ci)=>ci!==p.ci?c:{...c,items:c.items.filter((_,ii)=>ii!==p.ii)}))
+    else onSavingChange(saving.filter((_,i)=>i!==p.i))
+  }
+
   const totExpP = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.plan||0),0),0)
   const totExpA = budget.reduce((s,c)=>s+c.items.reduce((ss,i)=>ss+(i.actual||0),0),0)
   const totSavP = saving.reduce((s,r)=>s+(r.plan||0),0)
   const totSavA = saving.reduce((s,r)=>s+(r.actual||0),0)
 
-  // ── Shared styles ──
-  const rowBase: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid #e3e7ee', transition:'border-color .13s, background .13s, box-shadow .13s' }
   const mono: React.CSSProperties = { ...inp, minWidth: isMobile?'0':'100px', fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap' }
-  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'5px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'8px 9px', marginTop:'8px' }
+  const totalRow: React.CSSProperties = { display:'flex', alignItems:'center', gap:'6px', background:'#f7f8fa', border:'1px solid #e3e7ee', borderRadius:'10px', padding:'7px 9px', marginTop:'8px' }
+  const sectionTitle: React.CSSProperties = { fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'4px' }
+
+  const renderPlanActual = (planNode: React.ReactNode, actualNode: React.ReactNode) => isMobile ? (
+    <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+      {planNode}{actualNode}
+    </div>
+  ) : (<>{planNode}{actualNode}</>)
 
   return (
     <div>
@@ -116,118 +166,77 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
         const catP = cat.items.reduce((s,i)=>s+(i.plan||0),0)
         const catA = cat.items.reduce((s,i)=>s+(i.actual||0),0)
         const pct  = catP>0 ? Math.min(120,(catA/catP)*100) : (catA>0?100:0)
-        const clr  = pct>=100?'#b91c1c':pct>=85?'#d97706':'#1a5c42'
+        const clr  = pct>=100?'#b91c1c':pct>=85?'#d97706':ACCENT
         const hk   = `cat-${ci}`
+        const hov  = hovRow===hk
 
         return (
-          <div key={ci} style={{ marginBottom:'6px' }}
+          <div key={ci} style={{ marginBottom:'10px' }}
             onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(hk) }}
             onDrop={e=>{ if(e.dataTransfer.getData('type')==='cat') onCatDrop(e,ci); else e.stopPropagation() }}
             onDragLeave={()=>setDragOver(null)}>
 
-            {/* Category header */}
-            <div draggable onDragStart={e=>onCatDragStart(e,ci)}
-              style={{ ...rowBase, background:'#fff', cursor:'grab', borderColor: dragOver===hk?'#1a5c42':'#e3e7ee', borderWidth: dragOver===hk?'2px':'1px' }}
-              onMouseEnter={()=>setHovRow(hk)} onMouseLeave={()=>setHovRow(null)}>
-              <DragHandle />
-              <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
+            {/* Category header — slim, no card */}
+            <div draggable={!isMobile} onDragStart={e=>onCatDragStart(e,ci)}
+              onMouseEnter={()=>setHovRow(hk)} onMouseLeave={()=>setHovRow(null)}
+              style={{ display:'flex', alignItems:'center', gap:'6px', padding:'5px 2px', borderBottom: dragOver===hk?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+              {!isMobile && <DragHandle visible={hov || dragOver===hk} />}
+              <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:700, color:'#111827', cursor:'text' }}
                 value={cat.label} onMouseDown={e=>e.stopPropagation()}
                 onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,label:e.target.value}))} />
-              {isMobile ? (
-                /* Mobile: flex:2 agar proporsional dengan label (flex:1 di input) */
-                <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                  <span style={{ fontSize:'9.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catP)}</span>
-                  <span style={{ fontSize:'11.5px', fontWeight:700, color:clr, fontFamily:'var(--font-mono), monospace', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', width:'100%', textAlign:'right' }}>{fmt(catA)}</span>
-                </div>
-              ) : (
-                <>
-                  <span style={{ width:'100px', flexShrink:0, fontSize:'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(catP)}</span>
-                  <span style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap' }}>{fmt(catA)}</span>
-                </>
+              {renderPlanActual(
+                <span style={{ width: isMobile?'100%':'100px', flexShrink:0, fontSize: isMobile?'9.5px':'11.5px', color:'#9ca3af', textAlign:'right', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{fmt(catP)}</span>,
+                <span style={{ width: isMobile?'100%':'100px', flexShrink:0, fontSize: isMobile?'11.5px':'11.5px', fontWeight:700, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:clr, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{fmt(catA)}</span>
               )}
-              <button
-                style={{ ...delBtn, opacity: hovRow===hk?1:0 }}
-                title="Delete budget category"
-                onMouseDown={e=>e.stopPropagation()}
-                onClick={()=>{
-                  const ok = confirm(`Delete budget category "${cat.label}" and all its items?`)
-                  if (!ok) return
-                  onBudgetChange(budget.filter((_,ci2)=>ci2!==ci))
-                }}
-               aria-label="Remove"><AppIcon name="trash" size={13} /></button>
+              <MiniAddItem onClick={()=>handleAddBudgetItem(ci)} />
+              <DelBtn visible={hov} isMobile={isMobile} alwaysShowOnMobile title="Delete budget category"
+                onClick={()=>setPendingDelete({ kind:'cat', ci, label:cat.label })} />
             </div>
 
             {/* Progress bar */}
-            <div style={{ height:'2px', background:'#e3e7ee', borderRadius:'1px', margin:'-2px 0 5px 22px' }}>
-              <div style={{ height:'2px', borderRadius:'1px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
+            <div style={{ height:'3px', background:'#eef1f5', borderRadius:'2px', margin:'0 0 2px' }}>
+              <div style={{ height:'3px', borderRadius:'2px', background:clr, width:`${Math.min(100,pct)}%`, transition:'width .3s' }} />
             </div>
 
-            {/* Items */}
-            <div style={{ paddingLeft:'16px' }}>
+            {/* Items — clean divider rows */}
+            <div style={{ paddingLeft:'14px' }}>
               {cat.items.map((item, ii) => {
                 const ik = `item-${ci}-${ii}`
+                const ihov = hovRow===ik
+                const clickable = onItemClick && (item.actual||0)>0
                 return (
-                  <div key={ii} draggable onDragStart={e=>onItemDragStart(e,ci,ii)}
+                  <div key={ii} draggable={!isMobile} onDragStart={e=>onItemDragStart(e,ci,ii)}
                     onDragOver={e=>{ e.preventDefault(); e.stopPropagation(); setDragOver(ik) }}
                     onDrop={e=>{ e.stopPropagation(); onItemDrop(e,ci,ii) }}
                     onDragLeave={()=>setDragOver(null)}
-                    style={{ ...rowBase, background:'#f7f8fa', cursor:'grab', borderColor: dragOver===ik?'#1a5c42':'#e3e7ee', borderWidth: dragOver===ik?'2px':'1px' }}
-                    onMouseEnter={()=>setHovRow(ik)} onMouseLeave={()=>setHovRow(null)}>
-                    <DragHandle />
-                    <span style={{ width:'10px', fontSize:'9px', color:'#9ca3af', textAlign:'center', flexShrink:0 }}>└</span>
-
+                    onMouseEnter={()=>setHovRow(ik)} onMouseLeave={()=>setHovRow(null)}
+                    style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: ii<cat.items.length-1?'1px solid #f1f4f8':'none', borderTop: dragOver===ik?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+                    {!isMobile && <DragHandle visible={ihov || dragOver===ik} />}
+                    <input style={{ ...inp, flex:1, minWidth:0, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
+                      value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
+                      onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
+                      onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
                     {isMobile ? (
-                      /* Mobile: flex ratio — label:angka = 3:2, keduanya minWidth:0 */
-                      <>
-                        <div style={{ flex:'3', minWidth:0, overflow:'hidden' }}>
-                          <input style={{ ...inp, width:'100%', fontSize:'11.5px', color:'#4b5563', cursor:'text' }}
-                            value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
-                            onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                            onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
-                        </div>
-                        <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                          <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#1a5c42' : 'transparent'}`, background:hovRow===ik ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
-                            value={item.plan?fmtNum(item.plan):''} placeholder="0"
-                            onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
-                            onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
-                            onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:pNum(e.target.value)})}))} />
-                          <button
-                            type="button"
-                            onClick={e=>{
-                              e.stopPropagation()
-                              if (onItemClick && (item.actual||0)>0) onItemClick(item.label)
-                            }}
-                            title={(item.actual||0)>0?'Click to view transactions':undefined}
-                            style={{
-                              border:'none',
-                              background:'transparent',
-                              fontSize:'11.5px',
-                              fontWeight:600,
-                              fontFamily:'var(--font-mono), monospace',
-                              color:(item.actual||0)>0?'#b91c1c':'#9ca3af',
-                              width:'100%',
-                              textAlign:'right',
-                              overflow:'hidden',
-                              textOverflow:'ellipsis',
-                              whiteSpace:'nowrap',
-                              cursor:(item.actual||0)>0?'pointer':'default',
-                              borderRadius:'4px',
-                              padding:'1px 3px',
-                              WebkitTapHighlightColor:'transparent'
-                            }}
-                          >
-                            {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
-                          </button>
-                        </div>
-                      </>
+                      <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'0', overflow:'hidden' }}>
+                        <input style={{ ...planInp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'2px 3px' }}
+                          defaultValue={item.plan?fmtNum(item.plan):''} placeholder="0"
+                          key={`bplan-${ci}-${ii}-${item.plan}`}
+                          onMouseDown={e=>e.stopPropagation()}
+                          onFocus={e=>{ e.target.value=item.plan?String(item.plan):''; e.target.select() }}
+                          onBlur={e=>{ const v=pNum(e.target.value); onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:v})})); e.target.value=v?fmtNum(v):'' }}
+                          onChange={()=>{}} />
+                        <button
+                          type="button"
+                          onClick={e=>{ e.stopPropagation(); if (clickable) onItemClick(item.label) }}
+                          title={clickable?'Click to view transactions':undefined}
+                          style={{ border:'none', background:'transparent', fontSize:'11.5px', fontWeight:600, fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', width:'100%', textAlign:'right', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:clickable?'pointer':'default', padding:'1px 3px' }}
+                        >
+                          {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
+                        </button>
+                      </div>
                     ) : (
-                      /* Desktop: side by side */
                       <>
-                        <input style={{ ...inp, flex:1, fontSize:'12.5px', color:'#4b5563', cursor:'text' }}
-                          value={item.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = item.label }}
-                          onChange={e=>onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,label:e.target.value})}))}
-                          onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'out') }} />
-                        <input style={{ ...mono, padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===ik ? '#1a5c42' : 'transparent'}`, background:hovRow===ik ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===ik ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }} defaultValue={item.plan?fmtNum(item.plan):''}
+                        <input style={{ ...planInp, ...mono, padding:'2px 6px' }} defaultValue={item.plan?fmtNum(item.plan):''}
                           key={`plan-${ci}-${ii}-${item.plan}`}
                           placeholder="0" type="text"
                           onMouseDown={e=>e.stopPropagation()}
@@ -235,25 +244,17 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
                           onBlur={e=>{ const v=pNum(e.target.value); onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.map((it,ii2)=>ii2!==ii?it:{...it,plan:v})})); e.target.value=v?fmtNum(v):'' }}
                           onChange={()=>{}} />
                         <div
-                          onClick={e=>{ e.stopPropagation(); if(onItemClick && (item.actual||0)>0) onItemClick(item.label) }}
-                          style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:(item.actual||0)>0?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
-                          title={(item.actual||0)>0?'Click to view transactions':undefined}
-                          onMouseEnter={e=>{ if((item.actual||0)>0) e.currentTarget.style.background='#fee2e2' }}
+                          onClick={e=>{ e.stopPropagation(); if(clickable) onItemClick(item.label) }}
+                          style={{ width:'100px', flexShrink:0, fontSize:'11.5px', fontWeight:600, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:(item.actual||0)>0?'#b91c1c':'#9ca3af', whiteSpace:'nowrap', cursor:clickable?'pointer':'default', borderRadius:'4px', padding:'1px 3px' }}
+                          title={clickable?'Click to view transactions':undefined}
+                          onMouseEnter={e=>{ if(clickable) e.currentTarget.style.background='#fee2e2' }}
                           onMouseLeave={e=>{ e.currentTarget.style.background='transparent' }}>
                           {(item.actual||0)>0 ? fmtNum(item.actual) : '-'}
                         </div>
                       </>
                     )}
-                    <button
-                      style={{ ...delBtn, opacity: hovRow===ik?1:0 }}
-                      title="Delete budget item"
-                      onMouseDown={e=>e.stopPropagation()}
-                      onClick={()=>{
-                        const ok = confirm(`Delete budget item "${item.label}"?`)
-                        if (!ok) return
-                        onBudgetChange(budget.map((c,ci2)=>ci2!==ci?c:{...c,items:c.items.filter((_,ii2)=>ii2!==ii)}))
-                      }}
-                     aria-label="Remove"><AppIcon name="trash" size={13} /></button>
+                    <DelBtn visible={ihov} isMobile={isMobile} alwaysShowOnMobile title="Delete budget item"
+                      onClick={()=>setPendingDelete({ kind:'item', ci, ii, label:item.label })} />
                   </div>
                 )
               })}
@@ -262,95 +263,78 @@ export default function BudgetPanel({ budget, saving, debt = [], onBudgetChange,
         )
       })}
 
-      {/* Bottom buttons */}
-      <div style={{ display:'flex', gap:'6px', marginTop:'2px' }}>
-        <AddBtn label="+ add item to last category" onClick={handleAddBudgetItem} />
-        <AddBtn label="+ add category" onClick={handleAddBudgetCategory} />
-      </div>
+      <AddBtn label="+ add category" onClick={handleAddBudgetCategory} />
 
       {/* Total Expenses */}
-      <div style={{ height:'1px', background:'#e3e7ee', margin:'12px 0' }} />
+      <div style={{ height:'1px', background:'#e3e7ee', margin:'10px 0' }} />
       <div style={totalRow}>
-        <div style={{ width:'14px' }}/>
-        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Expenses</div>
-        {isMobile ? (
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace' }}>{fmt(totExpA)}</span>
-          </div>
-        ) : (
-          <>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
-          </>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:700, color:'#111827' }}>Total Expenses</div>
+        {renderPlanActual(
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'10px':'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpP)}</div>,
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'12px':'11.5px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totExpA)}</div>
         )}
-        <div style={{ width:'18px' }}/>
       </div>
 
       {/* Savings & Allocations */}
-      <div style={{ height:'1px', background:'#e3e7ee', margin:'14px 0 10px' }} />
-      <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.7px', marginBottom:'8px' }}>Savings &amp; Allocations</div>
+      <div style={{ height:'1px', background:'#e3e7ee', margin:'12px 0 8px' }} />
+      <div style={sectionTitle}>Savings &amp; Allocations</div>
       {saving.map((r, i) => {
         const sk = `sav-${i}`
+        const shov = hovRow===sk
         return (
-          <div key={i} draggable onDragStart={e=>onSavDragStart(e,i)}
+          <div key={i} draggable={!isMobile} onDragStart={e=>onSavDragStart(e,i)}
             onDragOver={e=>{ e.preventDefault(); setDragOver(sk) }}
             onDrop={e=>onSavDrop(e,i)} onDragLeave={()=>setDragOver(null)}
-            style={{ display:'flex', alignItems:'center', gap:'5px', borderRadius:'10px', padding:'8px 10px', marginBottom:'6px', border:'1px solid', borderColor: dragOver===sk?'#1a5c42':'#e3e7ee', background:'#f7f8fa', cursor:'grab', transition:'border-color .13s, background .13s, box-shadow .13s' }}
-            onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}>
-            <DragHandle />
+            onMouseEnter={()=>setHovRow(sk)} onMouseLeave={()=>setHovRow(null)}
+            style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 2px', borderBottom: i<saving.length-1?'1px solid #f1f4f8':'none', borderTop: dragOver===sk?`2px solid ${ACCENT}`:'2px solid transparent', cursor: isMobile?'default':'grab' }}>
+            {!isMobile && <DragHandle visible={shov || dragOver===sk} />}
             <input style={{ ...inp, flex:1, minWidth:0, fontSize:'13px', fontWeight:600, color:'#111827', cursor:'text' }}
               value={r.label} onMouseDown={e=>e.stopPropagation()} onFocus={e=>{ e.currentTarget.dataset.oldLabel = r.label }}
               onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,label:e.target.value}))}
               onBlur={e=>{ const old=e.currentTarget.dataset.oldLabel || ''; if(old && old!==e.target.value) onRename(old,e.target.value,'save') }} />
-            {isMobile ? (
-              /* Mobile: flex:2 untuk angka */
-              <div style={{ flex:'2', minWidth:0, display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px', overflow:'hidden' }}>
-                <input style={{ ...inp, fontSize:'9.5px', fontFamily:'var(--font-mono), monospace', color:'#9ca3af', textAlign:'right', width:'100%', padding:'3px 4px 2px', borderBottom:`1.5px solid ${hovRow===sk ? '#2563eb' : 'transparent'}`, background:hovRow===sk ? 'rgba(255,255,255,.7)' : 'transparent', borderRadius:'6px 6px 0 0', transition:'border-color .14s, background .14s' }}
-                  value={r.plan?fmtNum(r.plan):''} placeholder="0"
-                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
-                  onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
-                  onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <div style={{ fontSize:'11.5px', fontWeight:600, color:'#1d4ed8', fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                  {r.actual ? fmtNum(r.actual) : '-'}
-                </div>
-              </div>
-            ) : (
-              <>
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'3px 6px 2px', borderBottom:`1.5px solid ${hovRow===sk ? '#2563eb' : 'transparent'}`, background:hovRow===sk ? '#fff' : 'transparent', borderRadius:'7px 7px 0 0', boxShadow:hovRow===sk ? '0 1px 0 rgba(15,23,42,.03)' : 'none', transition:'border-color .14s, background .14s, box-shadow .14s' }}
-                  value={r.plan?fmtNum(r.plan):''} placeholder="0"
-                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
-                  onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
-                  onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:pNum(e.target.value)}))} />
-                <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#1a5c42', whiteSpace:'nowrap' }}
-                  value={r.actual?fmtNum(r.actual):''} placeholder="0"
-                  onMouseDown={e=>e.stopPropagation()} onFocus={e=>e.target.select()}
-                  onBlur={e=>{ const v=pNum(e.target.value); e.target.value=v?fmtNum(v):'' }}
-                  onChange={e=>onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,actual:pNum(e.target.value)}))} />
-              </>
+            {renderPlanActual(
+              <input style={{ ...planInp, width: isMobile?'100%':'100px', flexShrink:0, fontSize: isMobile?'9.5px':'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:'#4b5563', whiteSpace:'nowrap', padding:'2px 3px' }}
+                defaultValue={r.plan?fmtNum(r.plan):''} placeholder="0"
+                key={`splan-${i}-${r.plan}`}
+                onMouseDown={e=>e.stopPropagation()}
+                onFocus={e=>{ e.target.value=r.plan?String(r.plan):''; e.target.select() }}
+                onBlur={e=>{ const v=pNum(e.target.value); onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,plan:v})); e.target.value=v?fmtNum(v):'' }}
+                onChange={()=>{}} />,
+              isMobile
+                ? <div style={{ fontSize:'11.5px', fontWeight:600, color:ACCENT, fontFamily:'var(--font-mono), monospace', width:'100%', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.actual ? fmtNum(r.actual) : '-'}</div>
+                : <input style={{ ...inp, width:'100px', flexShrink:0, fontSize:'12px', fontWeight:500, textAlign:'right', fontFamily:'var(--font-mono), monospace', color:ACCENT, whiteSpace:'nowrap', padding:'2px 6px' }}
+                    defaultValue={r.actual?fmtNum(r.actual):''} placeholder="0"
+                    key={`sact-${i}-${r.actual}`}
+                    onMouseDown={e=>e.stopPropagation()}
+                    onFocus={e=>{ e.target.value=r.actual?String(r.actual):''; e.target.select() }}
+                    onBlur={e=>{ const v=pNum(e.target.value); onSavingChange(saving.map((s,i2)=>i2!==i?s:{...s,actual:v})); e.target.value=v?fmtNum(v):'' }}
+                    onChange={()=>{}} />
             )}
-            <button style={{ ...delBtn, opacity: hovRow===sk?1:0 }} onMouseDown={e=>e.stopPropagation()}
-              onClick={()=>onSavingChange(saving.filter((_,i2)=>i2!==i))} aria-label="Remove"><AppIcon name="trash" size={13} /></button>
+            <DelBtn visible={shov} isMobile={isMobile} alwaysShowOnMobile title="Delete saving allocation"
+              onClick={()=>setPendingDelete({ kind:'saving', i, label:r.label })} />
           </div>
         )
       })}
       <AddBtn label="+ add allocation" onClick={handleAddSavingItem} />
       <div style={totalRow}>
-        <div style={{ width:'14px' }}/>
-        <div style={{ flex:1, fontSize:'12px', fontWeight:600, color:'#4b5563' }}>Total Savings</div>
-        {isMobile ? (
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'1px' }}>
-            <span style={{ fontSize:'10px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavP)}</span>
-            <span style={{ fontSize:'12px', fontWeight:700, color:'#1d4ed8', fontFamily:'var(--font-mono), monospace' }}>{fmt(totSavA)}</span>
-          </div>
-        ) : (
-          <>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>
-            <div style={{ width:'100px', flexShrink:0, textAlign:'right', fontSize:'11.5px', fontWeight:700, color:'#1a5c42', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
-          </>
+        <div style={{ flex:1, fontSize:'12px', fontWeight:700, color:'#111827' }}>Total Savings</div>
+        {renderPlanActual(
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'10px':'11.5px', color:'#9ca3af', fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavP)}</div>,
+          <div style={{ width: isMobile?'auto':'100px', flexShrink:0, textAlign:'right', fontSize: isMobile?'12px':'11.5px', fontWeight:700, color:ACCENT, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{fmt(totSavA)}</div>
         )}
-        <div style={{ width:'18px' }}/>
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title={pendingDelete.kind==='cat' ? 'Delete budget category?' : pendingDelete.kind==='item' ? 'Delete budget item?' : 'Delete saving allocation?'}
+          message={<>Delete <strong style={{ color:'#111827' }}>“{pendingDelete.label}”</strong>{pendingDelete.kind==='cat' ? ' and all its items' : ''}? This cannot be undone.</>}
+          onConfirm={confirmDelete}
+          onCancel={()=>setPendingDelete(null)}
+        />
+      )}
     </div>
   )
 }
+
+// Memoized: skips re-render when parent re-renders with unchanged props (e.g. saving indicator toggles).
+export default memo(BudgetPanel)

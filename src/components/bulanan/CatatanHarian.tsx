@@ -1,8 +1,10 @@
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, useEffect, useRef } from 'react'
 import { fmt, pNum } from '@/components/ui/helpers'
 import { AppIcon } from '@/components/ui/design'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { TypePicker, CategoryPicker, TYPE_LABELS } from '@/components/bulanan/TxPickers'
 import { MONTHS_ORDER } from '@/components/layout/DashboardShell'
 import { useSavings } from '@/hooks/useSavings'
 import type { Transaction, BudgetCategory, IncomeCategory, SavingRow, DebtRow } from '@/types/database'
@@ -117,16 +119,56 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     const dd = String(d.getDate()).padStart(2,'0')
     return `${y}-${m}-${dd}`
   })()
-  const [date,    setDate]    = useState(today)
-  const [type,    setType]    = useState<'out'|'inn'|'save'>('out')
-  const [cat,     setCat]     = useState('')
-  const [note,    setNote]    = useState('')
-  const [amt,     setAmt]     = useState('')
-  const [isDebt,  setIsDebt]  = useState(false)
+
+  // Draft preservation: one session-storage slot per viewed month, so a draft
+  // typed in October survives a detour to September and back.
+  const DRAFT_KEY = `fink-tx-draft-v1:${curYear}-${curMonth}`
+  function readDraft(): { date?: string; type?: 'out'|'inn'|'save'; cat?: string; note?: string; amt?: string; isDebt?: boolean } | null {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY)
+      if (!raw) return null
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  }
+  // Lazy initializer: read the draft once on mount.
+  const [draft] = useState(readDraft)
+
+  const [date,    setDate]    = useState(draft?.date || today)
+  const [type,    setType]    = useState<'out'|'inn'|'save'>(draft?.type || 'out')
+  const [cat,     setCat]     = useState(draft?.cat || '')
+  const [note,    setNote]    = useState(draft?.note || '')
+  const [amt,     setAmt]     = useState(draft?.amt || '')
+  const [isDebt,  setIsDebt]  = useState(!!draft?.isDebt)
   const [loading, setLoading] = useState(false)
+
+  // Persist the in-progress form so it survives a page remount (month switch).
+  // The first run is skipped so mounting a fresh month never overwrites the
+  // stored draft with an empty form.
+  const draftSaveStarted = useRef(false)
+  useEffect(() => {
+    if (!draftSaveStarted.current) {
+      draftSaveStarted.current = true
+      return
+    }
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ date, type, cat, note, amt, isDebt }))
+    } catch { /* storage unavailable — draft simply won't survive */ }
+  }, [DRAFT_KEY, date, type, cat, note, amt, isDebt])
+
+  function clearDraft() {
+    try { sessionStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+  }
   const [editId,  setEditId]  = useState<string|null>(null)
   const [editData,setEditData]= useState<Partial<Transaction>>({})
   const [editCatOpts, setEditCatOpts] = useState<{group:string;items:string[]}[]>([])
+  const [editAmtInput, setEditAmtInput] = useState('')
+  const [histQuery, setHistQuery] = useState('')
+  const [histType, setHistType] = useState<'all' | 'out' | 'inn' | 'save'>('all')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const { goals, topupGoal } = useSavings()
   const activeGoals = useMemo(() => goals.filter(g => g.status === 'active' || g.status === 'pending'), [goals])
   const [savingModalOpen, setSavingModalOpen] = useState(false)
@@ -138,21 +180,25 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const [calcExpr, setCalcExpr] = useState('')
   const [calcResult, setCalcResult] = useState<number|null>(null)
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [calcHistory, setCalcHistory] = useState<{ expr: string; result: number }[]>([])
   const [errors, setErrors] = useState<{ amt?: string; note?: string }>({})
   const [confirmTx, setConfirmTx] = useState<Transaction | null>(null)
 
-  // Category options grouped by category. Memoized agar input form tidak menghitung ulang opsi setiap render.
-  const catGroups = useMemo(() => {
-    if (type === 'out') {
+  // Category options grouped by category. Shared by the add form and the edit form.
+  function catOptsFor(t: 'out' | 'inn' | 'save') {
+    if (t === 'out') {
       const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
       const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
       return debtItems.length
         ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
         : budgetGroups
     }
-    if (type === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
+    if (t === 'inn')  return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
     return [{ group: 'Savings', items: saving.map(r => r.label) }]
-  }, [type, budget, income, saving, debt])
+  }
+
+  // Memoized so the add form does not recompute options every render.
+  const catGroups = useMemo(() => catOptsFor(type), [type, budget, income, saving, debt])
 
   async function commitAddTransaction(goalId?: string | null) {
     setLoading(true)
@@ -165,6 +211,7 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
       await topupGoal(goalId, amount, goalNote || note || `Setoran dari Monthly - ${goal?.name || cat || 'Smart Saving'}`)
     }
     setAmt(''); setNote(''); setCat(''); setIsDebt(false); setGoalNote('')
+    clearDraft()
     setLoading(false)
     setSavingModalOpen(false)
     window.dispatchEvent(new Event('hutang-refresh'))
@@ -191,30 +238,33 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     setActionMenuId(null)
     setEditId(t.id)
     setEditData({ ...t })
-        const opts = (() => {
-      if (t.type === 'out') {
-        const budgetGroups = budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-        const debtItems = Array.isArray(debt) ? debt.map(r => r.label).filter(Boolean) : []
-        return debtItems.length
-          ? [...budgetGroups, { group: 'Debt Payment', items: debtItems }]
-          : budgetGroups
-      }
-      if (t.type === 'inn')
-        return income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-      return [{ group: 'Savings', items: saving.map(r => r.label) }]
-    })()
-    setEditCatOpts(opts)
+    setEditAmtInput(t.amt ? Number(t.amt).toLocaleString('id-ID') : '')
+    setEditCatOpts(catOptsFor(t.type as 'out' | 'inn' | 'save'))
   }
 
   async function saveEdit() {
     if (!editId) return
-    await onUpdate(editId, editData.date ? { ...editData, date: String(editData.date).padStart(2, '0') } : editData)
+    const amt = parseInputAmount(editAmtInput)
+    const data = { ...editData, amt }
+    await onUpdate(editId, data.date ? { ...data, date: String(data.date).padStart(2, '0') } : data)
     setEditId(null)
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
+  const filteredTx = useMemo(() => {
+    const q = histQuery.trim().toLowerCase()
+    return tx.filter(t => {
+      if (histType !== 'all' && t.type !== histType) return false
+      if (!q) return true
+      const qDigits = q.replace(/\D/g, '')
+      return (t.note || '').toLowerCase().includes(q)
+        || (t.cat || '').toLowerCase().includes(q)
+        || (qDigits !== '' && String(t.amt || '').includes(qDigits))
+    })
+  }, [tx, histQuery, histType])
+
   const debtCount = useMemo(() => tx.filter(t => t.debt && !t.settled).length, [tx])
-  const sortedTx = useMemo(() => tx.slice().sort((a, b) => Number(b.date) - Number(a.date)), [tx])
+  const sortedTx = useMemo(() => filteredTx.slice().sort((a, b) => Number(b.date) - Number(a.date)), [filteredTx])
 
   // Group transactions by day (descending) for the history list.
   const txGroups = useMemo(() => {
@@ -227,12 +277,17 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     return [...map.entries()]
   }, [sortedTx])
 
-  // Day header label in fixed format, e.g. "2 Oct 2026".
+  // Day header label in fixed format, e.g. "Sun · 5 Oct 2026".
   const monthIdx = curMonth ? MONTHS_ORDER.indexOf(curMonth as any) : -1
   const dayLabel = (day: string) => {
     const m = monthIdx >= 0 ? SHORT_MONTHS[monthIdx] : ''
     const y = curYear || ''
-    return `${Number(day)}${m ? ` ${m}` : ''}${y ? ` ${y}` : ''}`.trim()
+    const base = `${Number(day)}${m ? ` ${m}` : ''}${y ? ` ${y}` : ''}`.trim()
+    if (monthIdx >= 0 && curYear) {
+      const wd = new Date(curYear, monthIdx, Number(day)).toLocaleDateString('en-US', { weekday: 'short' })
+      return `${wd} · ${base}`
+    }
+    return base
   }
   const dayNet = (items: Transaction[]) =>
     items.reduce((s, t) => s + (t.type === 'inn' ? Number(t.amt || 0) : -Number(t.amt || 0)), 0)
@@ -282,8 +337,29 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   function applyCalculatorResult() {
     const result = calcResult ?? safeCalculateExpression(calcExpr)
     if (result === null) return
+    setCalcHistory(prev => [{ expr: calcExpr, result }, ...prev.filter(h => h.expr !== calcExpr)].slice(0, 5))
     setAmt(fmtInput(String(result)))
     setCalcOpen(false)
+  }
+
+  function reuseCalcHistory(h: { expr: string; result: number }) {
+    setCalcExpr(h.expr)
+    setCalcResult(h.result)
+  }
+
+  const CALC_KEYS: { k: string; tone: 'num' | 'op' | 'clear' | 'util' }[] = [
+    { k:'7', tone:'num' }, { k:'8', tone:'num' }, { k:'9', tone:'num' }, { k:'÷', tone:'op' },
+    { k:'4', tone:'num' }, { k:'5', tone:'num' }, { k:'6', tone:'num' }, { k:'×', tone:'op' },
+    { k:'1', tone:'num' }, { k:'2', tone:'num' }, { k:'3', tone:'num' }, { k:'-', tone:'op' },
+    { k:'0', tone:'num' }, { k:'000', tone:'num' }, { k:'.', tone:'num' }, { k:'+', tone:'op' },
+    { k:'C', tone:'clear' }, { k:'⌫', tone:'util' }, { k:'(', tone:'util' }, { k:')', tone:'util' },
+  ]
+  const calcKeyStyle = (tone: 'num' | 'op' | 'clear' | 'util'): React.CSSProperties => {
+    const base: React.CSSProperties = { padding:'13px 0', borderRadius:'12px', fontSize:'15px', fontWeight:800, cursor:'pointer', border:'1px solid' }
+    if (tone === 'op') return { ...base, background:'#f0fdf4', borderColor:'#bbf7d0', color:'#1a5c42' }
+    if (tone === 'clear') return { ...base, background:'#fef2f2', borderColor:'#fecaca', color:'#991b1b' }
+    if (tone === 'util') return { ...base, background:'#f7f8fa', borderColor:'#e3e7ee', color:'#4b5563' }
+    return { ...base, background:'#fff', borderColor:'#e3e7ee', color:'#111827' }
   }
 
   function openDeleteConfirm(t: Transaction) {
@@ -299,6 +375,17 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
+  async function confirmBulkDeleteTx() {
+    const ids = selectedIds
+    setConfirmBulkDelete(false)
+    setSelectedIds([])
+    setSelectMode(false)
+    for (const id of ids) {
+      await onDelete(id)
+    }
+    window.dispatchEvent(new Event('hutang-refresh'))
+  }
+
   // Base styles — konsisten Inter font
   const baseFont: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px' }
   const inp: React.CSSProperties = { ...baseFont, width: '100%', padding: '8px 10px', border: '1.5px solid #e3e7ee', borderRadius: '6px', background: '#f7f8fa', outline: 'none', color: '#111827', appearance: 'none', WebkitAppearance: 'none' }
@@ -307,7 +394,13 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
   const lbl: React.CSSProperties = { display:'block', fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'4px' }
   const err: React.CSSProperties = { fontSize:'11px', color:'#b91c1c', marginTop:'4px' }
 
-  const TYPE_LABELS: Record<string, string> = { out: 'Expense', inn: 'Income', save: 'Savings' }
+  function pickType(v: 'out'|'inn'|'save') {
+    setType(v); setCat(''); setErrors({})
+  }
+
+  function pickCat(v: string) {
+    setCat(v); setErrors(p => ({ ...p, note: undefined }))
+  }
 
   return (
     <div>
@@ -339,29 +432,12 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
               </>
             )}
           </div>
-          <div style={{ minWidth:0 }}>
-            <span style={lbl}>Type</span>
-            <select style={sel} value={type} onChange={e => { setType(e.target.value as 'out'|'inn'|'save'); setCat(''); setErrors({}) }}>
-              <option value="out">Expense</option>
-              <option value="inn">Income</option>
-              <option value="save">Savings</option>
-            </select>
-          </div>
+          <TypePicker value={type} onPick={pickType} />
         </div>
 
         {/* Row 2: Category + Amount */}
         <div className="fink-tx-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div style={{ minWidth:0 }}>
-            <span style={lbl}>Category</span>
-            <select style={sel} value={cat} onChange={e => { setCat(e.target.value); setErrors(p => ({ ...p, note: undefined })) }}>
-              <option value="">— Select category —</option>
-              {catGroups.map(g => (
-                <optgroup key={g.group} label={g.group}>
-                  {g.items.map(item => <option key={item} value={item}>{item}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </div>
+          <CategoryPicker value={cat} onPick={pickCat} groups={catGroups} />
           <div style={{ minWidth:0 }}>
             <span style={lbl}>Amount (Rp)</span>
             <div style={{ display:'flex', gap:'6px', alignItems:'stretch', position:'relative' }}>
@@ -487,64 +563,67 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
           onClick={e => { if (e.currentTarget === e.target) setCalcOpen(false) }}
           style={{ position:'fixed', inset:0, background:'rgba(17,24,39,.42)', zIndex:950, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}
         >
-          <div style={{ width:'100%', maxWidth:'340px', background:'#fff', borderRadius:'16px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
-            <div style={{ padding:'14px 16px', borderBottom:'1px solid #e3e7ee', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:7, fontSize:'15px', fontWeight:800, color:'#111827' }}><AppIcon name="calculator" size={16} />Expense Calculator</div>
-                <div style={{ fontSize:'11px', color:'#9ca3af', marginTop:'2px' }}>Calculate, then insert into Amount</div>
+          <div style={{ width:'100%', maxWidth:'360px', background:'#fff', borderRadius:'20px', border:'1px solid #e3e7ee', boxShadow:'0 24px 80px rgba(0,0,0,.22)', overflow:'hidden' }}>
+            <div style={{ padding:'16px 18px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:9, fontSize:'15px', fontWeight:800, color:'#111827' }}>
+                <span style={{ width:'32px', height:'32px', borderRadius:'10px', background:'#f0fdf4', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#1a5c42' }}>
+                  <AppIcon name="calculator" size={17} />
+                </span>
+                Calculator
               </div>
               <button type="button" aria-label="Close" onClick={()=>setCalcOpen(false)} style={{ width:'30px', height:'30px', border:'none', background:'#f3f4f6', borderRadius:'8px', color:'#4b5563', cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
             </div>
 
-            <div style={{ padding:'14px 16px' }}>
-              <input
-                readOnly
-                inputMode="none"
-                value={calcExpr}
-                onChange={e => {
-                  const formatted = formatCalcExpression(e.target.value)
-                  setCalcExpr(formatted)
-                  setCalcResult(safeCalculateExpression(formatted))
-                }}
-                placeholder="E.g. 12.000+35.000"
-                style={{ width:'100%', padding:'10px 12px', border:'1.5px solid #e3e7ee', borderRadius:'10px', outline:'none', background:'#f7f8fa', fontFamily:'var(--font-mono), monospace', fontSize:'15px', fontWeight:700, color:'#111827', cursor:'default', caretColor:'transparent' }}
-              />
-
-              <div style={{ marginTop:'8px', padding:'10px 12px', borderRadius:'10px', background:'#f0fdf4', border:'1px solid #bbf7d0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'10px' }}>
-                <span style={{ fontSize:'11px', fontWeight:800, color:'#15803d', textTransform:'uppercase', letterSpacing:'.5px' }}>Result</span>
-                <span style={{ fontFamily:'var(--font-mono), monospace', fontSize:'16px', fontWeight:900, color:'#1a5c42' }}>
-                  {calcResult === null ? '-' : fmt(calcResult)}
-                </span>
+            <div style={{ margin:'0 18px', padding:'14px 16px', borderRadius:'14px', background:'#111827' }}>
+              <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'13.5px', color:'#9ca3af', textAlign:'right', minHeight:'20px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {calcExpr || ' '}
               </div>
+              <div style={{ fontFamily:'var(--font-mono), monospace', fontSize:'26px', fontWeight:800, color:'#fff', textAlign:'right', marginTop:'4px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {calcResult === null ? '—' : fmt(calcResult)}
+              </div>
+            </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'8px', marginTop:'12px' }}>
-                {['7','8','9','÷','4','5','6','×','1','2','3','-','0','000','.','+'].map(k => (
+            {calcHistory.length > 0 && (
+              <div style={{ margin:'10px 18px 0' }}>
+                <div style={{ fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:'2px' }}>Recent</div>
+                <div style={{ display:'flex', flexDirection:'column', maxHeight:'92px', overflowY:'auto' }}>
+                  {calcHistory.map((h, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => reuseCalcHistory(h)}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', padding:'6px 10px', border:'none', borderRadius:'8px', background:'transparent', cursor:'pointer', fontFamily:'var(--font-mono), monospace', fontSize:'12px', color:'#4b5563', textAlign:'left' }}
+                    >
+                      <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{h.expr}</span>
+                      <span style={{ fontWeight:700, color:'#1a5c42', flexShrink:0 }}>= {fmt(h.result)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ padding:'14px 18px 18px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'10px' }}>
+                {CALC_KEYS.map(({ k, tone }) => (
                   <button
                     key={k}
                     type="button"
                     onClick={()=>handleCalcInput(k)}
-                    style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:['+','-','×','÷'].includes(k)?'#f0fdf4':'#fff', color:['+','-','×','÷'].includes(k)?'#1a5c42':'#111827', fontSize:'14px', fontWeight:800, cursor:'pointer' }}
+                    style={calcKeyStyle(tone)}
                   >
                     {k}
                   </button>
                 ))}
-                <button type="button" onClick={()=>handleCalcInput('C')} style={{ padding:'11px 0', border:'1px solid #fecaca', borderRadius:'10px', background:'#fef2f2', color:'#991b1b', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>C</button>
-                <button type="button" onClick={()=>handleCalcInput('⌫')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>⌫</button>
-                <button type="button" onClick={()=>handleCalcInput('(')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>(</button>
-                <button type="button" onClick={()=>handleCalcInput(')')} style={{ padding:'11px 0', border:'1px solid #e3e7ee', borderRadius:'10px', background:'#fff', color:'#4b5563', fontSize:'14px', fontWeight:800, cursor:'pointer' }}>)</button>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop:'14px' }}>
-                <button type="button" onClick={()=>setCalcOpen(false)} style={{ padding:'10px', borderRadius:'10px', border:'1px solid #e3e7ee', background:'#fff', color:'#4b5563', fontWeight:800, cursor:'pointer' }}>Cancel</button>
-                <button
-                  type="button"
-                  onClick={applyCalculatorResult}
-                  disabled={calcResult === null}
-                  style={{ padding:'10px', borderRadius:'10px', border:'none', background:calcResult===null?'#9ca3af':'#1a5c42', color:'#fff', fontWeight:900, cursor:calcResult===null?'not-allowed':'pointer' }}
-                >
-                  Use Result
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={applyCalculatorResult}
+                disabled={calcResult === null}
+                style={{ width:'100%', marginTop:'12px', padding:'12px', borderRadius:'12px', border:'none', background:calcResult===null?'#9ca3af':'#1a5c42', color:'#fff', fontSize:'14px', fontWeight:800, cursor:calcResult===null?'not-allowed':'pointer', fontFamily:'Inter, system-ui, sans-serif' }}
+              >
+                Use Result{calcResult !== null ? ` · ${fmt(calcResult)}` : ''}
+              </button>
             </div>
           </div>
         </div>
@@ -560,12 +639,74 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
         )}
       </div>
 
+      {(tx.length > 0) && (
+        <div style={{ padding: '8px 16px 0', display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <input
+            placeholder="Search note, category, amount..."
+            value={histQuery}
+            onChange={e => setHistQuery(e.target.value)}
+            style={{ flex:1, minWidth:0, padding: '7px 10px', border: '1.5px solid #e3e7ee', borderRadius: '8px', outline: 'none', background: '#f7f8fa', fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', color: '#111827' }}
+          />
+          <div style={{ display: 'flex', gap: '3px', background: '#f7f8fa', border: '1px solid #e3e7ee', borderRadius: '8px', padding: '2px', flexShrink: 0 }}>
+            {([['all','All'],['out','Out'],['inn','In'],['save','Sav']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setHistType(v)}
+                style={{ border: 'none', borderRadius: '6px', padding: '5px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer', background: histType === v ? '#1a5c42' : 'transparent', color: histType === v ? '#fff' : '#6b7280', fontFamily: 'Inter, system-ui, sans-serif' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => { setSelectMode(v => !v); setSelectedIds([]) }}
+            style={{ border: '1.5px solid #e3e7ee', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: selectMode ? '#1a5c42' : '#fff', color: selectMode ? '#fff' : '#4b5563', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}
+          >
+            {selectMode ? 'Done' : 'Select'}
+          </button>
+        </div>
+      )}
+
+      {selectMode && selectedIds.length > 0 && (
+        <div style={{ padding: '8px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '8px 12px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#1a5c42' }}>{selectedIds.length} selected</span>
+            <button
+              type="button"
+              onClick={() => setConfirmBulkDelete(true)}
+              style={{ border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', background: '#b91c1c', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── TX LIST (grouped by day, with daily subtotal) ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 16px' }}>
         {tx.length === 0 && (
           <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
             <div style={{ display:'flex', justifyContent:'center', marginBottom:'6px' }}><AppIcon name="transactions" size={24} /></div>
             No transactions yet
+          </div>
+        )}
+
+        {tx.length > 0 && txGroups.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '28px', color: '#9ca3af', fontSize: '13px' }}>
+            No transactions match your search
+            {(histQuery || histType !== 'all') && (
+              <div style={{ marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setHistQuery(''); setHistType('all') }}
+                  style={{ border: '1px solid #e3e7ee', background: '#fff', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, color: '#4b5563', cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -594,36 +735,20 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
                   <input type="number" min="1" max="31" style={{ ...inp, fontSize: '12px', padding: '5px 8px' }}
                     value={editData.date || ''} onChange={e => setEditData(p => ({ ...p, date: e.target.value }))} />
                 </div>
-                <div>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Type</div>
-                  <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
-                    value={editData.type || 'out'}
-                    onChange={e => {
-                      const v = e.target.value as 'out'|'inn'|'save'
-                      setEditData(p => ({ ...p, type: v, cat: '' }))
-                      const opts = v === 'out' ? budget.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-                        : v === 'inn' ? income.map(c => ({ group: c.label, items: c.items.map(i => i.label) }))
-                        : [{ group: 'Savings', items: saving.map(r => r.label) }]
-                      setEditCatOpts(opts)
-                    }}>
-                    <option value="out">Expense</option>
-                    <option value="inn">Income</option>
-                    <option value="save">Savings</option>
-                  </select>
-                </div>
+                <TypePicker
+                  value={(editData.type || 'out') as 'out' | 'inn' | 'save'}
+                  onPick={v => {
+                    setEditData(p => ({ ...p, type: v, cat: '' }))
+                    setEditCatOpts(catOptsFor(v))
+                  }}
+                />
               </div>
               <div style={{ marginBottom: '6px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Category</div>
-                <select style={{ ...sel, fontSize: '12px', padding: '5px 28px 5px 8px' }}
+                <CategoryPicker
                   value={editData.cat || ''}
-                  onChange={e => setEditData(p => ({ ...p, cat: e.target.value }))}>
-                  <option value="">— Select —</option>
-                  {editCatOpts.map(g => (
-                    <optgroup key={g.group} label={g.group}>
-                      {g.items.map(item => <option key={item} value={item}>{item}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
+                  onPick={v => setEditData(p => ({ ...p, cat: v }))}
+                  groups={editCatOpts}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                 <div>
@@ -634,7 +759,13 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
                 <div>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', marginBottom: '3px', textTransform: 'uppercase' }}>Amount (Rp)</div>
                   <input type="text" inputMode="numeric" style={{ ...inp, fontSize: '12px', padding: '5px 8px', fontFamily: 'var(--font-mono), monospace' }}
-                    value={editData.amt ? Number(editData.amt).toLocaleString('id-ID') : ''} onChange={e => setEditData(p => ({ ...p, amt: parseInputAmount(e.target.value) }))} />
+                    value={editAmtInput}
+                    onChange={e => setEditAmtInput(e.target.value)}
+                    onBlur={() => {
+                      const n = parseInputAmount(editAmtInput)
+                      setEditData(p => ({ ...p, amt: n }))
+                      setEditAmtInput(n ? n.toLocaleString('id-ID') : '')
+                    }} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
@@ -660,13 +791,23 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
             <div key={t.id} style={{
               display: 'flex', alignItems: 'flex-start', gap: '7px',
               background: t.debt && !t.settled ? '#fffbeb' : '#f7f8fa',
-              border: `1px solid ${t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
+              border: `1px solid ${selectedIds.includes(t.id) ? '#1a5c42' : t.debt && !t.settled ? '#fde68a' : '#e3e7ee'}`,
               borderRadius: '6px', padding: '8px 10px',
             }}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(t.id)}
+                  onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, t.id] : prev.filter(id => id !== t.id))}
+                  aria-label={`Select ${t.note || 'transaction'}`}
+                  style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: '#1a5c42', cursor: 'pointer', flexShrink: 0 }}
+                />
+              )}
               <div style={{ fontSize: '10.5px', color: '#9ca3af', fontWeight: 600, minWidth: '22px', marginTop: '2px', fontFamily: 'var(--font-mono), monospace' }}>{t.date}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.note}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize:'9px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'.4px' }}>{TYPE_LABELS[t.type]}</span>
                   <span style={{ fontSize:'9.5px', fontWeight:600, background: catUn ? '#f1f5f9' : bc, color: catUn ? '#64748b' : tc, padding:'2px 7px', borderRadius:'20px', letterSpacing:'.3px', border: catUn ? '1px dashed #cbd5e1' : 'none' }}>{catLabel}</span>
                   {t.debt && !t.settled && <span style={{ fontSize: '9px', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="warning" size={10} />Unpaid</span></span>}
                   {t.debt && t.settled  && <span style={{ fontSize: '9px', fontWeight: 700, background: '#d1eadd', color: '#1a5c42', padding: '1px 6px', borderRadius: '10px' }}><span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><AppIcon name="check" size={10} />Settled</span></span>}
@@ -783,45 +924,29 @@ function CatatanHarian({ tx, budget, income, saving, debt = [], curMonth, curYea
 
       {/* ── DELETE CONFIRMATION DIALOG ── */}
       {confirmTx && (
-        <div
-          onClick={() => setConfirmTx(null)}
-          style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(17,24,39,.45)', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', animation:'finkFadeIn .15s ease' }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            role="alertdialog"
-            aria-modal="true"
-            aria-label="Delete transaction"
-            style={{ ...baseFont, background:'#fff', borderRadius:'14px', padding:'20px', width:'100%', maxWidth:'340px', boxShadow:'0 20px 50px rgba(0,0,0,.25)', animation:'finkPopIn .15s ease' }}
-          >
-            <div style={{ fontSize:'15px', fontWeight:800, color:'#111827', marginBottom:'8px' }}>Delete transaction?</div>
-            <div style={{ fontSize:'12.5px', color:'#6b7280', lineHeight:1.5, marginBottom:'18px' }}>
-              Delete this {TYPE_LABELS[confirmTx.type] || 'transaction'} of <strong style={{ color:'#111827' }}>{fmt(confirmTx.amt)}</strong>
-              {confirmTx.note ? <> — “{confirmTx.note}”</> : confirmTx.cat ? <> ({confirmTx.cat})</> : <> (Uncategorized)</>}? This cannot be undone.
-            </div>
-            <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setConfirmTx(null)}
-                style={{ ...baseFont, border:'1.5px solid #e3e7ee', background:'#fff', color:'#374151', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteTx}
-                style={{ ...baseFont, border:'none', background:'#b91c1c', color:'#fff', fontWeight:700, borderRadius:'9px', padding:'8px 16px', cursor:'pointer' }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Delete transaction?"
+          message={<>
+            Delete this {TYPE_LABELS[confirmTx.type] || 'transaction'} of <strong style={{ color:'#111827' }}>{fmt(confirmTx.amt)}</strong>
+            {confirmTx.note ? <> — “{confirmTx.note}”</> : confirmTx.cat ? <> ({confirmTx.cat})</> : <> (Uncategorized)</>}? This cannot be undone.
+          </>}
+          onConfirm={confirmDeleteTx}
+          onCancel={() => setConfirmTx(null)}
+        />
+      )}
+
+      {/* ── BULK DELETE CONFIRMATION DIALOG ── */}
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Delete ${selectedIds.length} transactions?`}
+          message={<>Delete <strong style={{ color:'#111827' }}>{selectedIds.length} selected transactions</strong>? This cannot be undone.</>}
+          confirmLabel="Delete All"
+          onConfirm={confirmBulkDeleteTx}
+          onCancel={() => setConfirmBulkDelete(false)}
+        />
       )}
 
       <style>{`
-        @keyframes finkFadeIn { from { opacity:0; } to { opacity:1; } }
-        @keyframes finkPopIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
         @media (max-width: 430px) {
           .fink-tx-row { grid-template-columns: 1fr !important; }
         }

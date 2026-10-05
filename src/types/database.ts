@@ -134,6 +134,8 @@ export interface Transaction {
   amt: number
   debt: boolean
   settled: boolean
+  /** Amount already paid toward this debt. Remaining = amt - paid_amt. */
+  paid_amt?: number
 }
 
 export interface MonthData {

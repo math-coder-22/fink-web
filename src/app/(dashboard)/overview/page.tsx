@@ -803,7 +803,8 @@ function buildDailyProgressData({
   const incomeTargetLabels = targetedIncomeLabels(income)
 
   for (const t of tx || []) {
-    if ((t as any).debt && !(t as any).settled) continue
+    // Unpaid expenses appear on their transaction day (consistent with journal actuals).
+    if ((t as any).type !== 'out' && (t as any).debt && !(t as any).settled) continue
 
     const day = getTransactionDay(t, days)
     if (!day) continue
