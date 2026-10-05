@@ -10,14 +10,16 @@ const fmt = (n: number) =>
 
 export function TopupModal({
   goal,
+  initialAmount,
   onConfirm,
   onClose,
 }: {
   goal: SavingsGoal;
+  initialAmount?: number;
   onConfirm: (amt: number, note: string) => void;
   onClose: () => void;
 }) {
-  const [amt, setAmt] = useState("");
+  const [amt, setAmt] = useState(initialAmount && initialAmount > 0 ? String(Math.round(initialAmount)) : "");
   const [note, setNote] = useState("");
   const inp: CSSProperties = {
     width: "100%",
@@ -141,7 +143,7 @@ export function TopupModal({
             </label>
             <input
               type="text"
-              placeholder="Gaji bulan ini..."
+              placeholder="This month's salary..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={inp}
@@ -387,7 +389,7 @@ export function ReconcileModal({
   onClose: () => void;
 }) {
   const [actual, setActual] = useState(String(Math.round(goal.current || 0)));
-  const [note, setNote] = useState("Reconcile saldo tabungan");
+  const [note, setNote] = useState("Savings balance reconcile");
   const actualNumber = parseFloat(actual) || 0;
   const diff = actualNumber - goal.current;
   const inp: CSSProperties = {
@@ -439,12 +441,12 @@ export function ReconcileModal({
             <div
               style={{ fontSize: "15px", fontWeight: 700, color: "#92400e" }}
             >
-              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Saldo</span>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Balance</span>
             </div>
             <div
               style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}
             >
-              Sesuaikan saldo aktual Smart Saving
+              Adjust the actual savings balance
             </div>
           </div>
           <button
@@ -501,7 +503,7 @@ export function ReconcileModal({
                   letterSpacing: ".5px",
                 }}
               >
-                Saldo App
+                App Balance
               </div>
               <div
                 style={{
@@ -531,7 +533,7 @@ export function ReconcileModal({
                   letterSpacing: ".5px",
                 }}
               >
-                Selisih
+                Difference
               </div>
               <div
                 style={{
@@ -559,7 +561,7 @@ export function ReconcileModal({
                 letterSpacing: ".5px",
               }}
             >
-              Saldo Aktual Saat Ini (Rp)
+              Actual Current Balance (Rp)
             </label>
             <input
               autoFocus
@@ -586,7 +588,7 @@ export function ReconcileModal({
                 letterSpacing: ".5px",
               }}
             >
-              Keterangan
+              Note
             </label>
             <input
               type="text"
@@ -613,13 +615,13 @@ export function ReconcileModal({
                 actualNumber >= 0 && diff !== 0 ? "pointer" : "not-allowed",
             }}
           >
-            Simpan Reconcile
+            Save Reconcile
           </button>
           <div
             style={{ fontSize: "11.5px", color: "#9ca3af", lineHeight: 1.5 }}
           >
-            Jika saldo aktual lebih besar, riwayat akan menjadi setor dana. Jika
-            lebih kecil, riwayat akan menjadi tarik dana.
+            If the actual balance is higher, the history entry becomes a deposit. If
+            lower, it becomes a withdrawal.
           </div>
         </div>
       </div>
@@ -677,14 +679,14 @@ export function SummaryCard({
     <div style={{ border: '1px solid #e3e7ee', borderRadius: '16px', background: '#fff', padding: '14px 16px', marginBottom: '14px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div>
-          <div style={label}>TOTAL TERKUMPUL</div>
+          <div style={label}>TOTAL SAVED</div>
           <div style={{ fontSize: '19px', fontWeight: 950, color: '#111827', fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
             {fmt(totalCollected)}
           </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>dari {fmt(totalTarget)}</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>of {fmt(totalTarget)}</div>
         </div>
         <div>
-          <div style={label}>RENCANA BULAN INI</div>
+          <div style={label}>THIS MONTH'S PLAN</div>
           {plan ? (
             <>
               <div style={{ fontSize: '19px', fontWeight: 950, color: statusColor, fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
@@ -697,7 +699,7 @@ export function SummaryCard({
               </div>
             </>
           ) : (
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>Menghitung rencana…</div>
+            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>Computing plan…</div>
           )}
         </div>
       </div>
@@ -706,7 +708,7 @@ export function SummaryCard({
         <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: '#1a5c42', borderRadius: 999 }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#94a3b8', marginTop: '5px' }}>
-        <span>Akumulasi semua target</span>
+        <span>Combined across all goals</span>
         <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 800 }}>{Math.round(pct)}%</span>
       </div>
 
@@ -716,7 +718,7 @@ export function SummaryCard({
             onClick={() => setShowBreakdown((v) => !v)}
             style={{ border: 'none', background: 'none', padding: 0, fontSize: '12px', fontWeight: 850, color: '#1a5c42', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            {showBreakdown ? '▾ Sembunyikan rincian' : '▸ Lihat rincian per goal'}
+            {showBreakdown ? '▾ Hide breakdown' : '▸ View per-goal breakdown'}
           </button>
           {showBreakdown && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
@@ -742,7 +744,7 @@ export function SummaryCard({
       )}
       {!plan && count === 0 && (
         <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b' }}>
-          Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan.
+          No active goals yet. Add a goal to start planning.
         </div>
       )}
     </div>
