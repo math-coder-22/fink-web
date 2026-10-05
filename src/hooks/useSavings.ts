@@ -492,7 +492,7 @@ export function useSavings() {
   );
 
   const reconcileGoal = useCallback(
-    async (id: string, actual: number, note = "Reconcile saldo tabungan") => {
+    async (id: string, actual: number, note = "Savings balance reconcile") => {
       if (!userId) return;
       const next = goals.map((g) => {
         if (g.id !== id) return g;
@@ -503,7 +503,7 @@ export function useSavings() {
           id: uid(),
           type: diff > 0 ? "topup" : "withdraw",
           amount: Math.abs(diff),
-          note: note || `Reconcile saldo ke ${safeActual.toLocaleString("id-ID")}`,
+          note: note || `Reconcile balance to ${safeActual.toLocaleString("id-ID")}`,
           date: new Date().toISOString(),
         };
         const status =
