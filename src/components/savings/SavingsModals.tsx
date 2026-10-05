@@ -627,67 +627,124 @@ export function ReconcileModal({
   );
 }
 
+export type GoalPlanData = {
+  items: { id: string; name: string; suggestedMonthly: number; progress: number }[];
+  plan: {
+    allocatedMonthly: number;
+    safeCapacity: number;
+    status: 'healthy' | 'stretched' | 'overloaded' | 'no_capacity';
+    statusLabel: string;
+    message: string;
+  };
+};
+
 export function SummaryCard({
   summary,
+  plan,
 }: {
   summary: {
     totalTarget: number;
     totalCollected: number;
-    totalMonthly: number;
     pct: number;
     count: number;
   };
+  plan: GoalPlanData | null;
 }) {
-  const { totalTarget, totalCollected, totalMonthly, pct, count } = summary;
+  const { totalTarget, totalCollected, pct, count } = summary;
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const status = plan?.plan.status;
+  const statusColor =
+    status === 'healthy' ? '#15803d'
+    : status === 'stretched' ? '#b45309'
+    : status === 'overloaded' ? '#b91c1c'
+    : '#64748b';
+  const statusBg =
+    status === 'healthy' ? '#ecfdf5'
+    : status === 'stretched' ? '#fffbeb'
+    : status === 'overloaded' ? '#fef2f2'
+    : '#f8fafc';
+  const statusBorder =
+    status === 'healthy' ? '#bbf7d0'
+    : status === 'stretched' ? '#fde68a'
+    : status === 'overloaded' ? '#fecaca'
+    : '#e2e8f0';
+
+  const allocItems = (plan?.items || []).filter((i) => (i.suggestedMonthly || 0) > 0);
+  const label: CSSProperties = { fontSize: '10.5px', fontWeight: 850, color: '#64748b', letterSpacing: '.04em' };
+
   return (
-    <div className="savings-summary-card">
-      <div className="savings-summary-top">
-        <div className="savings-summary-block">
-          <div className="savings-summary-label">Total Dana Terkumpul</div>
-          <div className="savings-summary-value">{fmt(totalCollected)}</div>
-          <div className="savings-summary-note">dari {fmt(totalTarget)}</div>
-        </div>
-
-        <div className="savings-summary-block">
-          <div className="savings-summary-label">Kebutuhan/Bulan</div>
-          <div className="savings-summary-value">{fmt(totalMonthly)}</div>
-          <div className="savings-summary-note">{count} goal aktif</div>
-        </div>
-
-        <div className="savings-summary-progress-wrap">
-          <div className="savings-summary-label">Progress Keseluruhan</div>
-          <div className="savings-progress-line">
-            <div
-              className="savings-progress-fill"
-              style={{ width: `${Math.min(100, pct)}%` }}
-            />
+    <div style={{ border: '1px solid #e3e7ee', borderRadius: '16px', background: '#fff', padding: '14px 16px', marginBottom: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div>
+          <div style={label}>TOTAL TERKUMPUL</div>
+          <div style={{ fontSize: '19px', fontWeight: 950, color: '#111827', fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
+            {fmt(totalCollected)}
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "10.5px",
-              opacity: 0.74,
-            }}
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>dari {fmt(totalTarget)}</div>
+        </div>
+        <div>
+          <div style={label}>RENCANA BULAN INI</div>
+          {plan ? (
+            <>
+              <div style={{ fontSize: '19px', fontWeight: 950, color: statusColor, fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
+                {fmt(plan.plan.allocatedMonthly)}
+              </div>
+              <div style={{ marginTop: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 950, color: statusColor, background: statusBg, border: `1px solid ${statusBorder}`, borderRadius: '999px', padding: '2px 8px' }}>
+                  {plan.plan.statusLabel}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>Menghitung rencana…</div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ height: '6px', background: '#eef1f5', borderRadius: 999, overflow: 'hidden', marginTop: '12px' }}>
+        <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: '#1a5c42', borderRadius: 999 }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#94a3b8', marginTop: '5px' }}>
+        <span>Akumulasi semua target</span>
+        <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 800 }}>{Math.round(pct)}%</span>
+      </div>
+
+      {plan && allocItems.length > 0 && (
+        <div style={{ marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+          <button
+            onClick={() => setShowBreakdown((v) => !v)}
+            style={{ border: 'none', background: 'none', padding: 0, fontSize: '12px', fontWeight: 850, color: '#1a5c42', cursor: 'pointer', fontFamily: 'inherit' }}
           >
-            <span>Akumulasi semua target</span>
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontWeight: 800,
-              }}
-            >
-              {Math.round(pct)}%
-            </span>
-          </div>
+            {showBreakdown ? '▾ Sembunyikan rincian' : '▸ Lihat rincian per goal'}
+          </button>
+          {showBreakdown && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+              {allocItems.map((item) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px' }}>
+                  <span style={{ color: '#374151', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.name}
+                  </span>
+                  <span style={{ color: '#1a5c42', fontWeight: 850, fontFamily: 'var(--font-mono), monospace', whiteSpace: 'nowrap' }}>
+                    {fmt(item.suggestedMonthly)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      <div className="savings-summary-tip">
-        {count === 0
-          ? "Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
-          : `Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
-      </div>
+      {plan && (
+        <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.55 }}>
+          {plan.plan.message}
+        </div>
+      )}
+      {!plan && count === 0 && (
+        <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b' }}>
+          Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan.
+        </div>
+      )}
     </div>
   );
 }
