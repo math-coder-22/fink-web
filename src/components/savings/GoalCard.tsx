@@ -710,6 +710,7 @@ function GoalDetailModal({
 interface Props {
   goal: SavingsGoal;
   calc: GoalCalcResult;
+  suggestedMonthly?: number | null;
   onEdit: (g: SavingsGoal) => void;
   onTopup: (id: string) => void;
   onWithdraw: (id: string) => void;
@@ -722,6 +723,7 @@ interface Props {
 function GoalCard({
   goal,
   calc,
+  suggestedMonthly = null,
   onEdit,
   onTopup,
   onWithdraw,
@@ -779,9 +781,8 @@ function GoalCard({
           </div>
 
           <div className="savings-goal-compact-side">
-            <div className="savings-label">Recommended/Month</div>
-            <div className="savings-rec-value">{fmt(calc.monthlyNeeded)}</div>
-            <div className="savings-rec-meta">{goal.history?.length || 0} history</div>
+            <div className="savings-label">{suggestedMonthly != null ? "Rencana bln ini" : "Ideal/bln"}</div>
+            <div className="savings-rec-value">{fmt(suggestedMonthly ?? calc.monthlyNeeded)}</div>
           </div>
 
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
