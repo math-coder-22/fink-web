@@ -42,6 +42,7 @@ interface Props {
 export default function GoalModal({ goal, onSave, onClose }: Props) {
   const [form, setForm] = useState<FormData>(defaultForm())
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
     if (goal) {
@@ -53,6 +54,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
   }, [goal])
 
   function set<K extends keyof FormData>(k: K, v: FormData[K]) {
+    setDirty(true)
     setForm(prev => ({ ...prev, [k]: v }))
   }
 
@@ -92,7 +94,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
   const isEdit = !!goal
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget && !dirty) onClose() }}
       style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
       <div style={{ background:'#fff', borderRadius:'22px', width:'100%', maxWidth:'520px', maxHeight:'90vh', overflow:'hidden', boxShadow:'0 24px 64px rgba(0,0,0,.18)' }}>
 
