@@ -405,7 +405,7 @@ export function buildAdvisorSummary(params: {
   if (debtRatio > 25) priorities.push({ level: debtRatio > 35 ? 'high' : 'medium', title:'Jaga beban cicilan', detail:'Hindari cicilan baru dan prioritaskan pelunasan utang berbunga tinggi.' })
   if (goalPlan.status === 'overloaded') priorities.push({ level:'high', title:'Tinjau kembali pemasukan atau timeline target', detail:'Target Anda membutuhkan alokasi lebih besar daripada kapasitas aman saat ini. Pertimbangkan untuk meningkatkan pemasukan atau memperpanjang deadline, or reducing active focus goals.' })
   focusGoals.slice(0, 2).forEach((g) => {
-    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Fokus pada ${g.name}`, detail: `${g.recommendation} ${g.realisticEtaLabel !== 'Belum ada estimasi' ? `Estimasi realistis: ${g.realisticEtaLabel}.` : ''}` })
+    priorities.push({ level: g.priority === 'critical' || g.priority === 'high' ? 'high' : g.priority === 'medium' ? 'medium' : 'low', title:`Focus on ${g.name}`, detail: `${g.recommendation} ${g.realisticEtaLabel !== 'No estimate yet' ? `Realistic estimate: ${g.realisticEtaLabel}.` : ''}` })
   })
   if (milestone) priorities.push({ level:'low', title:`Percepat ${milestone.title}`, detail: milestone.monthly > 0 ? `Pertahankan alokasi Rp ${Math.round(milestone.monthly).toLocaleString('id-ID')} per bulan.` : milestone.detail })
   if (priorities.length === 0) priorities.push({ level:'low', title:'Pertahankan pola bulan ini', detail:'Arus kas, tabungan, dan risiko utama masih terkendali.' })
