@@ -29,10 +29,12 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
   const [payId, setPayId] = useState<string | null>(null)
   const [payInput, setPayInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [payError, setPayError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/hutang')
+      // no-store: the browser must not serve a cached list right after a payment
+      const res = await fetch('/api/hutang', { cache: 'no-store' })
       const json = await res.json()
       setUnpaidTx(json.data || [])
     } catch { /* keep old list on transient failure */ }
@@ -83,12 +85,23 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
 
   async function postPayments(payments: { id: string; amount: number }[]) {
     setBusy(true)
+    setPayError(null)
     try {
-      await fetch('/api/hutang', {
+      const res = await fetch('/api/hutang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payments }),
       })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setPayError(json?.error || 'Payment failed. Please try again.')
+        return
+      }
+      const failed = (json?.results || []).filter((r: any) => !r.ok)
+      if (failed.length > 0) {
+        setPayError(failed[0]?.error || 'Some payments failed. Please try again.')
+        return
+      }
     } finally {
       setBusy(false)
     }
@@ -212,6 +225,11 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
             </div>
 
             {/* Select-all bar */}
+            {payError && (
+              <div style={{ padding: '8px 18px', background: '#fef2f2', borderBottom: '1px solid #fecaca', fontSize: '12px', color: '#b91c1c', fontWeight: 600, flexShrink: 0 }}>
+                {payError}
+              </div>
+            )}
             <button onClick={toggleSelectAll}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', border: 'none', borderBottom: '1px solid #f1f5f9', background: '#fff', cursor: 'pointer', flexShrink: 0 }}>
               <input type="checkbox" checked={allSelected} readOnly style={checkboxStyle(allSelected)} />
