@@ -21,6 +21,7 @@ export function TopupModal({
 }) {
   const [amt, setAmt] = useState(initialAmount && initialAmount > 0 ? String(Math.round(initialAmount)) : "");
   const [note, setNote] = useState("");
+  const isDirty = amt !== "" || note !== "";
   const inp: CSSProperties = {
     width: "100%",
     padding: "9px 12px",
@@ -33,7 +34,7 @@ export function TopupModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
@@ -184,6 +185,7 @@ export function WithdrawModal({
   const [amt, setAmt] = useState("");
   const [note, setNote] = useState("");
   const [all, setAll] = useState(false);
+  const isDirty = amt !== "" || note !== "" || all;
   const actualAmt = all ? goal.current : parseFloat(amt) || 0;
   const inp: CSSProperties = {
     width: "100%",
@@ -197,7 +199,7 @@ export function WithdrawModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
@@ -390,6 +392,9 @@ export function ReconcileModal({
 }) {
   const [actual, setActual] = useState(String(Math.round(goal.current || 0)));
   const [note, setNote] = useState("Savings balance reconcile");
+  const isDirty =
+    actual !== String(Math.round(goal.current || 0)) ||
+    note !== "Savings balance reconcile";
   const actualNumber = parseFloat(actual) || 0;
   const diff = actualNumber - goal.current;
   const inp: CSSProperties = {
@@ -405,7 +410,7 @@ export function ReconcileModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
