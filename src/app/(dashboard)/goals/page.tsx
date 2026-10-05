@@ -21,9 +21,9 @@ import { sortGoalsByAdvisor } from "@/lib/finance/goals";
 type TabKey = "active" | "complete" | "archived";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "active", label: "Aktif" },
-  { key: "complete", label: "Selesai" },
-  { key: "archived", label: "Arsip" },
+  { key: "active", label: "Active" },
+  { key: "complete", label: "Completed" },
+  { key: "archived", label: "Archived" },
 ];
 
 export default function TabunganPage() {
@@ -44,6 +44,7 @@ export default function TabunganPage() {
   const [editGoal, setEditGoal] = useState<SavingsGoal | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [topupId, setTopupId] = useState<string | null>(null);
+  const [topupPreset, setTopupPreset] = useState<number | null>(null);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [reconcileId, setReconcileId] = useState<string | null>(null);
   const { isPremium } = useSubscription();
@@ -72,7 +73,7 @@ export default function TabunganPage() {
     goals.forEach((goal) => {
       if (goal.status === "complete") counts.complete += 1;
       else if (goal.status === "archived") counts.archived += 1;
-      else counts.active += 1; // status "pending" lama ikut tampil di Aktif
+      else counts.active += 1; // legacy "pending" goals still show under Active
     });
     return counts;
   }, [goals]);
@@ -101,7 +102,8 @@ export default function TabunganPage() {
       calc={calcById.get(goal.id) ?? calcGoal(goal)}
       suggestedMonthly={suggestedById.get(goal.id) ?? null}
       onEdit={setEditGoal}
-      onTopup={setTopupId}
+      onTopup={(id) => { setTopupId(id); setTopupPreset(null); }}
+      onQuickDeposit={(id, amount) => { setTopupId(id); setTopupPreset(amount); }}
       onWithdraw={setWithdrawId}
       onReconcile={setReconcileId}
       onStatus={changeStatus}
@@ -178,17 +180,12 @@ export default function TabunganPage() {
       <PageHeader
         title="Goals"
         subtitle="Goal-based planning with auto priority, focus goals, and Advisor recommendations"
-        action={
-          <AppButton onClick={openNewGoal}>
-            + Add Goal
-          </AppButton>
-        }
       />
 
       {error && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
           Goals error: {error}<br />
-          Pastikan SQL <b>savings_goals_schema.sql</b> sudah dijalankan di Supabase.
+          Make sure <b>savings_goals_schema.sql</b> has been run in Supabase.
         </div>
       )}
 
@@ -218,6 +215,11 @@ export default function TabunganPage() {
               </button>
             );
           })}
+        </div>
+        <div className="savings-tabs-action">
+          <AppButton variant="secondary" onClick={openNewGoal}>
+            + New Goal
+          </AppButton>
         </div>
       </div>
 
@@ -278,11 +280,13 @@ export default function TabunganPage() {
       {topupGoalObj && (
         <TopupModal
           goal={topupGoalObj}
+          initialAmount={topupPreset ?? undefined}
           onConfirm={(amt, note) => {
             topupGoal(topupGoalObj.id, amt, note);
             setTopupId(null);
+            setTopupPreset(null);
           }}
-          onClose={() => setTopupId(null)}
+          onClose={() => { setTopupId(null); setTopupPreset(null); }}
         />
       )}
       {wdGoalObj && (
