@@ -321,7 +321,7 @@ function GoalDetailModal({
 
   return createPortal(
     <div
-      onMouseDown={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed",
         inset: 0,
@@ -535,50 +535,12 @@ function GoalCard({
 
   return (
     <>
-      <div className="savings-goal-card compact" onClick={() => setShowDetail(true)}>
-        <div className="savings-goal-compact-main">
-          <div style={{ minWidth: 0 }}>
-            <div className="savings-goal-title-row compact">
-              <div className="savings-goal-title">{goal.name}</div>
-              <TrackBadge status={calc.trackStatus} />
-            </div>
-            <div className="savings-goal-subtitle">
-              {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
-              {advisor.typeLabel || goalTypeLabel(goal.type)}
-              {goal.deadline &&
-                ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
-            </div>
-            <div className="savings-goal-progress-row compact">
-              <div className="savings-goal-progress">
-                <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
-              </div>
-              <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
-            </div>
-            <div className="savings-goal-compact-meta">
-              {fmt(goal.current)} / {fmt(calc.targetNow)} · ETA {advisor.etaLabel}
-            </div>
+      <div className="goal-row" onClick={() => setShowDetail(true)}>
+        <div className="goal-row-top">
+          <div className="goal-row-title">
+            <span className="goal-row-name">{goal.name}</span>
+            <TrackBadge status={calc.trackStatus} />
           </div>
-
-          <div className="savings-goal-compact-side">
-            {suggestedMonthly != null ? (
-              <div
-                onClick={(e) => { e.stopPropagation(); onQuickDeposit?.(goal.id, suggestedMonthly); }}
-                title="Deposit this month's planned amount"
-                style={{ cursor: "pointer" }}
-              >
-                <div className="savings-label">This month's plan</div>
-                <div className="savings-rec-value">{fmt(suggestedMonthly)}</div>
-              </div>
-            ) : (
-              <>
-                <div className="savings-label">This month</div>
-                <div className="savings-rec-value" style={{ fontSize: "0.78rem", fontWeight: 600, color: "#9ca3af" }}>
-                  Not allocated
-                </div>
-              </>
-            )}
-          </div>
-
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
             <DetailActionMenu
               goal={goal}
@@ -590,6 +552,34 @@ function GoalCard({
               onDelete={deleteGoalSafe}
             />
           </div>
+        </div>
+        <div className="goal-row-sub">
+          {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
+          {advisor.typeLabel || goalTypeLabel(goal.type)}
+          {goal.deadline &&
+            ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
+        </div>
+        <div className="goal-row-progress">
+          <div className="savings-goal-progress">
+            <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
+          </div>
+          <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
+        </div>
+        <div className="goal-row-foot">
+          <div className="goal-row-amounts">{fmt(goal.current)} <span>of</span> {fmt(calc.targetNow)}</div>
+          {suggestedMonthly != null ? (
+            <div className="goal-row-plan">
+              <span className="goal-row-plan-text">This month <strong>{fmt(suggestedMonthly)}</strong></span>
+              <button
+                className="goal-row-deposit"
+                onClick={(e) => { e.stopPropagation(); onQuickDeposit?.(goal.id, suggestedMonthly); }}
+              >
+                Deposit
+              </button>
+            </div>
+          ) : (
+            <span className="goal-row-unallocated">Not allocated this month</span>
+          )}
         </div>
       </div>
 
