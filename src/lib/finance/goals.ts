@@ -125,7 +125,7 @@ function fmt(n: number) {
 }
 
 function monthLabel(months: number | null) {
-  if (months === null || !Number.isFinite(months) || months <= 0) return 'Belum ada estimasi'
+  if (months === null || !Number.isFinite(months) || months <= 0) return 'No estimate yet'
   const m = Math.ceil(months)
   if (m <= 1) return 'About 1 month'
   if (m < 12) return `About ${m} months`
