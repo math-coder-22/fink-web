@@ -8,43 +8,11 @@ import type {
   GoalTransaction,
 } from "@/types/savings";
 import { AppIcon } from "@/components/ui/design";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { buildGoalAdvisorItem, goalTypeLabel } from "@/lib/finance/goals";
 
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
-
-
-
-function PriorityBadge({ label, priority, mode }: { label: string; priority: string; mode: string }) {
-  const map: Record<string, { bg: string; color: string; border: string }> = {
-    critical: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
-    high: { bg: "#fff7ed", color: "#9a3412", border: "#fed7aa" },
-    medium: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
-    low: { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
-    maintain: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
-    paused: { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" },
-  };
-  const t = map[priority] || map.medium;
-  return (
-    <span
-      title={`${mode === "manual" ? "Manual" : "Auto"} priority`}
-      style={{
-        fontSize: "9.5px",
-        fontWeight: 800,
-        padding: "2px 7px",
-        borderRadius: "99px",
-        background: t.bg,
-        color: t.color,
-        border: `1px solid ${t.border}`,
-        textTransform: "uppercase" as const,
-        letterSpacing: ".3px",
-        whiteSpace: "nowrap" as const,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
 
 function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
   const map = {
@@ -102,197 +70,6 @@ function FeasibilityBadge({ status, label }: { status: string; label: string }) 
   );
 }
 
-/* ─── KEBAB MENU (fixed-position dropdown, tidak terpotong) ─── */
-function KebabMenu({
-  goal,
-  onTopup,
-  onWithdraw,
-  onReconcile,
-  onEdit,
-  onStatus,
-  onDelete,
-}: {
-  goal: SavingsGoal;
-  onTopup: () => void;
-  onWithdraw: () => void;
-  onReconcile: () => void;
-  onEdit: () => void;
-  onStatus: (s: SavingsGoal["status"]) => void;
-  onDelete: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const [mounted, setMounted] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  function toggleMenu(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    const rect = btnRef.current!.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const menuW = 210;
-    const menuH = 300;
-    const gap = 8;
-
-    // Fixed + portal ke document.body supaya tidak tertutup card/container.
-    // Posisi juga di-clamp agar item terakhir tidak masuk ke bawah browser.
-    const openUp = rect.bottom + menuH + gap > vh;
-    const top = Math.max(
-      12,
-      Math.min(
-        openUp ? rect.top - menuH - gap : rect.bottom + gap,
-        vh - menuH - 12,
-      ),
-    );
-    const left = Math.max(12, Math.min(rect.right - menuW, vw - menuW - 12));
-
-    setPos({ top, left });
-    setOpen(true);
-  }
-
-  const item = (label: React.ReactNode, color: string, onClick: () => void) => (
-    <button
-      key={typeof label === "string" ? label : String(color)}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-        setOpen(false);
-      }}
-      style={{
-        display: "block",
-        width: "100%",
-        textAlign: "left" as const,
-        padding: "8px 14px",
-        border: "none",
-        background: "none",
-        fontSize: "13px",
-        color,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        fontWeight: 500,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#f7f8fa")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={toggleMenu}
-        style={{
-          width: "28px",
-          height: "28px",
-          border: "1px solid #e4e1d9",
-          borderRadius: "6px",
-          background: open ? "#f3f4f6" : "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#6b7280",
-          flexShrink: 0,
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <circle cx="7" cy="2.5" r="1.2" />
-          <circle cx="7" cy="7" r="1.2" />
-          <circle cx="7" cy="11.5" r="1.2" />
-        </svg>
-      </button>
-
-      {mounted &&
-        open &&
-        createPortal(
-          <div
-            ref={menuRef}
-            style={{
-              position: "fixed" as const,
-              top: pos.top,
-              left: pos.left,
-              background: "#fff",
-              border: "1.5px solid #e4e1d9",
-              borderRadius: "12px",
-              boxShadow: "0 18px 50px rgba(0,0,0,.20)",
-              zIndex: 2147483647,
-              width: "210px",
-              overflow: "hidden",
-              padding: "5px 0",
-            }}
-          >
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="income" size={14} />Top Up</span>, "#1a5c42", onTopup)}
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="expense" size={14} />Withdraw</span>, "#b45309", onWithdraw)}
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="scale" size={14} />Reconcile Balance</span>, "#92400e", onReconcile)}
-            {goal.status === "active" && (
-              <div
-                style={{
-                  height: "1px",
-                  background: "#f3f4f6",
-                  margin: "3px 0",
-                }}
-              />
-            )}
-            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="edit" size={14} />Edit</span>, "#374151", onEdit)}
-            <div
-              style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
-            />
-            {(
-              [
-                "active",
-                "pending",
-                "complete",
-                "archived",
-              ] as SavingsGoal["status"][]
-            )
-              .filter((s) => s !== goal.status)
-              .map((s) =>
-                item(
-                  `${s.charAt(0).toUpperCase() + s.slice(1)}`,
-                  "#6b7280",
-                  () => onStatus(s),
-                ),
-              )}
-            <div
-              style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
-            />
-            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="trash" size={14} />Delete</span>, "#b91c1c", onDelete)}
-          </div>,
-          document.body,
-        )}
-    </>
-  );
-}
-
 /* ─── COMPACT ACTION MENU FOR DETAIL MODAL ─── */
 function DetailActionMenu({
   goal,
@@ -332,17 +109,18 @@ function DetailActionMenu({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: 9,
         width: "100%",
         textAlign: "left" as const,
-        padding: "9px 12px",
+        padding: "9px 10px",
         border: "none",
+        borderRadius: 7,
         background: "none",
         fontSize: 13,
         color,
         cursor: "pointer",
         fontFamily: "inherit",
-        fontWeight: 650,
+        fontWeight: 600,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "#f7f8fa")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
@@ -360,10 +138,10 @@ function DetailActionMenu({
         }}
         aria-label="Goal actions"
         style={{
-          width: 34,
-          height: 34,
-          border: "1px solid #e4e1d9",
-          borderRadius: 10,
+          width: 32,
+          height: 32,
+          border: "1px solid #e3e7ee",
+          borderRadius: 8,
           background: open ? "#f3f4f6" : "#fff",
           cursor: "pointer",
           display: "flex",
@@ -382,16 +160,16 @@ function DetailActionMenu({
         <div
           style={{
             position: "absolute" as const,
-            top: 40,
+            top: 38,
             right: 0,
             width: 205,
             background: "#fff",
-            border: "1.5px solid #e4e1d9",
-            borderRadius: 12,
-            boxShadow: "0 18px 45px rgba(15,23,42,.18)",
+            border: "1px solid #e3e7ee",
+            borderRadius: 10,
+            boxShadow: "0 12px 32px rgba(15,23,42,.12)",
             zIndex: 20,
             overflow: "hidden",
-            padding: "5px 0",
+            padding: 4,
           }}
         >
           {goal.status === "active" && item(<><AppIcon name="income" size={14} /> Deposit</>, "#1a5c42", onTopup)}
@@ -400,11 +178,11 @@ function DetailActionMenu({
           {goal.status === "active" && <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />}
           {item(<><AppIcon name="edit" size={14} /> Edit</>, "#374151", onEdit)}
           <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />
-          {(["active", "pending", "complete", "archived"] as SavingsGoal["status"][])
+          {(["active", "complete", "archived"] as SavingsGoal["status"][])
             .filter((s) => s !== goal.status)
             .map((s) =>
               item(
-                s === "pending" ? "Move to Pending" : s === "complete" ? "Mark as Complete" : s === "archived" ? "Archive" : "Reactivate",
+                s === "complete" ? "Mark as Complete" : s === "archived" ? "Archive" : "Reactivate",
                 "#6b7280",
                 () => onStatus(s),
               ),
@@ -477,13 +255,13 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
                   {h.note || (h.type === "topup" ? "Saving added" : "Saving withdrawn")}
                 </div>
                 <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: 2 }}>
-                  {new Date(h.date).toLocaleDateString("id-ID", {
+                  {new Date(h.date).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
                   {" · "}
-                  {new Date(h.date).toLocaleTimeString("id-ID", {
+                  {new Date(h.date).toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -515,6 +293,7 @@ function GoalDetailModal({
   advisor,
   pct,
   progColor,
+  suggestedMonthly = null,
   onClose,
   onTopup,
   onWithdraw,
@@ -528,6 +307,7 @@ function GoalDetailModal({
   advisor: ReturnType<typeof buildGoalAdvisorItem>;
   pct: number;
   progColor: string;
+  suggestedMonthly?: number | null;
   onClose: () => void;
   onTopup: () => void;
   onWithdraw: () => void;
@@ -542,7 +322,7 @@ function GoalDetailModal({
 
   return createPortal(
     <div
-      onMouseDown={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed",
         inset: 0,
@@ -586,12 +366,11 @@ function GoalDetailModal({
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h2 style={{ margin: 0, fontSize: 20, lineHeight: 1.2, color: "#111827" }}>{goal.name}</h2>
               <TrackBadge status={calc.trackStatus} />
-              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
             </div>
             <div style={{ marginTop: 6, fontSize: 12.5, color: "#9ca3af", fontWeight: 600 }}>
               {advisor.typeLabel || goalTypeLabel(goal.type)}
               {goal.deadline &&
-                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
+                ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -637,7 +416,7 @@ function GoalDetailModal({
             <div className="goal-detail-stat"><div className="savings-label">Saved</div><div className="savings-value" style={{ color: progColor }}>{fmt(goal.current)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Target</div><div className="savings-value small">{fmt(calc.targetNow)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Gap</div><div className="savings-value small">{fmt(calc.sisa)}</div></div>
-            <div className="goal-detail-stat"><div className="savings-label">Recommended/Month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{fmt(calc.monthlyNeeded)}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">Planned this month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{suggestedMonthly != null ? fmt(suggestedMonthly) : <span style={{ fontSize: 12, color: "#9ca3af" }}>Not allocated</span>}</div></div>
           </div>
 
           <div style={{ marginTop: 16, padding: "13px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
@@ -710,8 +489,10 @@ function GoalDetailModal({
 interface Props {
   goal: SavingsGoal;
   calc: GoalCalcResult;
+  suggestedMonthly?: number | null;
   onEdit: (g: SavingsGoal) => void;
   onTopup: (id: string) => void;
+  onQuickDeposit?: (id: string, amount: number) => void;
   onWithdraw: (id: string) => void;
   onReconcile: (id: string) => void;
   onStatus: (id: string, s: SavingsGoal["status"]) => void;
@@ -722,8 +503,10 @@ interface Props {
 function GoalCard({
   goal,
   calc,
+  suggestedMonthly = null,
   onEdit,
   onTopup,
+  onQuickDeposit,
   onWithdraw,
   onReconcile,
   onStatus,
@@ -744,46 +527,17 @@ function GoalCard({
         : "#1a5c42"
   ), [calc.trackStatus]);
 
-  const deleteGoalSafe = () => {
-    if (confirm("Delete this goal?")) {
-      setShowDetail(false);
-      onDelete(goal.id);
-    }
-  };
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteGoalSafe = () => setConfirmDelete(true);
 
   return (
     <>
-      <div className="savings-goal-card compact" onClick={() => setShowDetail(true)}>
-        <div className="savings-goal-compact-main">
-          <div style={{ minWidth: 0 }}>
-            <div className="savings-goal-title-row compact">
-              <div className="savings-goal-title">{goal.name}</div>
-              <TrackBadge status={calc.trackStatus} />
-              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
-            </div>
-            <div className="savings-goal-subtitle">
-              {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
-              {advisor.typeLabel || goalTypeLabel(goal.type)}
-              {goal.deadline &&
-                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
-            </div>
-            <div className="savings-goal-progress-row compact">
-              <div className="savings-goal-progress">
-                <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
-              </div>
-              <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
-            </div>
-            <div className="savings-goal-compact-meta">
-              {fmt(goal.current)} / {fmt(calc.targetNow)} · ETA {advisor.etaLabel}
-            </div>
+      <div className="goal-row" onClick={() => setShowDetail(true)}>
+        <div className="goal-row-top">
+          <div className="goal-row-title">
+            <span className="goal-row-name">{goal.name}</span>
+            <TrackBadge status={calc.trackStatus} />
           </div>
-
-          <div className="savings-goal-compact-side">
-            <div className="savings-label">Recommended/Month</div>
-            <div className="savings-rec-value">{fmt(calc.monthlyNeeded)}</div>
-            <div className="savings-rec-meta">{goal.history?.length || 0} history</div>
-          </div>
-
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
             <DetailActionMenu
               goal={goal}
@@ -796,7 +550,45 @@ function GoalCard({
             />
           </div>
         </div>
+        <div className="goal-row-sub">
+          {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
+          {advisor.typeLabel || goalTypeLabel(goal.type)}
+          {goal.deadline &&
+            ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
+        </div>
+        <div className="goal-row-progress">
+          <div className="savings-goal-progress">
+            <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
+          </div>
+          <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
+        </div>
+        <div className="goal-row-foot">
+          <div className="goal-row-amounts">{fmt(goal.current)} <span>of</span> {fmt(calc.targetNow)}</div>
+          {suggestedMonthly != null ? (
+            <div className="goal-row-plan">
+              <span className="goal-row-plan-text">This month <strong>{fmt(suggestedMonthly)}</strong></span>
+              <button
+                className="goal-row-deposit"
+                onClick={(e) => { e.stopPropagation(); onQuickDeposit?.(goal.id, suggestedMonthly); }}
+              >
+                Deposit
+              </button>
+            </div>
+          ) : (
+            <span className="goal-row-unallocated">Not allocated this month</span>
+          )}
+        </div>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete goal?"
+          message={<>Delete &ldquo;{goal.name}&rdquo;? This cannot be undone.</>}
+          confirmLabel="Delete"
+          onConfirm={() => { setConfirmDelete(false); setShowDetail(false); onDelete(goal.id); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
 
       {showDetail && (
         <GoalDetailModal
@@ -805,6 +597,7 @@ function GoalCard({
           advisor={advisor}
           pct={pct}
           progColor={progColor}
+          suggestedMonthly={suggestedMonthly}
           onClose={() => setShowDetail(false)}
           onTopup={() => {
             setShowDetail(false);

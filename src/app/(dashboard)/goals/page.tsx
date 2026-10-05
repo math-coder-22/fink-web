@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
@@ -9,20 +9,22 @@ import {
   TopupModal,
   WithdrawModal,
   ReconcileModal,
+  type GoalPlanData,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSubscription } from "@/hooks/useSubscription";
-import { FREE_PLAN_LIMITS, upgradeMessage } from "@/lib/subscription/limits";
+import { FREE_PLAN_LIMITS } from "@/lib/subscription/limits";
+import { MONTHS_ORDER } from "@/components/layout/DashboardShell";
 import type { SavingsGoal } from "@/types/savings";
-import { buildGoalAdvisorItem, sortGoalsByAdvisor } from "@/lib/finance/goals";
+import { sortGoalsByAdvisor } from "@/lib/finance/goals";
 
-type TabKey = "active" | "pending" | "complete" | "archived";
+type TabKey = "active" | "complete" | "archived";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "active", label: "Aktif" },
-  { key: "pending", label: "Pending" },
-  { key: "complete", label: "Selesai" },
-  { key: "archived", label: "Arsip" },
+  { key: "active", label: "Active" },
+  { key: "complete", label: "Completed" },
+  { key: "archived", label: "Archived" },
 ];
 
 export default function TabunganPage() {
@@ -43,55 +45,48 @@ export default function TabunganPage() {
   const [editGoal, setEditGoal] = useState<SavingsGoal | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [topupId, setTopupId] = useState<string | null>(null);
+  const [topupPreset, setTopupPreset] = useState<number | null>(null);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [reconcileId, setReconcileId] = useState<string | null>(null);
   const { isPremium } = useSubscription();
 
+  // Monthly allocation plan (income-aware): replaces the demotivating
+  // "total ideal needed per month" figure with a realistic plan.
+  const [planData, setPlanData] = useState<GoalPlanData | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const mk = MONTHS_ORDER[now.getMonth()];
+    fetch(`/api/advisor/summary?month=${mk}&year=${now.getFullYear()}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.data?.goalPlan) setPlanData({ items: j.data.goalPlanItems || j.data.goalInsights || [], plan: j.data.goalPlan });
+      })
+      .catch(() => {});
+  }, []);
+
+  const suggestedById = useMemo(
+    () => new Map((planData?.items || []).map((i) => [i.id, i.suggestedMonthly > 0 ? i.suggestedMonthly : null] as const)),
+    [planData]
+  );
+
   const tabCounts = useMemo(() => {
-    return goals.reduce<Record<TabKey, number>>((acc, goal) => {
-      acc[goal.status] = (acc[goal.status] || 0) + 1;
-      return acc;
-    }, { active: 0, pending: 0, complete: 0, archived: 0 });
+    const counts: Record<TabKey, number> = { active: 0, complete: 0, archived: 0 };
+    goals.forEach((goal) => {
+      if (goal.status === "complete") counts.complete += 1;
+      else if (goal.status === "archived") counts.archived += 1;
+      else counts.active += 1; // legacy "pending" goals still show under Active
+    });
+    return counts;
   }, [goals]);
 
-  const { sortedGoals, focusGoals, priorityGoals, longTermGoals, otherGoals } = useMemo(() => {
-    const filtered = goals.filter((g) => g.status === tab);
+  const { sortedGoals, focusGoals, restGoals } = useMemo(() => {
+    const filtered = goals.filter((g) =>
+      tab === "active" ? g.status === "active" || g.status === "pending" : g.status === tab,
+    );
     const sorted = sortGoalsByAdvisor(filtered, calcGoal);
-    const advisorCache = new Map<string, ReturnType<typeof buildGoalAdvisorItem>>();
-    const goalAdvisor = (g: SavingsGoal) => {
-      const cached = advisorCache.get(g.id);
-      if (cached) return cached;
-      const advisor = buildGoalAdvisorItem(g, calcGoal(g), goals);
-      advisorCache.set(g.id, advisor);
-      return advisor;
-    };
-
-    const focus = sorted.filter((g) => g.focus && g.status === tab);
-    const regular = sorted.filter((g) => !g.focus);
-    const priority = tab === "active"
-      ? regular.filter((g) => {
-          const a = goalAdvisor(g);
-          return a.priority === "critical" || a.priority === "high";
-        })
-      : [];
-    const priorityIds = new Set(priority.map((g) => g.id));
-    const longTerm = tab === "active"
-      ? regular.filter((g) => {
-          const a = goalAdvisor(g);
-          return !priorityIds.has(g.id) && (
-            g.type === "pensiun" ||
-            g.type === "investasi" ||
-            a.priority === "low" ||
-            a.priority === "maintain"
-          );
-        })
-      : [];
-    const longTermIds = new Set(longTerm.map((g) => g.id));
-    const other = tab === "active"
-      ? regular.filter((g) => !priorityIds.has(g.id) && !longTermIds.has(g.id))
-      : regular;
-
-    return { sortedGoals: sorted, focusGoals: focus, priorityGoals: priority, longTermGoals: longTerm, otherGoals: other };
+    const focus = sorted.filter((g) => g.focus);
+    const rest = sorted.filter((g) => !g.focus);
+    return { sortedGoals: sorted, focusGoals: focus, restGoals: rest };
   }, [goals, tab]);
 
   const calcById = useMemo(() => new Map(goals.map((g) => [g.id, calcGoal(g)])), [goals]);
@@ -106,15 +101,17 @@ export default function TabunganPage() {
       key={goal.id}
       goal={goal}
       calc={calcById.get(goal.id) ?? calcGoal(goal)}
+      suggestedMonthly={suggestedById.get(goal.id) ?? null}
       onEdit={setEditGoal}
-      onTopup={setTopupId}
+      onTopup={(id) => { setTopupId(id); setTopupPreset(null); }}
+      onQuickDeposit={(id, amount) => { setTopupId(id); setTopupPreset(amount); }}
       onWithdraw={setWithdrawId}
       onReconcile={setReconcileId}
       onStatus={changeStatus}
       onDelete={deleteGoal}
       allGoals={goals}
     />
-  ), [calcById, changeStatus, deleteGoal, goals]);
+  ), [calcById, suggestedById, changeStatus, deleteGoal, goals]);
 
   function GoalSection({
     title,
@@ -155,9 +152,10 @@ export default function TabunganPage() {
     );
   }
 
+  const [limitNotice, setLimitNotice] = useState(false);
   function openNewGoal() {
     if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
-      alert(upgradeMessage(`Akun Goals Free maksimal ${FREE_PLAN_LIMITS.savingGoals}`));
+      setLimitNotice(true);
       return;
     }
     setShowNew(true);
@@ -175,7 +173,7 @@ export default function TabunganPage() {
           fontSize: "13px",
         }}
       >
-        ⏳ Memuat Goals...
+        ⏳ Loading goals...
       </div>
     );
 
@@ -184,21 +182,16 @@ export default function TabunganPage() {
       <PageHeader
         title="Goals"
         subtitle="Goal-based planning with auto priority, focus goals, and Advisor recommendations"
-        action={
-          <AppButton onClick={openNewGoal}>
-            + Add Goal
-          </AppButton>
-        }
       />
 
       {error && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
           Goals error: {error}<br />
-          Pastikan SQL <b>savings_goals_schema.sql</b> sudah dijalankan di Supabase.
+          Make sure <b>savings_goals_schema.sql</b> has been run in Supabase.
         </div>
       )}
 
-      <SummaryCard summary={summary} />
+      <SummaryCard summary={summary} plan={planData} />
 
 
       {!isPremium && (
@@ -250,32 +243,30 @@ export default function TabunganPage() {
       ) : tab === "active" ? (
         <>
           <GoalSection
-            title="Focus Goals"
-            subtitle="Your 1–3 main planning priorities. These goals are surfaced in Advisor first."
+            title="Focus"
+            subtitle="Your main planning priorities this period."
             items={focusGoals}
             tone="focus"
           />
           <GoalSection
-            title="Priority Goals"
-            subtitle="Auto-prioritized by FiNK because they are urgent, foundational, or behind schedule."
-            items={priorityGoals}
-            tone="priority"
-          />
-          <GoalSection
-            title="Aktif Goals"
-            subtitle="Goals that are still active but not currently marked as focus or high priority."
-            items={otherGoals}
+            title="All Goals"
+            subtitle="Sorted automatically by priority — most urgent first."
+            items={restGoals}
             tone="neutral"
-          />
-          <GoalSection
-            title="Long-Term / Maintain"
-            subtitle="Background goals that should continue steadily without taking over your monthly focus."
-            items={longTermGoals}
-            tone="muted"
           />
         </>
       ) : (
-        <div className="savings-goal-list">{otherGoals.map(renderGoal)}</div>
+        <div className="savings-goal-list">{restGoals.map(renderGoal)}</div>
+      )}
+
+      {limitNotice && (
+        <ConfirmDialog
+          title="Goal limit reached"
+          message={<>The Free plan allows up to {FREE_PLAN_LIMITS.savingGoals} goals. Upgrade to Premium for unlimited goals.</>}
+          confirmLabel="OK"
+          onConfirm={() => setLimitNotice(false)}
+          onCancel={() => setLimitNotice(false)}
+        />
       )}
 
       {showNew && (
@@ -301,11 +292,13 @@ export default function TabunganPage() {
       {topupGoalObj && (
         <TopupModal
           goal={topupGoalObj}
+          initialAmount={topupPreset ?? undefined}
           onConfirm={(amt, note) => {
             topupGoal(topupGoalObj.id, amt, note);
             setTopupId(null);
+            setTopupPreset(null);
           }}
-          onClose={() => setTopupId(null)}
+          onClose={() => { setTopupId(null); setTopupPreset(null); }}
         />
       )}
       {wdGoalObj && (
