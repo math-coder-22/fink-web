@@ -290,7 +290,7 @@ html, body {
   .savings-summary-value { font-size: 24px; white-space: normal; overflow-wrap: anywhere; }
   .savings-summary-tip { font-size: 12px; }
   .savings-tabs-row { display:block; }
-  .savings-tabs { width:100%; display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:2px; overflow:visible; }
+  .savings-tabs { width:100%; display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:2px; overflow:visible; }
   .savings-tab-btn { padding: 7px 4px; font-size: 11px; }
   .savings-tab-count { display:none; }
   .savings-tabs-action { margin-top:10px; width:100%; }
