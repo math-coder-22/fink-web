@@ -12,8 +12,9 @@ import {
   type GoalPlanData,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSubscription } from "@/hooks/useSubscription";
-import { FREE_PLAN_LIMITS, upgradeMessage } from "@/lib/subscription/limits";
+import { FREE_PLAN_LIMITS } from "@/lib/subscription/limits";
 import { MONTHS_ORDER } from "@/components/layout/DashboardShell";
 import type { SavingsGoal } from "@/types/savings";
 import { sortGoalsByAdvisor } from "@/lib/finance/goals";
@@ -151,9 +152,10 @@ export default function TabunganPage() {
     );
   }
 
+  const [limitNotice, setLimitNotice] = useState(false);
   function openNewGoal() {
     if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
-      alert(upgradeMessage(`Akun Goals Free maksimal ${FREE_PLAN_LIMITS.savingGoals}`));
+      setLimitNotice(true);
       return;
     }
     setShowNew(true);
@@ -171,7 +173,7 @@ export default function TabunganPage() {
           fontSize: "13px",
         }}
       >
-        ⏳ Memuat Goals...
+        ⏳ Loading goals...
       </div>
     );
 
@@ -255,6 +257,16 @@ export default function TabunganPage() {
         </>
       ) : (
         <div className="savings-goal-list">{restGoals.map(renderGoal)}</div>
+      )}
+
+      {limitNotice && (
+        <ConfirmDialog
+          title="Goal limit reached"
+          message={<>The Free plan allows up to {FREE_PLAN_LIMITS.savingGoals} goals. Upgrade to Premium for unlimited goals.</>}
+          confirmLabel="OK"
+          onConfirm={() => setLimitNotice(false)}
+          onCancel={() => setLimitNotice(false)}
+        />
       )}
 
       {showNew && (
