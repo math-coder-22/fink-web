@@ -41,6 +41,7 @@ interface Props {
 
 export default function GoalModal({ goal, onSave, onClose }: Props) {
   const [form, setForm] = useState<FormData>(defaultForm())
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     if (goal) {
@@ -105,7 +106,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
           {/* Nama */}
           <div>
-            <label style={lbl}>Nama Tujuan</label>
+            <label style={lbl}>Goal Name</label>
             <input required style={inp} value={form.name} placeholder="Example: Family Emergency Fund"
               onChange={e => set('name', e.target.value)} />
           </div>
@@ -113,23 +114,23 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {/* Jenis + Status */}
           <div style={row}>
             <div>
-              <label style={lbl}>Jenis Tujuan</label>
+              <label style={lbl}>Goal Type</label>
               <select style={sel} value={form.type === 'darurat_lanjutan' ? 'darurat' : form.type} onChange={e => handleTypeChange(e.target.value as GoalType)}>
-                <option value="biasa">Tabungan Umum</option>
-                <option value="darurat">Dana Darurat</option>
-                <option value="rumah">Rumah</option>
-                <option value="kendaraan">Kendaraan</option>
-                <option value="pendidikan">Pendidikan</option>
-                <option value="pensiun">Pensiun</option>
-                <option value="investasi">Investasi</option>
+                <option value="biasa">General Savings</option>
+                <option value="darurat">Emergency Fund</option>
+                <option value="rumah">Home</option>
+                <option value="kendaraan">Vehicle</option>
+                <option value="pendidikan">Education</option>
+                <option value="pensiun">Retirement</option>
+                <option value="investasi">Investment</option>
               </select>
             </div>
             <div>
               <label style={lbl}>Status</label>
               <select style={sel} value={form.status} onChange={e => set('status', e.target.value as SavingsGoal['status'])}>
-                <option value="active">Aktif</option>
-                <option value="complete">Selesai</option>
-                <option value="archived">Arsip</option>
+                <option value="active">Active</option>
+                <option value="complete">Completed</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -143,26 +144,6 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <input type="checkbox" checked={!!form.focus} onChange={e => set('focus', e.target.checked)}
                 style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
             </label>
-            <div style={row}>
-              <div>
-                <label style={lbl}>Priority Mode</label>
-                <select style={sel} value={form.priorityMode || 'auto'} onChange={e => set('priorityMode', e.target.value as SavingsGoal['priorityMode'])}>
-                  <option value="auto">Auto priority</option>
-                  <option value="manual">Manual priority</option>
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Manual Priority</label>
-                <select style={sel} value={form.manualPriority || 'medium'} disabled={(form.priorityMode || 'auto') !== 'manual'} onChange={e => set('manualPriority', e.target.value as SavingsGoal['manualPriority'])}>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                  <option value="maintain">Maintain</option>
-                  <option value="paused">Paused</option>
-                </select>
-              </div>
-            </div>
           </div>
 
           {/* Dana Darurat fields */}
@@ -257,21 +238,58 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               onChange={e => set('deadline', e.target.value)} />
           </div>
 
-          {/* Investasi toggle */}
-          <div style={{ background:'#f7f8fa', borderRadius:'10px', padding:'12px' }}>
-            <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', gap:'12px' }}>
-              <div>
-                <div style={{ fontSize:'13px', fontWeight:600 }}>Use Investment Return</div>
-                <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'1px' }}>Calculate using investment return assumption</div>
-              </div>
-              <input type="checkbox" checked={form.useInvest} onChange={e => set('useInvest', e.target.checked)}
-                style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
-            </label>
-            {form.useInvest && (
-              <div style={{ marginTop:'10px' }}>
-                <label style={lbl}>Investment Return (%/Year)</label>
-                <input style={inp} type="number" min="0" max="50" value={form.returnRate}
-                  onChange={e => set('returnRate', parseFloat(e.target.value)||0)} />
+          {/* Advanced settings */}
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'10px', overflow:'hidden' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(v => !v)}
+              aria-expanded={showAdvanced}
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 12px', border:'none', background: showAdvanced ? '#f7f8fa' : '#fff', cursor:'pointer', fontFamily:'inherit' }}
+            >
+              <span style={{ fontSize:'13px', fontWeight:700, color:'#374151' }}>Advanced settings</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition:'transform .15s' }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </button>
+            {showAdvanced && (
+              <div style={{ padding:'12px', display:'flex', flexDirection:'column', gap:'12px', borderTop:'1px solid #f1f5f9' }}>
+                <div style={row}>
+                  <div>
+                    <label style={lbl}>Priority Mode</label>
+                    <select style={sel} value={form.priorityMode || 'auto'} onChange={e => set('priorityMode', e.target.value as SavingsGoal['priorityMode'])}>
+                      <option value="auto">Auto priority</option>
+                      <option value="manual">Manual priority</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Manual Priority</label>
+                    <select style={sel} value={form.manualPriority || 'medium'} disabled={(form.priorityMode || 'auto') !== 'manual'} onChange={e => set('manualPriority', e.target.value as SavingsGoal['manualPriority'])}>
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                      <option value="maintain">Maintain</option>
+                      <option value="paused">Paused</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ background:'#f7f8fa', borderRadius:'10px', padding:'12px' }}>
+                  <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', gap:'12px' }}>
+                    <div>
+                      <div style={{ fontSize:'13px', fontWeight:600 }}>Use Investment Return</div>
+                      <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'1px' }}>Calculate using investment return assumption</div>
+                    </div>
+                    <input type="checkbox" checked={form.useInvest} onChange={e => set('useInvest', e.target.checked)}
+                      style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
+                  </label>
+                  {form.useInvest && (
+                    <div style={{ marginTop:'10px' }}>
+                      <label style={lbl}>Investment Return (%/Year)</label>
+                      <input style={inp} type="number" min="0" max="50" value={form.returnRate}
+                        onChange={e => set('returnRate', parseFloat(e.target.value)||0)} />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
