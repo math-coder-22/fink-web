@@ -18,11 +18,10 @@ import { MONTHS_ORDER } from "@/components/layout/DashboardShell";
 import type { SavingsGoal } from "@/types/savings";
 import { sortGoalsByAdvisor } from "@/lib/finance/goals";
 
-type TabKey = "active" | "pending" | "complete" | "archived";
+type TabKey = "active" | "complete" | "archived";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "active", label: "Aktif" },
-  { key: "pending", label: "Pending" },
   { key: "complete", label: "Selesai" },
   { key: "archived", label: "Arsip" },
 ];
@@ -69,14 +68,19 @@ export default function TabunganPage() {
   );
 
   const tabCounts = useMemo(() => {
-    return goals.reduce<Record<TabKey, number>>((acc, goal) => {
-      acc[goal.status] = (acc[goal.status] || 0) + 1;
-      return acc;
-    }, { active: 0, pending: 0, complete: 0, archived: 0 });
+    const counts: Record<TabKey, number> = { active: 0, complete: 0, archived: 0 };
+    goals.forEach((goal) => {
+      if (goal.status === "complete") counts.complete += 1;
+      else if (goal.status === "archived") counts.archived += 1;
+      else counts.active += 1; // status "pending" lama ikut tampil di Aktif
+    });
+    return counts;
   }, [goals]);
 
   const { sortedGoals, focusGoals, restGoals } = useMemo(() => {
-    const filtered = goals.filter((g) => g.status === tab);
+    const filtered = goals.filter((g) =>
+      tab === "active" ? g.status === "active" || g.status === "pending" : g.status === tab,
+    );
     const sorted = sortGoalsByAdvisor(filtered, calcGoal);
     const focus = sorted.filter((g) => g.focus);
     const rest = sorted.filter((g) => !g.focus);
