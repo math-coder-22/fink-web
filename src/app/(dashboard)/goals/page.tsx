@@ -219,11 +219,6 @@ export default function TabunganPage() {
             );
           })}
         </div>
-        <div className="savings-tabs-action">
-          <AppButton variant="secondary" onClick={openNewGoal}>
-            + New Goal
-          </AppButton>
-        </div>
       </div>
 
       
