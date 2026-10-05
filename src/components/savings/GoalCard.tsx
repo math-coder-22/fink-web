@@ -13,39 +13,6 @@ import { buildGoalAdvisorItem, goalTypeLabel } from "@/lib/finance/goals";
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
 
-
-
-function PriorityBadge({ label, priority, mode }: { label: string; priority: string; mode: string }) {
-  const map: Record<string, { bg: string; color: string; border: string }> = {
-    critical: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
-    high: { bg: "#fff7ed", color: "#9a3412", border: "#fed7aa" },
-    medium: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
-    low: { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
-    maintain: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
-    paused: { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" },
-  };
-  const t = map[priority] || map.medium;
-  return (
-    <span
-      title={`${mode === "manual" ? "Manual" : "Auto"} priority`}
-      style={{
-        fontSize: "9.5px",
-        fontWeight: 800,
-        padding: "2px 7px",
-        borderRadius: "99px",
-        background: t.bg,
-        color: t.color,
-        border: `1px solid ${t.border}`,
-        textTransform: "uppercase" as const,
-        letterSpacing: ".3px",
-        whiteSpace: "nowrap" as const,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
 function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
   const map = {
     complete: { bg: "#dbeafe", color: "#1e40af", label: "Complete" },
@@ -287,13 +254,13 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
                   {h.note || (h.type === "topup" ? "Saving added" : "Saving withdrawn")}
                 </div>
                 <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: 2 }}>
-                  {new Date(h.date).toLocaleDateString("id-ID", {
+                  {new Date(h.date).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
                   {" · "}
-                  {new Date(h.date).toLocaleTimeString("id-ID", {
+                  {new Date(h.date).toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -325,6 +292,7 @@ function GoalDetailModal({
   advisor,
   pct,
   progColor,
+  suggestedMonthly = null,
   onClose,
   onTopup,
   onWithdraw,
@@ -338,6 +306,7 @@ function GoalDetailModal({
   advisor: ReturnType<typeof buildGoalAdvisorItem>;
   pct: number;
   progColor: string;
+  suggestedMonthly?: number | null;
   onClose: () => void;
   onTopup: () => void;
   onWithdraw: () => void;
@@ -396,12 +365,11 @@ function GoalDetailModal({
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <h2 style={{ margin: 0, fontSize: 20, lineHeight: 1.2, color: "#111827" }}>{goal.name}</h2>
               <TrackBadge status={calc.trackStatus} />
-              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
             </div>
             <div style={{ marginTop: 6, fontSize: 12.5, color: "#9ca3af", fontWeight: 600 }}>
               {advisor.typeLabel || goalTypeLabel(goal.type)}
               {goal.deadline &&
-                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
+                ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -447,7 +415,7 @@ function GoalDetailModal({
             <div className="goal-detail-stat"><div className="savings-label">Saved</div><div className="savings-value" style={{ color: progColor }}>{fmt(goal.current)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Target</div><div className="savings-value small">{fmt(calc.targetNow)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Gap</div><div className="savings-value small">{fmt(calc.sisa)}</div></div>
-            <div className="goal-detail-stat"><div className="savings-label">Recommended/Month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{fmt(calc.monthlyNeeded)}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">Planned this month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{suggestedMonthly != null ? fmt(suggestedMonthly) : <span style={{ fontSize: 12, color: "#9ca3af" }}>Not allocated</span>}</div></div>
           </div>
 
           <div style={{ marginTop: 16, padding: "13px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
@@ -523,6 +491,7 @@ interface Props {
   suggestedMonthly?: number | null;
   onEdit: (g: SavingsGoal) => void;
   onTopup: (id: string) => void;
+  onQuickDeposit?: (id: string, amount: number) => void;
   onWithdraw: (id: string) => void;
   onReconcile: (id: string) => void;
   onStatus: (id: string, s: SavingsGoal["status"]) => void;
@@ -536,6 +505,7 @@ function GoalCard({
   suggestedMonthly = null,
   onEdit,
   onTopup,
+  onQuickDeposit,
   onWithdraw,
   onReconcile,
   onStatus,
@@ -571,13 +541,12 @@ function GoalCard({
             <div className="savings-goal-title-row compact">
               <div className="savings-goal-title">{goal.name}</div>
               <TrackBadge status={calc.trackStatus} />
-              <PriorityBadge label={advisor.priorityLabel} priority={advisor.priority} mode={advisor.mode} />
             </div>
             <div className="savings-goal-subtitle">
               {goal.focus && <span style={{ color:'#1a5c42', fontWeight:800 }}>Focus · </span>}
               {advisor.typeLabel || goalTypeLabel(goal.type)}
               {goal.deadline &&
-                ` · ${new Date(goal.deadline).toLocaleDateString("id-ID", { month: "short", year: "numeric" })}`}
+                ` · ${new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
             </div>
             <div className="savings-goal-progress-row compact">
               <div className="savings-goal-progress">
@@ -592,15 +561,19 @@ function GoalCard({
 
           <div className="savings-goal-compact-side">
             {suggestedMonthly != null ? (
-              <>
-                <div className="savings-label">Rencana bln ini</div>
+              <div
+                onClick={(e) => { e.stopPropagation(); onQuickDeposit?.(goal.id, suggestedMonthly); }}
+                title="Deposit this month's planned amount"
+                style={{ cursor: "pointer" }}
+              >
+                <div className="savings-label">This month's plan</div>
                 <div className="savings-rec-value">{fmt(suggestedMonthly)}</div>
-              </>
+              </div>
             ) : (
               <>
-                <div className="savings-label">Bln ini</div>
+                <div className="savings-label">This month</div>
                 <div className="savings-rec-value" style={{ fontSize: "0.78rem", fontWeight: 600, color: "#9ca3af" }}>
-                  Belum dialokasikan
+                  Not allocated
                 </div>
               </>
             )}
@@ -627,6 +600,7 @@ function GoalCard({
           advisor={advisor}
           pct={pct}
           progColor={progColor}
+          suggestedMonthly={suggestedMonthly}
           onClose={() => setShowDetail(false)}
           onTopup={() => {
             setShowDetail(false);
