@@ -86,6 +86,23 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
   async function postPayments(payments: { id: string; amount: number }[]) {
     setBusy(true)
     setPayError(null)
+    // Optimistic: update the list instantly, reconcile with the server after.
+    const payMap = new Map(payments.map(p => [p.id, p.amount]))
+    setUnpaidTx(prev => {
+      const next: Transaction[] = []
+      for (const t of prev) {
+        const amt = payMap.get(t.id)
+        if (amt == null) { next.push(t); continue }
+        const total = Number(t.amt || 0)
+        const newPaid = paidOf(t) + Math.min(amt, remainingOf(t))
+        if (newPaid >= total) continue // settled → drop from the list immediately
+        next.push({ ...t, paid_amt: newPaid } as Transaction)
+      }
+      return next
+    })
+    setSelected(new Set())
+    setPayId(null)
+    setPayInput('')
     try {
       const res = await fetch('/api/hutang', {
         method: 'POST',
@@ -95,20 +112,19 @@ export default function HutangNotif({ isMobile = false }: { isMobile?: boolean }
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
         setPayError(json?.error || 'Payment failed. Please try again.')
+        await load() // revert optimistic change
         return
       }
       const failed = (json?.results || []).filter((r: any) => !r.ok)
       if (failed.length > 0) {
         setPayError(failed[0]?.error || 'Some payments failed. Please try again.')
+        await load() // revert optimistic change
         return
       }
     } finally {
       setBusy(false)
     }
-    setSelected(new Set())
-    setPayId(null)
-    setPayInput('')
-    await load()
+    await load() // reconcile with server truth
     window.dispatchEvent(new Event('hutang-refresh'))
   }
 
