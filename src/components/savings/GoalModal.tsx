@@ -219,7 +219,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
             </div>
           )}
 
-          {/* Dana terkumpul + tabungan/bln */}
+          {/* Saved + monthly saving */}
           <div style={row}>
             <div>
               <label style={lbl}>Current Balance (Rp)</label>
