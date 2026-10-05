@@ -62,6 +62,7 @@ export type AdvisorSummary = {
   risks: { tone: 'good' | 'warning' | 'danger' | 'neutral'; title: string; detail: string }[]
   priorities: AdvisorPriority[]
   goalInsights: GoalAdvisorItem[]
+  goalPlanItems: GoalAdvisorItem[]
   focusGoals: GoalAdvisorItem[]
   goalPlan: GoalPlanSummary
   tradeoffs: { title: string; detail: string; tone: 'good' | 'warning' | 'danger' | 'neutral' }[]
@@ -451,6 +452,7 @@ export function buildAdvisorSummary(params: {
     risks,
     priorities,
     goalInsights,
+    goalPlanItems: plannedGoals.items,
     focusGoals,
     goalPlan,
     tradeoffs,
