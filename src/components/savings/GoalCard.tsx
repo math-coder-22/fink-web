@@ -781,8 +781,19 @@ function GoalCard({
           </div>
 
           <div className="savings-goal-compact-side">
-            <div className="savings-label">{suggestedMonthly != null ? "Rencana bln ini" : "Ideal/bln"}</div>
-            <div className="savings-rec-value">{fmt(suggestedMonthly ?? calc.monthlyNeeded)}</div>
+            {suggestedMonthly != null ? (
+              <>
+                <div className="savings-label">Rencana bln ini</div>
+                <div className="savings-rec-value">{fmt(suggestedMonthly)}</div>
+              </>
+            ) : (
+              <>
+                <div className="savings-label">Bln ini</div>
+                <div className="savings-rec-value" style={{ fontSize: "0.78rem", fontWeight: 600, color: "#9ca3af" }}>
+                  Belum dialokasikan
+                </div>
+              </>
+            )}
           </div>
 
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
