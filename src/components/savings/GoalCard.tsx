@@ -102,197 +102,6 @@ function FeasibilityBadge({ status, label }: { status: string; label: string }) 
   );
 }
 
-/* ─── KEBAB MENU (fixed-position dropdown, tidak terpotong) ─── */
-function KebabMenu({
-  goal,
-  onTopup,
-  onWithdraw,
-  onReconcile,
-  onEdit,
-  onStatus,
-  onDelete,
-}: {
-  goal: SavingsGoal;
-  onTopup: () => void;
-  onWithdraw: () => void;
-  onReconcile: () => void;
-  onEdit: () => void;
-  onStatus: (s: SavingsGoal["status"]) => void;
-  onDelete: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const [mounted, setMounted] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  function toggleMenu(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    const rect = btnRef.current!.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const menuW = 210;
-    const menuH = 300;
-    const gap = 8;
-
-    // Fixed + portal ke document.body supaya tidak tertutup card/container.
-    // Posisi juga di-clamp agar item terakhir tidak masuk ke bawah browser.
-    const openUp = rect.bottom + menuH + gap > vh;
-    const top = Math.max(
-      12,
-      Math.min(
-        openUp ? rect.top - menuH - gap : rect.bottom + gap,
-        vh - menuH - 12,
-      ),
-    );
-    const left = Math.max(12, Math.min(rect.right - menuW, vw - menuW - 12));
-
-    setPos({ top, left });
-    setOpen(true);
-  }
-
-  const item = (label: React.ReactNode, color: string, onClick: () => void) => (
-    <button
-      key={typeof label === "string" ? label : String(color)}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-        setOpen(false);
-      }}
-      style={{
-        display: "block",
-        width: "100%",
-        textAlign: "left" as const,
-        padding: "8px 14px",
-        border: "none",
-        background: "none",
-        fontSize: "13px",
-        color,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        fontWeight: 500,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#f7f8fa")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        onClick={toggleMenu}
-        style={{
-          width: "28px",
-          height: "28px",
-          border: "1px solid #e4e1d9",
-          borderRadius: "6px",
-          background: open ? "#f3f4f6" : "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#6b7280",
-          flexShrink: 0,
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <circle cx="7" cy="2.5" r="1.2" />
-          <circle cx="7" cy="7" r="1.2" />
-          <circle cx="7" cy="11.5" r="1.2" />
-        </svg>
-      </button>
-
-      {mounted &&
-        open &&
-        createPortal(
-          <div
-            ref={menuRef}
-            style={{
-              position: "fixed" as const,
-              top: pos.top,
-              left: pos.left,
-              background: "#fff",
-              border: "1.5px solid #e4e1d9",
-              borderRadius: "12px",
-              boxShadow: "0 18px 50px rgba(0,0,0,.20)",
-              zIndex: 2147483647,
-              width: "210px",
-              overflow: "hidden",
-              padding: "5px 0",
-            }}
-          >
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="income" size={14} />Top Up</span>, "#1a5c42", onTopup)}
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="expense" size={14} />Withdraw</span>, "#b45309", onWithdraw)}
-            {goal.status === "active" &&
-              item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="scale" size={14} />Reconcile Balance</span>, "#92400e", onReconcile)}
-            {goal.status === "active" && (
-              <div
-                style={{
-                  height: "1px",
-                  background: "#f3f4f6",
-                  margin: "3px 0",
-                }}
-              />
-            )}
-            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="edit" size={14} />Edit</span>, "#374151", onEdit)}
-            <div
-              style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
-            />
-            {(
-              [
-                "active",
-                "pending",
-                "complete",
-                "archived",
-              ] as SavingsGoal["status"][]
-            )
-              .filter((s) => s !== goal.status)
-              .map((s) =>
-                item(
-                  `${s.charAt(0).toUpperCase() + s.slice(1)}`,
-                  "#6b7280",
-                  () => onStatus(s),
-                ),
-              )}
-            <div
-              style={{ height: "1px", background: "#f3f4f6", margin: "3px 0" }}
-            />
-            {item(<span style={{ display:"inline-flex", alignItems:"center", gap:8 }}><AppIcon name="trash" size={14} />Delete</span>, "#b91c1c", onDelete)}
-          </div>,
-          document.body,
-        )}
-    </>
-  );
-}
-
 /* ─── COMPACT ACTION MENU FOR DETAIL MODAL ─── */
 function DetailActionMenu({
   goal,
@@ -332,17 +141,18 @@ function DetailActionMenu({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: 9,
         width: "100%",
         textAlign: "left" as const,
-        padding: "9px 12px",
+        padding: "9px 10px",
         border: "none",
+        borderRadius: 7,
         background: "none",
         fontSize: 13,
         color,
         cursor: "pointer",
         fontFamily: "inherit",
-        fontWeight: 650,
+        fontWeight: 600,
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "#f7f8fa")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
@@ -360,10 +170,10 @@ function DetailActionMenu({
         }}
         aria-label="Goal actions"
         style={{
-          width: 34,
-          height: 34,
-          border: "1px solid #e4e1d9",
-          borderRadius: 10,
+          width: 32,
+          height: 32,
+          border: "1px solid #e3e7ee",
+          borderRadius: 8,
           background: open ? "#f3f4f6" : "#fff",
           cursor: "pointer",
           display: "flex",
@@ -382,16 +192,16 @@ function DetailActionMenu({
         <div
           style={{
             position: "absolute" as const,
-            top: 40,
+            top: 38,
             right: 0,
             width: 205,
             background: "#fff",
-            border: "1.5px solid #e4e1d9",
-            borderRadius: 12,
-            boxShadow: "0 18px 45px rgba(15,23,42,.18)",
+            border: "1px solid #e3e7ee",
+            borderRadius: 10,
+            boxShadow: "0 12px 32px rgba(15,23,42,.12)",
             zIndex: 20,
             overflow: "hidden",
-            padding: "5px 0",
+            padding: 4,
           }}
         >
           {goal.status === "active" && item(<><AppIcon name="income" size={14} /> Deposit</>, "#1a5c42", onTopup)}
@@ -400,11 +210,11 @@ function DetailActionMenu({
           {goal.status === "active" && <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />}
           {item(<><AppIcon name="edit" size={14} /> Edit</>, "#374151", onEdit)}
           <div style={{ height: 1, background: "#f3f4f6", margin: "3px 0" }} />
-          {(["active", "pending", "complete", "archived"] as SavingsGoal["status"][])
+          {(["active", "complete", "archived"] as SavingsGoal["status"][])
             .filter((s) => s !== goal.status)
             .map((s) =>
               item(
-                s === "pending" ? "Move to Pending" : s === "complete" ? "Mark as Complete" : s === "archived" ? "Archive" : "Reactivate",
+                s === "complete" ? "Mark as Complete" : s === "archived" ? "Archive" : "Reactivate",
                 "#6b7280",
                 () => onStatus(s),
               ),
