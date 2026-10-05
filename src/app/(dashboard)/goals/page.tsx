@@ -58,13 +58,13 @@ export default function TabunganPage() {
     fetch(`/api/advisor/summary?month=${mk}&year=${now.getFullYear()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => {
-        if (j?.data?.goalPlan) setPlanData({ items: j.data.goalInsights || [], plan: j.data.goalPlan });
+        if (j?.data?.goalPlan) setPlanData({ items: j.data.goalPlanItems || j.data.goalInsights || [], plan: j.data.goalPlan });
       })
       .catch(() => {});
   }, []);
 
   const suggestedById = useMemo(
-    () => new Map((planData?.items || []).map((i) => [i.id, i.suggestedMonthly])),
+    () => new Map((planData?.items || []).map((i) => [i.id, i.suggestedMonthly > 0 ? i.suggestedMonthly : null] as const)),
     [planData]
   );
 
