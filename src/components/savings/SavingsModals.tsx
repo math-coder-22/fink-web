@@ -98,7 +98,7 @@ export function TopupModal({
         >
           <div style={{ fontSize: "13px", fontWeight: 600 }}>{goal.name}</div>
           <div style={{ fontSize: "12px", color: "#9ca3af" }}>
-            Terkumpul: {fmt(goal.current)} / {fmt(goal.target)}
+            Saved: {fmt(goal.current)} / {fmt(goal.target)}
           </div>
           <div>
             <label
