@@ -346,7 +346,7 @@ export function WithdrawModal({
             </label>
             <input
               type="text"
-              placeholder="Dipakai untuk..."
+              placeholder="Used for..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={inp}
