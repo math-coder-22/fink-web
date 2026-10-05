@@ -8,6 +8,7 @@ import type {
   GoalTransaction,
 } from "@/types/savings";
 import { AppIcon } from "@/components/ui/design";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { buildGoalAdvisorItem, goalTypeLabel } from "@/lib/finance/goals";
 
 const fmt = (n: number) =>
@@ -526,12 +527,8 @@ function GoalCard({
         : "#1a5c42"
   ), [calc.trackStatus]);
 
-  const deleteGoalSafe = () => {
-    if (confirm("Delete this goal?")) {
-      setShowDetail(false);
-      onDelete(goal.id);
-    }
-  };
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteGoalSafe = () => setConfirmDelete(true);
 
   return (
     <>
@@ -582,6 +579,16 @@ function GoalCard({
           )}
         </div>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete goal?"
+          message={<>Delete &ldquo;{goal.name}&rdquo;? This cannot be undone.</>}
+          confirmLabel="Delete"
+          onConfirm={() => { setConfirmDelete(false); setShowDetail(false); onDelete(goal.id); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
 
       {showDetail && (
         <GoalDetailModal
