@@ -128,7 +128,6 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <label style={lbl}>Status</label>
               <select style={sel} value={form.status} onChange={e => set('status', e.target.value as SavingsGoal['status'])}>
                 <option value="active">Aktif</option>
-                <option value="pending">Pending</option>
                 <option value="complete">Selesai</option>
                 <option value="archived">Arsip</option>
               </select>
