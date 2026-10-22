@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 /* Shared delete-confirmation dialog — one consistent look everywhere. */
 
 interface Props {
@@ -13,6 +15,15 @@ interface Props {
 const baseFont: React.CSSProperties = { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px' }
 
 export default function ConfirmDialog({ title, message, confirmLabel = 'Delete', onConfirm, onCancel }: Props) {
+  // Escape means Cancel, like clicking the backdrop.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onCancel])
+
   return (
     <div
       onClick={onCancel}
