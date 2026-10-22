@@ -63,7 +63,6 @@ export const useMonthContext = () => useContext(MonthContext)
 const BASE_NAV_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
   { href:'/overview', label:'Overview', icon:'overview' },
   { href:'/journal',   label:'Journal',  icon:'journal' },
-  { href:'/advisor', label:'Advisor', icon:'advisor' },
   { href:'/goals',  label:'Wallets',  icon:'goals' },
   { href:'/profile',  label:'Profile',  icon:'profile' },
 ]
