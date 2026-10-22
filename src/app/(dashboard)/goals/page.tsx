@@ -58,6 +58,13 @@ export default function TabunganPage() {
   const [topupPreset, setTopupPreset] = useState<number | null>(null);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [reconcileId, setReconcileId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [notice, setNotice] = useState<{ text: string; tab?: TabKey } | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 9000);
+    return () => clearTimeout(t);
+  }, [notice]);
   const { isPremium } = useSubscription();
 
   // Wallet view: actual money movement this month, computed from goal
@@ -71,13 +78,18 @@ export default function TabunganPage() {
     const byId = new Map<string, number>();
     goals.forEach((g) => {
       let net = 0;
+      let gin = 0;
+      let gout = 0;
       (g.history || []).forEach((tx) => {
         const d = new Date(tx.date);
         if (d.getFullYear() === y && d.getMonth() === m) {
-          if (tx.type === "topup") { net += tx.amount; tin += tx.amount; }
-          else { net -= tx.amount; tout += tx.amount; }
+          if (tx.type === "topup") { net += tx.amount; gin += tx.amount; }
+          else { net -= tx.amount; gout += tx.amount; }
         }
       });
+      // Card totals use the same goal set as TOTAL BALANCE (active only);
+      // per-row figures keep each goal's own movement regardless of status.
+      if (g.status === "active") { tin += gin; tout += gout; }
       byId.set(g.id, net);
     });
     return { monthIn: tin, monthOut: tout, monthNetById: byId };
@@ -105,10 +117,18 @@ export default function TabunganPage() {
     return sortGoalsByAdvisor(filtered, calcGoal);
   }, [goals, tab]);
 
+  const visibleGoals = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return sortedGoals;
+    return sortedGoals.filter(
+      (g) => g.name.toLowerCase().includes(q) || (g.parent || "").toLowerCase().includes(q),
+    );
+  }, [sortedGoals, query]);
+
   // Group the visible savings by parent (account/category); Uncategorized last.
   const groups = useMemo(() => {
     const map = new Map<string, SavingsGoal[]>();
-    sortedGoals.forEach((g) => {
+    visibleGoals.forEach((g) => {
       const key = (g.parent || "").trim();
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(g);
@@ -116,14 +136,21 @@ export default function TabunganPage() {
     return [...map.entries()].sort((a, b) =>
       a[0] === "" ? 1 : b[0] === "" ? -1 : a[0].localeCompare(b[0]),
     );
-  }, [sortedGoals]);
+  }, [visibleGoals]);
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("fink-wallets-collapsed");
+      if (v) setCollapsedGroups(new Set(JSON.parse(v) as string[]));
+    } catch {}
+  }, []);
   const toggleGroup = useCallback((name: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
+      try { localStorage.setItem("fink-wallets-collapsed", JSON.stringify([...next])); } catch {}
       return next;
     });
   }, []);
@@ -157,6 +184,17 @@ export default function TabunganPage() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteParentName, setDeleteParentName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showCategories) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !deleteParentName) {
+        if (renaming) setRenaming(null);
+        else setShowCategories(false);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [showCategories, renaming]);
 
   function ParentGroup({ name, items }: { name: string; items: SavingsGoal[] }) {
     const total = items.reduce((a, g) => a + (g.current || 0), 0);
@@ -182,8 +220,9 @@ export default function TabunganPage() {
   }
 
   const [limitNotice, setLimitNotice] = useState(false);
+  const countableGoals = goals.filter((g) => g.status !== "archived").length;
   function openNewGoal() {
-    if (!isPremium && goals.length >= FREE_PLAN_LIMITS.savingGoals) {
+    if (!isPremium && countableGoals >= FREE_PLAN_LIMITS.savingGoals) {
       setLimitNotice(true);
       return;
     }
@@ -192,17 +231,13 @@ export default function TabunganPage() {
 
   if (!loaded)
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "60vh",
-          color: "#9ca3af",
-          fontSize: "13px",
-        }}
-      >
-        ⏳ Loading goals...
+      <div className="savings-page" aria-busy="true" aria-label="Loading wallets">
+        <div className="fink-skeleton" style={{ height: 30, width: 180, marginBottom: 8 }} />
+        <div className="fink-skeleton" style={{ height: 14, width: 320, maxWidth: "80%", marginBottom: 18 }} />
+        <div className="fink-skeleton" style={{ height: 196, marginBottom: 14 }} />
+        <div className="fink-skeleton" style={{ height: 64, marginBottom: 10 }} />
+        <div className="fink-skeleton" style={{ height: 64, marginBottom: 10 }} />
+        <div className="fink-skeleton" style={{ height: 64 }} />
       </div>
     );
 
@@ -214,9 +249,37 @@ export default function TabunganPage() {
       />
 
       {error && (
-        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
-          Wallets error: {error}<br />
-          Make sure <b>savings_goals_schema.sql</b> has been run in Supabase.
+        <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5, display:'flex', alignItems:'center', gap:'10px', justifyContent:'space-between' }}>
+          <span>Something went wrong while loading your wallets. Your data is safe — please try again.</span>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ border:'1.5px solid #fecaca', background:'#fff', color:'#991b1b', fontWeight:700, borderRadius:'8px', padding:'6px 12px', cursor:'pointer', fontFamily:'inherit', fontSize:'12px', flexShrink:0 }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {notice && (
+        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#166534', fontSize:'12.5px', fontWeight:600, lineHeight:1.5, display:'flex', alignItems:'center', gap:'10px', justifyContent:'space-between' }}>
+          <span>{notice.text}</span>
+          <span style={{ display:'flex', gap:'6px', flexShrink:0 }}>
+            {notice.tab && (
+              <button
+                onClick={() => { setTab(notice.tab!); setNotice(null); }}
+                style={{ border:'none', background:'#1a5c42', color:'#fff', fontWeight:700, borderRadius:'8px', padding:'6px 12px', cursor:'pointer', fontFamily:'inherit', fontSize:'12px' }}
+              >
+                View
+              </button>
+            )}
+            <button
+              aria-label="Dismiss"
+              onClick={() => setNotice(null)}
+              style={{ border:'1.5px solid #bbf7d0', background:'#fff', color:'#166534', fontWeight:700, borderRadius:'8px', padding:'6px 10px', cursor:'pointer', fontFamily:'inherit', fontSize:'12px' }}
+            >
+              ✕
+            </button>
+          </span>
         </div>
       )}
 
@@ -225,7 +288,7 @@ export default function TabunganPage() {
 
       {!isPremium && (
         <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#9a3412', fontSize:'12px', fontWeight:600 }}>
-          Free plan: up to {FREE_PLAN_LIMITS.savingGoals} savings. Currently: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
+          Free plan: up to {FREE_PLAN_LIMITS.savingGoals} savings. Currently: {countableGoals}/{FREE_PLAN_LIMITS.savingGoals}.
         </div>
       )}
 
@@ -248,6 +311,13 @@ export default function TabunganPage() {
           })}
         </div>
         <div className="savings-tabs-action" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search savings…"
+            aria-label="Search savings"
+            style={{ width: "150px", padding: "7px 11px", border: "1.5px solid #e3e7ee", borderRadius: "9px", fontSize: "12.5px", fontFamily: "inherit", outline: "none", background: "#fff", color: "#111827" }}
+          />
           <AppButton variant="secondary" onClick={() => { setRenaming(null); setShowCategories(true); }}>
             Categories
           </AppButton>
@@ -262,20 +332,40 @@ export default function TabunganPage() {
       </div>
 
       
-      {sortedGoals.length === 0 ? (
-        <EmptyState
-          icon={<AppIcon name="saving" size={24} />}
-          title="No savings in this category yet"
-          action={
-            tab === "active" ? (
-              <AppButton onClick={openNewGoal}>
-                + Add First Saving
-              </AppButton>
-            ) : undefined
-          }
-        >
-          Your savings will appear here based on the selected status.
-        </EmptyState>
+      {visibleGoals.length === 0 ? (
+        query.trim() ? (
+          <EmptyState
+            icon={<AppIcon name="saving" size={24} />}
+            title={`No results for “${query.trim()}”`}
+            action={<AppButton variant="secondary" onClick={() => setQuery("")}>Clear search</AppButton>}
+          >
+            No savings match your search. Try a different name.
+          </EmptyState>
+        ) : (
+          <EmptyState
+            icon={<AppIcon name="saving" size={24} />}
+            title={
+              tab === "complete"
+                ? "No completed savings yet"
+                : tab === "archived"
+                  ? "No archived savings yet"
+                  : "No savings yet"
+            }
+            action={
+              tab === "active" ? (
+                <AppButton onClick={openNewGoal}>
+                  + Add First Saving
+                </AppButton>
+              ) : undefined
+            }
+          >
+            {tab === "complete"
+              ? "Savings that reach their target will appear here."
+              : tab === "archived"
+                ? "Savings you archive will appear here."
+                : "Add your first saving to start tracking your wallets."}
+          </EmptyState>
+        )
       ) : (
         groups.map(([name, items]) => (
           <ParentGroup key={name || "__none"} name={name} items={items} />
@@ -313,6 +403,13 @@ export default function TabunganPage() {
                         autoFocus
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const v = renameValue.trim();
+                            if (v && v !== name) retagParent(name, v);
+                            setRenaming(null);
+                          }
+                        }}
                         style={{ flex: 1, minWidth: 0, padding: "8px 10px", border: "1.5px solid #e4e1d9", borderRadius: "8px", fontSize: "13.5px", fontFamily: "inherit", outline: "none", background: "#f9fafb", color: "#111827" }}
                       />
                       <button
@@ -415,6 +512,10 @@ export default function TabunganPage() {
           goal={topupGoalObj}
           initialAmount={topupPreset ?? undefined}
           onConfirm={(amt, note) => {
+            const t = calcById.get(topupGoalObj.id)?.targetNow ?? topupGoalObj.target;
+            if (topupGoalObj.status === "active" && t > 0 && topupGoalObj.current + amt >= t) {
+              setNotice({ text: `“${topupGoalObj.name}” reached its target and moved to Completed.`, tab: "complete" });
+            }
             topupGoal(topupGoalObj.id, amt, note);
             setTopupId(null);
             setTopupPreset(null);
@@ -426,6 +527,10 @@ export default function TabunganPage() {
         <WithdrawModal
           goal={wdGoalObj}
           onConfirm={(amt, note) => {
+            const t = calcById.get(wdGoalObj.id)?.targetNow ?? wdGoalObj.target;
+            if (wdGoalObj.status === "complete" && t > 0 && wdGoalObj.current - amt < t) {
+              setNotice({ text: `“${wdGoalObj.name}” dropped below its target and is Active again.`, tab: "active" });
+            }
             withdrawGoal(wdGoalObj.id, amt, note);
             setWithdrawId(null);
           }}
@@ -436,6 +541,12 @@ export default function TabunganPage() {
         <ReconcileModal
           goal={rcGoalObj}
           onConfirm={(actual, note) => {
+            const t = calcById.get(rcGoalObj.id)?.targetNow ?? rcGoalObj.target;
+            if (t > 0 && rcGoalObj.status === "active" && actual >= t) {
+              setNotice({ text: `“${rcGoalObj.name}” reached its target and moved to Completed.`, tab: "complete" });
+            } else if (t > 0 && rcGoalObj.status === "complete" && actual < t) {
+              setNotice({ text: `“${rcGoalObj.name}” dropped below its target and is Active again.`, tab: "active" });
+            }
             reconcileGoal(rcGoalObj.id, actual, note);
             setReconcileId(null);
           }}
