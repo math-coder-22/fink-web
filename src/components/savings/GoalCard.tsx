@@ -490,6 +490,7 @@ interface Props {
   goal: SavingsGoal;
   calc: GoalCalcResult;
   monthNet?: number | null;
+  variant?: "list" | "card";
   onEdit: (g: SavingsGoal) => void;
   onTopup: (id: string) => void;
   onQuickDeposit?: (id: string, amount: number) => void;
@@ -504,6 +505,7 @@ function GoalCard({
   goal,
   calc,
   monthNet = null,
+  variant = "list",
   onEdit,
   onTopup,
   onQuickDeposit,
@@ -532,7 +534,7 @@ function GoalCard({
 
   return (
     <>
-      <div className="goal-row" onClick={() => setShowDetail(true)}>
+      <div className={variant === "card" ? "goal-card-box" : "goal-row"} onClick={() => setShowDetail(true)}>
         <div className="goal-row-top">
           <div className="goal-row-title">
             <span className="goal-row-name">{goal.name}</span>
