@@ -153,10 +153,10 @@ export default function TabunganPage() {
     />
   ), [calcById, monthNetById, changeStatus, deleteGoal, goals, view]);
 
-  const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [showCategories, setShowCategories] = useState(false);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteParentName, setDeleteParentName] = useState<string | null>(null);
-  const [groupMenu, setGroupMenu] = useState<string | null>(null);
 
   function ParentGroup({ name, items }: { name: string; items: SavingsGoal[] }) {
     const total = items.reduce((a, g) => a + (g.current || 0), 0);
@@ -165,37 +165,11 @@ export default function TabunganPage() {
     return (
       <section style={{ marginBottom: "18px" }}>
         <div className="wallet-group-head">
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <button className="wallet-group-title" onClick={() => toggleGroup(name)}>
-              <span className="wallet-group-chevron">{collapsed ? "\u25B8" : "\u25BE"}</span>
-              {display}
-              <span className="wallet-group-count">({items.length})</span>
-            </button>
-            {name && (
-              <div className="wallet-group-menu-wrap">
-                <button
-                  className="wallet-group-kebab"
-                  aria-label={`Actions for ${display}`}
-                  onClick={() => setGroupMenu(groupMenu === name ? null : name)}
-                >
-                  \u22EE
-                </button>
-                {groupMenu === name && (
-                  <>
-                    <div className="wallet-group-menu-backdrop" onClick={() => setGroupMenu(null)} />
-                    <div className="wallet-group-menu" style={{ left: 0, right: "auto" }}>
-                      <button onClick={() => { setGroupMenu(null); setRenameTarget(name); setRenameValue(name); }}>
-                        Rename category
-                      </button>
-                      <button className="danger" onClick={() => { setGroupMenu(null); setDeleteParentName(name); }}>
-                        Delete category
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <button className="wallet-group-title" onClick={() => toggleGroup(name)}>
+            <span className="wallet-group-chevron">{collapsed ? "\u25B8" : "\u25BE"}</span>
+            {display}
+            <span className="wallet-group-count">({items.length})</span>
+          </button>
           <span className="wallet-group-total">{"Rp " + Math.round(total).toLocaleString("id-ID")}</span>
         </div>
         {!collapsed && (
@@ -274,6 +248,9 @@ export default function TabunganPage() {
           })}
         </div>
         <div className="savings-tabs-action" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <AppButton variant="secondary" onClick={() => { setRenaming(null); setShowCategories(true); }}>
+            Categories
+          </AppButton>
           <div className="view-toggle" role="group" aria-label="View">
             <button className={view === "list" ? "active" : ""} onClick={() => changeView("list")}>List</button>
             <button className={view === "card" ? "active" : ""} onClick={() => changeView("card")}>Cards</button>
@@ -305,37 +282,88 @@ export default function TabunganPage() {
         ))
       )}
 
-      {renameTarget && (
+      {showCategories && (
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) setRenameTarget(null); }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCategories(false); }}
           style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(17,24,39,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
         >
-          <div style={{ background: "#fff", borderRadius: "14px", padding: "20px", width: "100%", maxWidth: "340px", boxShadow: "0 20px 50px rgba(0,0,0,.25)" }}>
-            <div style={{ fontSize: "15px", fontWeight: 800, color: "#111827", marginBottom: "10px" }}>Rename category</div>
-            <input
-              autoFocus
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e4e1d9", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#f9fafb", color: "#111827", marginBottom: "16px" }}
-            />
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "20px", width: "100%", maxWidth: "430px", boxShadow: "0 20px 50px rgba(0,0,0,.25)", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              <div style={{ fontSize: "15px", fontWeight: 800, color: "#111827" }}>Categories</div>
               <button
-                onClick={() => setRenameTarget(null)}
-                style={{ border: "1.5px solid #e3e7ee", background: "#fff", color: "#374151", fontWeight: 700, borderRadius: "9px", padding: "8px 16px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}
+                aria-label="Close"
+                onClick={() => setShowCategories(false)}
+                style={{ border: "none", background: "#f3f4f6", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", color: "#4b5563", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const v = renameValue.trim();
-                  if (v && v !== renameTarget) retagParent(renameTarget, v);
-                  setRenameTarget(null);
-                }}
-                style={{ border: "none", background: "#1a5c42", color: "#fff", fontWeight: 700, borderRadius: "9px", padding: "8px 16px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}
-              >
-                Save
+                <AppIcon name="close" size={15} />
               </button>
             </div>
+            <div style={{ fontSize: "12px", color: "#94a3b8", lineHeight: 1.5, marginBottom: "12px" }}>
+              Renaming applies to every saving in the category. Deleting a category moves its savings to Uncategorized — the savings are not deleted. New categories are created from a saving&apos;s Edit form.
+            </div>
+            {parentNames.map((name) => {
+              const items = goals.filter((g) => (g.parent || "").trim() === name);
+              const total = items.reduce((a, g) => a + (g.current || 0), 0);
+              const isRenaming = renaming === name;
+              return (
+                <div key={name} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 0", borderTop: "1px solid #f1f5f9" }}>
+                  {isRenaming ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        style={{ flex: 1, minWidth: 0, padding: "8px 10px", border: "1.5px solid #e4e1d9", borderRadius: "8px", fontSize: "13.5px", fontFamily: "inherit", outline: "none", background: "#f9fafb", color: "#111827" }}
+                      />
+                      <button
+                        onClick={() => {
+                          const v = renameValue.trim();
+                          if (v && v !== name) retagParent(name, v);
+                          setRenaming(null);
+                        }}
+                        style={{ border: "none", background: "#1a5c42", color: "#fff", fontWeight: 700, borderRadius: "8px", padding: "8px 13px", cursor: "pointer", fontFamily: "inherit", fontSize: "12.5px" }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setRenaming(null)}
+                        style={{ border: "1.5px solid #e3e7ee", background: "#fff", color: "#374151", fontWeight: 700, borderRadius: "8px", padding: "8px 13px", cursor: "pointer", fontFamily: "inherit", fontSize: "12.5px" }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13.5px", fontWeight: 800, color: "#111827" }}>{name}</div>
+                        <div style={{ fontSize: "11.5px", color: "#94a3b8" }}>{items.length} savings · {"Rp " + Math.round(total).toLocaleString("id-ID")}</div>
+                      </div>
+                      <button
+                        onClick={() => { setRenaming(name); setRenameValue(name); }}
+                        style={{ border: "1.5px solid #e3e7ee", background: "#fff", color: "#374151", fontWeight: 700, borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontFamily: "inherit", fontSize: "12.5px" }}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => setDeleteParentName(name)}
+                        style={{ border: "1.5px solid #fecaca", background: "#fff", color: "#b91c1c", fontWeight: 700, borderRadius: "8px", padding: "7px 12px", cursor: "pointer", fontFamily: "inherit", fontSize: "12.5px" }}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {(() => {
+              const uncat = goals.filter((g) => !(g.parent || "").trim());
+              if (uncat.length === 0) return null;
+              return (
+                <div style={{ padding: "10px 0", borderTop: "1px solid #f1f5f9", fontSize: "12.5px", color: "#94a3b8" }}>
+                  Uncategorized · {uncat.length} savings — assign a category from each saving&apos;s Edit form.
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
