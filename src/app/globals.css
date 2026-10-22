@@ -224,6 +224,32 @@ html, body {
   box-shadow: 0 1px 4px rgba(0,0,0,.1);
   font-weight: 800;
 }
+.wealth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  gap: 22px;
+}
+.wealth-side {
+  border-left: 1px solid #eef2f7;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  .wealth-layout { grid-template-columns: 1fr; gap: 14px; }
+  .wealth-side {
+    border-left: none;
+    border-top: 1px solid #eef2f7;
+    padding-left: 0;
+    padding-top: 14px;
+    flex-direction: row;
+    gap: 24px;
+    justify-content: flex-start;
+  }
+}
+
 .savings-goal-list {
   display: flex;
   flex-direction: column;
