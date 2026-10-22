@@ -151,17 +151,28 @@ export default function WealthChart({
     const values = pts.map((t) => cats.map((c) => c.series.reduce((a, s) => a + balanceAt(s, t), 0)));
     const totals = values.map((row) => row.reduce((a, v) => a + v, 0));
     // Smoothed copies used ONLY for drawing the paths (tooltips, legend and
-    // the change figure keep the true values). Endpoints stay exact.
-    const half = Math.max(0, Math.floor(Math.round(pts.length / 28) / 2));
+    // the change figure keep the true values). A Gaussian kernel with sigma
+    // ~2% of the point count turns each balance step into a gentle sigmoid
+    // ease (~\u00B13 sigma wide) instead of a straight ramp with sharp knees.
+    // Endpoints stay exact.
+    const sigma = Math.max(1.2, pts.length * 0.02);
+    const radius = Math.max(1, Math.min(pts.length - 1, Math.ceil(sigma * 3)));
+    const kernel: number[] = [];
+    for (let k = -radius; k <= radius; k++) kernel.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
     const smooth = (vals: number[]): number[] => {
-      if (half === 0 || vals.length < 3) return vals;
+      if (vals.length < 3) return vals;
       return vals.map((_, i) => {
         if (i === 0 || i === vals.length - 1) return vals[i];
-        const lo = Math.max(0, i - half);
-        const hi = Math.min(vals.length - 1, i + half);
-        let sum = 0;
-        for (let j = lo; j <= hi; j++) sum += vals[j];
-        return sum / (hi - lo + 1);
+        let wsum = 0;
+        let vsum = 0;
+        for (let k = -radius; k <= radius; k++) {
+          const j = i + k;
+          if (j < 0 || j >= vals.length) continue;
+          const w = kernel[k + radius];
+          wsum += w;
+          vsum += vals[j] * w;
+        }
+        return vsum / wsum;
       });
     };
     const totalsSmooth = smooth(totals);
