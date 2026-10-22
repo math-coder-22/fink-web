@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { SavingsGoal, GoalType } from '@/types/savings'
 import { futureValue } from '@/hooks/useSavings'
 import { AppIcon } from '@/components/ui/design'
@@ -42,15 +42,20 @@ interface Props {
 
 export default function GoalModal({ goal, parents = [], onSave, onClose }: Props) {
   const [form, setForm] = useState<FormData>(defaultForm())
+  const initialRef = useRef<FormData | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
     if (goal) {
       const { id, createdAt, updatedAt, ...rest } = goal
-      setForm({ ...defaultForm(), ...rest })
+      const populated = { ...defaultForm(), ...rest }
+      setForm(populated)
+      initialRef.current = populated
     } else {
-      setForm(defaultForm())
+      const fresh = defaultForm()
+      setForm(fresh)
+      initialRef.current = fresh
     }
   }, [goal])
 
@@ -77,13 +82,16 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
     e.preventDefault()
     let finalForm = { ...form, parent: (form.parent || '').trim() || undefined }
 
-    // Auto-hitung target pendidikan dari inflasi
-    if (form.type === 'pendidikan' && form.eduCurrent && form.deadline) {
+    // Auto-hitung target pendidikan dari inflasi — hanya jika field setup-nya diubah
+    const init = initialRef.current
+    const eduSetupChanged = !init || init.eduCurrent !== form.eduCurrent || init.eduInflasi !== form.eduInflasi || init.deadline !== form.deadline
+    if (form.type === 'pendidikan' && eduSetupChanged && form.eduCurrent && form.deadline) {
       const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       finalForm.target = futureValue(form.eduCurrent, form.eduInflasi || 8, years)
     }
-    // Auto-hitung target pensiun: 25x annual expense
-    if (form.type === 'pensiun' && form.pensionExp && form.deadline) {
+    // Auto-hitung target pensiun: 25x annual expense — hanya jika field setup-nya diubah
+    const pensionSetupChanged = !init || init.pensionExp !== form.pensionExp || init.pensionInflasi !== form.pensionInflasi || init.deadline !== form.deadline
+    if (form.type === 'pensiun' && pensionSetupChanged && form.pensionExp && form.deadline) {
       const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       const futureAnnual = futureValue(form.pensionExp * 12, form.pensionInflasi || 5, years)
       finalForm.target = 25 * futureAnnual
