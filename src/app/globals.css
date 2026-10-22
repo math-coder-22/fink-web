@@ -338,6 +338,81 @@ html, body {
 }
 
 /* Minimalist Goals list rows */
+.wallet-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.wallet-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font-size: 13px;
+  font-weight: 900;
+  color: #111827;
+  text-transform: uppercase;
+  letter-spacing: .45px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.wallet-group-chevron { font-size: 10px; color: #94a3b8; }
+.wallet-group-count { color: #94a3b8; font-weight: 700; }
+.wallet-group-right { display: flex; align-items: center; gap: 8px; }
+.wallet-group-total {
+  font-family: var(--font-mono), 'SFMono-Regular', Consolas, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a5c42;
+}
+.wallet-group-menu-wrap { position: relative; }
+.wallet-group-kebab {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wallet-group-menu-backdrop { position: fixed; inset: 0; z-index: 40; }
+.wallet-group-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 41;
+  background: #fff;
+  border: 1px solid #e3e7ee;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15,23,42,.13);
+  padding: 4px;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+}
+.wallet-group-menu button {
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.wallet-group-menu button:hover { background: #f8fafc; }
+.wallet-group-menu button.danger { color: #b91c1c; }
 .goal-row {
   padding: 14px 2px;
   border-bottom: 1px solid #e2e8f0;
