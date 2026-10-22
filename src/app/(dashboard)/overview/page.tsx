@@ -609,34 +609,6 @@ function ProgressBar({ value, color = '#1a5c42' }: { value: number; color?: stri
 }
 
 
-const QuickActionsSection = memo(function QuickActionsSection() {
-  const actions = [
-    { href:'/journal', icon:'transactions' as const, title:'Add Transaction', note:'Catat pemasukan atau pengeluaran' },
-    { href:'/goals', icon:'goals' as const, title:'Update Goal', note:'Perbarui progres target keluarga' },
-    { href:'/overview#financial-checkup', icon:'advisor' as const, title:'Financial Checkup', note:'Lihat diagnosis dan saran FiNK' },
-  ]
-  return (
-    <div className="overview-quick-actions" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12, marginBottom:14 }}>
-      {actions.map(a => (
-        <Link key={a.href} href={a.href} style={{ textDecoration:'none', color:'inherit' }}>
-          <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:18, padding:'14px 15px', display:'flex', gap:12, alignItems:'center', minHeight:78, boxShadow:'0 8px 22px rgba(15,23,42,.045)' }}>
-            <div style={{ width:38, height:38, borderRadius:14, background:'#f0fdf4', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name={a.icon} size={18} /></div>
-            <div style={{ minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:900, color:'#0f172a' }}>{a.title}</div>
-              <div style={{ fontSize:11.5, color:'#64748b', marginTop:3, lineHeight:1.35 }}>{a.note}</div>
-            </div>
-          </div>
-        </Link>
-      ))}
-      <style>{`
-        @media (max-width: 760px) {
-          .overview-quick-actions { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
-  )
-})
-
 function DashboardPremiumLock() {
   return (
     <PremiumLockCard
@@ -654,39 +626,6 @@ function DashboardPremiumLock() {
     />
   )
 }
-
-const PriorityGoalsList = memo(function PriorityGoalsList({ goals }: { goals: SavingsGoal[] }) {
-  if (goals.length === 0) return <div style={{ fontSize:'12px', color:'#9ca3af' }}>Belum ada target tabungan aktif.</div>
-  return (
-    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-      {goals.map(g => {
-        const p = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0
-        const remaining = Math.max(0, (g.target || 0) - (g.current || 0))
-        const isFocus = Boolean(g.focus)
-        return (
-          <div key={g.id} style={{ border:'1px solid #e2e8f0', borderRadius:14, padding:'11px 12px', background:isFocus ? '#f0fdf4' : '#fff' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', gap:'10px', alignItems:'flex-start', marginBottom:7 }}>
-              <div style={{ minWidth:0 }}>
-                <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
-                  <span style={{ fontSize:'12.5px', fontWeight:900, color:'#111827' }}>{g.name}</span>
-                  {isFocus && <span style={{ fontSize:9.5, color:'#15803d', background:'#dcfce7', border:'1px solid #bbf7d0', borderRadius:999, padding:'2px 6px', fontWeight:900 }}>Focus</span>}
-                </div>
-                <div style={{ fontSize:10.5, color:'#94a3b8', marginTop:3 }}>Sisa {fmt(remaining)} · target {fmt(g.target || 0)}</div>
-              </div>
-              <div style={{ fontSize:'12px', color:'#1d4ed8', fontFamily:'var(--font-mono), monospace', fontWeight:900 }}>{pct(p)}</div>
-            </div>
-            <ProgressBar value={p} color={isFocus ? '#15803d' : '#1d4ed8'} />
-            <div style={{ display:'flex', justifyContent:'space-between', gap:10, marginTop:7, fontSize:10.5, color:'#64748b' }}>
-              <span>Terkumpul {fmt(g.current || 0)}</span>
-              <span>Bulanan {fmt(g.monthly || 0)}</span>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-})
-
 
 function getInsight(totalIncome: number, totalExpense: number, totalSaving: number, rawSisa: number) {
   if (totalIncome <= 0) return 'Mulai isi pemasukan bulan ini agar FiNK dapat membaca kondisi keuangan Anda dengan lebih akurat.'
@@ -1464,12 +1403,6 @@ function goalTargetAmount(goal: SavingsGoal) {
   return Math.max(Number(goal.target || 0), targetFromCoverage)
 }
 
-function goalProgressColor(progress: number) {
-  if (progress >= 75) return '#15803d'
-  if (progress >= 30) return '#d99a24'
-  return '#dc6b70'
-}
-
 function goalEtaLabel(goal: OverviewGoalItem) {
   const remaining = Math.max(0, goal.target - goal.current)
   if (goal.target <= 0) return 'Target belum diatur'
@@ -1481,148 +1414,6 @@ function goalEtaLabel(goal: OverviewGoalItem) {
   const years = months / 12
   return `±${years.toFixed(years >= 2 ? 0 : 1).replace('.', ',')} tahun lagi`
 }
-
-function buildOverviewGoalItems(goals: SavingsGoal[]): OverviewGoalItem[] {
-  const active = (goals || []).filter(g => g.status === 'active')
-  const groupedTypes = new Set(['darurat', 'darurat_lanjutan', 'pendidikan', 'pensiun', 'investasi'])
-  const groups = new Map<string, OverviewGoalItem>()
-  const individual: OverviewGoalItem[] = []
-
-  for (const goal of active) {
-    const type = String(goal.type || '')
-    const current = Number(goal.current || 0)
-    const target = goalTargetAmount(goal)
-    const monthly = Number(goal.monthly || 0)
-
-    if (groupedTypes.has(type)) {
-      const key = type === 'darurat' || type === 'darurat_lanjutan' ? 'emergency' : type
-      const existing = groups.get(key)
-      if (existing) {
-        existing.current += current
-        existing.target += target
-        existing.monthly += monthly
-        existing.focus = Boolean(existing.focus || goal.focus)
-        existing.progress = existing.target > 0 ? (existing.current / existing.target) * 100 : 0
-      } else {
-        groups.set(key, {
-          id: `group-${key}`,
-          name: goalTypeLabel(type) || goal.name || 'Goal',
-          current,
-          target,
-          monthly,
-          progress: target > 0 ? (current / target) * 100 : 0,
-          focus: Boolean(goal.focus),
-          type:key,
-        })
-      }
-      continue
-    }
-
-    individual.push({
-      id: goal.id,
-      name: goal.name || goalTypeLabel(type) || 'Goal',
-      current,
-      target,
-      monthly,
-      progress: target > 0 ? (current / target) * 100 : 0,
-      focus: Boolean(goal.focus),
-      type,
-    })
-  }
-
-  return [...groups.values(), ...individual]
-    .filter(g => g.target > 0 || g.current > 0 || g.monthly > 0)
-    .sort((a, b) => Number(Boolean(b.focus)) - Number(Boolean(a.focus)) || (b.progress - a.progress))
-}
-
-const GoalsProgressOverview = memo(function GoalsProgressOverview({ goals }: { goals: SavingsGoal[] }) {
-  const list = buildOverviewGoalItems(goals).slice(0, 4)
-
-  return (
-    <Card style={{ borderRadius:20 }}>
-      <CardHead title="Progress Goals" right={<Link href="/goals" style={{ fontSize:11, color:'#1a5c42', fontWeight:850, textDecoration:'none' }}>Lihat semua goal →</Link>} />
-      <div style={{ padding:'4px 16px 16px', display:'flex', flexDirection:'column', gap:12 }}>
-        {list.length === 0 ? (
-          <div style={{ fontSize:12, color:'#94a3b8', padding:'10px 0' }}>Belum ada goal aktif.</div>
-        ) : list.map(goal => {
-          const progress = Math.max(0, Math.min(100, goal.progress || 0))
-          const color = goalProgressColor(progress)
-
-          return (
-            <div key={goal.id} style={{ border:'1px solid #eef2f7', borderRadius:14, padding:'12px 13px' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', gap:12, marginBottom:9, alignItems:'flex-start' }}>
-                <div style={{ minWidth:0 }}>
-                  <div style={{ fontSize:12.5, fontWeight:900, color:'#111827' }}>{goal.name}</div>
-                </div>
-                <div style={{ fontSize:12, fontWeight:950, color, fontFamily:'var(--font-mono), monospace', whiteSpace:'nowrap' }}>{pct(progress)}</div>
-              </div>
-
-              <ProgressBar value={progress} color={color} />
-
-              <div style={{ marginTop:7, display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap', fontSize:10.5, color:'#64748b', fontFamily:'var(--font-mono), monospace' }}>
-                <span>{fmt(goal.current)} / {fmt(goal.target)}</span>
-                {goal.monthly > 0 && <span>alokasi {fmt(goal.monthly)}/bln</span>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </Card>
-  )
-})
-
-const MonthlyReflectionSection = memo(function MonthlyReflectionSection({
-  monthlySurplus,
-  savingRate,
-  expenseRate,
-  topCategory,
-}: {
-  monthlySurplus: number
-  savingRate: number
-  expenseRate: number
-  topCategory?: { label:string; actual:number; plan:number }
-}) {
-  const items = [
-    {
-      title: monthlySurplus >= 0 ? 'This month remained stable.' : 'This month needs attention.',
-      note: monthlySurplus >= 0 ? 'Balance is still in a healthy position.' : 'Outflow is higher than available room.',
-      icon:'↗',
-      color: monthlySurplus >= 0 ? '#15803d' : '#b91c1c',
-      bg: monthlySurplus >= 0 ? '#f0fdf4' : '#fef2f2',
-    },
-    {
-      title: topCategory ? `Most spending came from ${topCategory.label}.` : 'No major spending yet.',
-      note: topCategory ? 'Review this category if budget feels tight.' : 'Start recording transactions to build awareness.',
-      icon:'☕',
-      color:'#b7791f',
-      bg:'#fffbeb',
-    },
-    {
-      title: savingRate >= 15 ? 'Saving stayed consistent.' : 'Saving can be improved.',
-      note: savingRate >= 15 ? 'Great job keeping the habit.' : 'Try setting a realistic saving allocation.',
-      icon:'♙',
-      color: savingRate >= 15 ? '#1d4ed8' : '#64748b',
-      bg:'#eff6ff',
-    },
-  ]
-
-  return (
-    <Card style={{ borderRadius:20 }}>
-      <CardHead title="Monthly Reflection" icon={<AppIcon name="advisor" size={16} />} />
-      <div style={{ padding:'4px 16px 16px', display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:12 }} className="monthly-reflection-grid">
-        {items.map((item, idx)=>(
-          <div key={idx} style={{ border:'1px solid #eef2f7', borderRadius:16, padding:'13px 14px', background:'#fff', display:'flex', gap:12 }}>
-            <div style={{ width:36, height:36, borderRadius:999, background:item.bg, color:item.color, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:950, flexShrink:0 }}>{item.icon}</div>
-            <div>
-              <div style={{ fontSize:12.5, fontWeight:850, color:'#111827', lineHeight:1.35 }}>{item.title}</div>
-              <div style={{ marginTop:4, fontSize:11, color:'#64748b', lineHeight:1.45 }}>{item.note}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-})
 
 export default function DashboardPage() {
   
@@ -1782,7 +1573,6 @@ const { curMonth, curYear } = useMonthContext()
     return [...tx].sort((a: Transaction, b: Transaction) => Number(b.date || 0) - Number(a.date || 0)).slice(0,6)
   }, [tx])
 
-  const activeGoals = useMemo(() => goals.filter(g => g.status === 'active'), [goals])
   const insight = useMemo(() => getInsight(totalIncome, totalExpense, totalSaving, monthlySurplusAfterUnpaid), [totalIncome, totalExpense, totalSaving, monthlySurplusAfterUnpaid])
 
   const { chartVisibleDay, daysInActiveMonth } = useMemo(() => {
@@ -1833,41 +1623,31 @@ const { curMonth, curYear } = useMonthContext()
       {/* Financial insights */}
       <CheckupCard />
 
-      {/* Hero daily progress */}
-      <div className="overview-hero-chart" style={{ marginBottom:14 }}>
-        <DailyProgressCard
-          tx={tx}
-          income={income}
-          saving={saving}
-          debt={debt}
-          curDay={chartVisibleDay}
-          daysInMonth={daysInActiveMonth}
-          currentBalance={rawSisa}
-          monthLabel={`${MONTH_NAMES[curMonth]} ${curYear}`}
-        />
-      </div>
-
-      {/* Monthly comparison */}
-      <div style={{ marginBottom:14 }}>
-        <MonthlyComparisonChart data={monthlyTrend} />
-      </div>
-
-      {/* Total assets trend */}
+      {/* Total assets trend — the big picture first */}
       <div style={{ marginBottom:14 }}>
         <TotalAssetsTrendChart data={monthlyTrend} currentTotalAssets={totalAssets} />
       </div>
 
-      {!hasPremiumAccess ? (
-        <DashboardPremiumLock />
-      ) : (
-        <>
-          <div style={{ marginBottom:14 }}>
-            <GoalsProgressOverview goals={activeGoals} />
-          </div>
+      {/* Daily progress + monthly comparison side by side */}
+      <div className="overview-chart-pair" style={{ display:'grid', gridTemplateColumns:'3fr 2fr', gap:14, marginBottom:14, alignItems:'stretch' }}>
+        <div className="overview-hero-chart">
+          <DailyProgressCard
+            tx={tx}
+            income={income}
+            saving={saving}
+            debt={debt}
+            curDay={chartVisibleDay}
+            daysInMonth={daysInActiveMonth}
+            currentBalance={rawSisa}
+            monthLabel={`${MONTH_NAMES[curMonth]} ${curYear}`}
+          />
+        </div>
+        <div>
+          <MonthlyComparisonChart data={monthlyTrend} />
+        </div>
+      </div>
 
-          <QuickActionsSection />
-        </>
-      )}
+      {!hasPremiumAccess && <DashboardPremiumLock />}
 
       <style>{`
         .fink-dashboard-page {
@@ -1876,9 +1656,20 @@ const { curMonth, curYear } = useMonthContext()
           overflow-x: hidden;
           padding-bottom: max(18px, env(safe-area-inset-bottom));
         }
+        .overview-chart-pair > div {
+          display: flex;
+          min-width: 0;
+        }
+        .overview-chart-pair > div > * {
+          flex: 1;
+          min-width: 0;
+        }
 
         @media (max-width: 1100px) {
           .fink-dashboard-page .overview-chart-layout {
+            grid-template-columns: 1fr !important;
+          }
+          .fink-dashboard-page .overview-chart-pair {
             grid-template-columns: 1fr !important;
           }
         }
