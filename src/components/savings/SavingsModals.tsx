@@ -634,20 +634,10 @@ export function ReconcileModal({
   );
 }
 
-export type GoalPlanData = {
-  items: { id: string; name: string; suggestedMonthly: number; progress: number }[];
-  plan: {
-    allocatedMonthly: number;
-    safeCapacity: number;
-    status: 'healthy' | 'stretched' | 'overloaded' | 'no_capacity';
-    statusLabel: string;
-    message: string;
-  };
-};
-
 export function SummaryCard({
   summary,
-  plan,
+  monthIn,
+  monthOut,
 }: {
   summary: {
     totalTarget: number;
@@ -655,101 +645,35 @@ export function SummaryCard({
     pct: number;
     count: number;
   };
-  plan: GoalPlanData | null;
+  monthIn: number;
+  monthOut: number;
 }) {
-  const { totalTarget, totalCollected, pct, count } = summary;
-  const [showBreakdown, setShowBreakdown] = useState(false);
-
-  const status = plan?.plan.status;
-  const statusColor =
-    status === 'healthy' ? '#15803d'
-    : status === 'stretched' ? '#b45309'
-    : status === 'overloaded' ? '#b91c1c'
-    : '#64748b';
-  const statusBg =
-    status === 'healthy' ? '#ecfdf5'
-    : status === 'stretched' ? '#fffbeb'
-    : status === 'overloaded' ? '#fef2f2'
-    : '#f8fafc';
-  const statusBorder =
-    status === 'healthy' ? '#bbf7d0'
-    : status === 'stretched' ? '#fde68a'
-    : status === 'overloaded' ? '#fecaca'
-    : '#e2e8f0';
-
-  const allocItems = (plan?.items || []).filter((i) => (i.suggestedMonthly || 0) > 0);
+  const { totalCollected, count } = summary;
   const label: CSSProperties = { fontSize: '10.5px', fontWeight: 850, color: '#64748b', letterSpacing: '.04em' };
+  const big: CSSProperties = { fontSize: '19px', fontWeight: 950, color: '#111827', fontFamily: 'var(--font-mono), monospace', marginTop: '2px' };
+  const net = monthIn - monthOut;
 
   return (
     <div style={{ border: '1px solid #e3e7ee', borderRadius: '16px', background: '#fff', padding: '14px 16px', marginBottom: '14px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div>
-          <div style={label}>TOTAL SAVED</div>
-          <div style={{ fontSize: '19px', fontWeight: 950, color: '#111827', fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
-            {fmt(totalCollected)}
-          </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>of {fmt(totalTarget)}</div>
+          <div style={label}>TOTAL BALANCE</div>
+          <div style={big}>{fmt(totalCollected)}</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>across {count} savings</div>
         </div>
         <div>
-          <div style={label}>THIS MONTH'S PLAN</div>
-          {plan ? (
-            <>
-              <div style={{ fontSize: '19px', fontWeight: 950, color: statusColor, fontFamily: 'var(--font-mono), monospace', marginTop: '2px' }}>
-                {fmt(plan.plan.allocatedMonthly)}
-              </div>
-              <div style={{ marginTop: '4px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 950, color: statusColor, background: statusBg, border: `1px solid ${statusBorder}`, borderRadius: '999px', padding: '2px 8px' }}>
-                  {plan.plan.statusLabel}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>Computing plan…</div>
-          )}
+          <div style={label}>THIS MONTH</div>
+          <div style={{ ...big, color: net > 0 ? '#1a5c42' : net < 0 ? '#b91c1c' : '#111827' }}>
+            {net === 0 ? fmt(0) : `${net > 0 ? '+' : '\u2212'}${fmt(net)}`}
+          </div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+            In {fmt(monthIn)} · Out {fmt(monthOut)}
+          </div>
         </div>
       </div>
-
-      <div style={{ height: '6px', background: '#eef1f5', borderRadius: 999, overflow: 'hidden', marginTop: '12px' }}>
-        <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: '#1a5c42', borderRadius: 999 }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#94a3b8', marginTop: '5px' }}>
-        <span>Combined across all goals</span>
-        <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 800 }}>{Math.round(pct)}%</span>
-      </div>
-
-      {plan && allocItems.length > 0 && (
-        <div style={{ marginTop: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
-          <button
-            onClick={() => setShowBreakdown((v) => !v)}
-            style={{ border: 'none', background: 'none', padding: 0, fontSize: '12px', fontWeight: 850, color: '#1a5c42', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            {showBreakdown ? '▾ Hide breakdown' : '▸ View per-goal breakdown'}
-          </button>
-          {showBreakdown && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-              {allocItems.map((item) => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', fontSize: '12px' }}>
-                  <span style={{ color: '#374151', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.name}
-                  </span>
-                  <span style={{ color: '#1a5c42', fontWeight: 850, fontFamily: 'var(--font-mono), monospace', whiteSpace: 'nowrap' }}>
-                    {fmt(item.suggestedMonthly)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {plan && (
-        <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b', lineHeight: 1.55 }}>
-          {plan.plan.message}
-        </div>
-      )}
-      {!plan && count === 0 && (
+      {count === 0 && (
         <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b' }}>
-          No active goals yet. Add a goal to start planning.
+          No active savings yet. Add one to start.
         </div>
       )}
     </div>
