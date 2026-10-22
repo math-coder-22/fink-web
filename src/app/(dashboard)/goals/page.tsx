@@ -11,6 +11,7 @@ import {
   ReconcileModal,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
+import WealthChart from "@/components/savings/WealthChart";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FREE_PLAN_LIMITS } from "@/lib/subscription/limits";
@@ -221,6 +222,8 @@ export default function TabunganPage() {
       )}
 
       <SummaryCard summary={summary} monthIn={monthIn} monthOut={monthOut} />
+
+      <WealthChart goals={goals} />
 
 
       {!isPremium && (
