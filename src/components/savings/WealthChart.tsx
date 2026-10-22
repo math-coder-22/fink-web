@@ -123,12 +123,15 @@ export default function WealthChart({
     const start = Math.max(def.days ? now - def.days * DAY : earliest, earliest);
     const end = now;
 
-    // Daily samples (stride keeps the point count ≤ ~240 on long ranges).
+    // Daily samples anchored at `end` (stride keeps the count ≤ ~240), so
+    // the final point is exactly "now" and gaps are uniform — hover snapping
+    // at the right edge can never land on a stale mid-yesterday sample.
     const totalDays = Math.max(1, Math.ceil((end - start) / DAY));
     const stride = Math.max(1, Math.ceil(totalDays / 240));
-    const pts: number[] = [];
-    for (let t = start; t < end; t += stride * DAY) pts.push(t);
-    if (pts.length === 0 || pts[pts.length - 1] !== end) pts.push(end);
+    const rev: number[] = [];
+    for (let t = end; t > start; t -= stride * DAY) rev.push(t);
+    if (rev.length === 0 || rev[rev.length - 1] !== start) rev.push(start);
+    const pts = rev.reverse();
 
     const cats = [...byCat.entries()]
       .map(([name, series]) => ({ name, series, now: series.reduce((a, s) => a + balanceAt(s, end), 0) }))
@@ -141,13 +144,32 @@ export default function WealthChart({
 
     const values = pts.map((t) => cats.map((c) => c.series.reduce((a, s) => a + balanceAt(s, t), 0)));
     const totals = values.map((row) => row.reduce((a, v) => a + v, 0));
-    return { start, end, pts, cats, colorOf, values, totals };
+    // Smoothed copies used ONLY for drawing the paths (tooltips, legend and
+    // the change figure keep the true values). Endpoints stay exact.
+    const half = Math.max(0, Math.floor(Math.round(pts.length / 45) / 2));
+    const smooth = (vals: number[]): number[] => {
+      if (half === 0 || vals.length < 3) return vals;
+      return vals.map((_, i) => {
+        if (i === 0 || i === vals.length - 1) return vals[i];
+        const lo = Math.max(0, i - half);
+        const hi = Math.min(vals.length - 1, i + half);
+        let sum = 0;
+        for (let j = lo; j <= hi; j++) sum += vals[j];
+        return sum / (hi - lo + 1);
+      });
+    };
+    const totalsSmooth = smooth(totals);
+    const valuesSmooth = cats.map((_, ci) => smooth(values.map((row) => row[ci])));
+    return { start, end, pts, cats, colorOf, values, totals, totalsSmooth, valuesSmooth };
   }, [active, range]);
 
-  const { start, end, pts, cats, values, totals } = model;
+  const { start, end, pts, cats, values, totals, totalsSmooth, valuesSmooth } = model;
   const visibleIdx = cats.map((c, i) => (hidden.has(c.name) ? -1 : i)).filter((i) => i >= 0);
   const stackTotals = pts.map((_, pi) =>
     mode === 'categories' ? visibleIdx.reduce((a, ci) => a + values[pi][ci], 0) : totals[pi],
+  );
+  const drawTotals = pts.map((_, pi) =>
+    mode === 'categories' ? visibleIdx.reduce((a, ci) => a + valuesSmooth[ci][pi], 0) : totalsSmooth[pi],
   );
   const firstTotal = stackTotals[0] ?? 0;
   const lastTotal = stackTotals[stackTotals.length - 1] ?? 0;
@@ -163,8 +185,8 @@ export default function WealthChart({
   const padB = 22;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
-  const rawMin = Math.min(...stackTotals);
-  const rawMax = Math.max(...stackTotals, 0);
+  const rawMin = Math.min(...drawTotals);
+  const rawMax = Math.max(...drawTotals, 0);
   const span = Math.max(rawMax - rawMin, rawMax * 0.05, 1);
   const yMin = mode === 'categories' ? 0 : Math.max(0, rawMin - span * 0.08);
   const yMax = rawMax + span * 0.1;
@@ -172,7 +194,7 @@ export default function WealthChart({
   const y = (v: number) => padT + (1 - (v - yMin) / (yMax - yMin || 1)) * ih;
   const coordsOf = (series: number[]): [number, number][] => pts.map((t, i) => [x(t), y(series[i])]);
 
-  const totalLinePath = smoothPath(coordsOf(stackTotals));
+  const totalLinePath = smoothPath(coordsOf(drawTotals));
   const totalAreaPath = totalLinePath + ` L${x(end).toFixed(1)},${y(yMin).toFixed(1)} L${x(start).toFixed(1)},${y(yMin).toFixed(1)} Z`;
 
   const catAreas = visibleIdx.map((ci) => {
@@ -181,13 +203,13 @@ export default function WealthChart({
     pts.forEach((_, pi) => {
       let b = 0;
       visibleIdx.forEach((vj) => {
-        if (vj < ci) b += values[pi][vj];
+        if (vj < ci) b += valuesSmooth[vj][pi];
       });
       bottom[pi] = b;
-      top[pi] = b + values[pi][ci];
+      top[pi] = b + valuesSmooth[ci][pi];
     });
     const topPath = smoothPath(coordsOf(top));
-    const bottomPath = smoothPath(coordsOf(bottom).reverse()).replace(/^M/, 'L');
+    const bottomPath = smoothPath(coordsOf(bottom).slice().reverse()).replace(/^M/, 'L');
     return { name: cats[ci].name, color: model.colorOf(cats[ci].name, ci), path: topPath + ' ' + bottomPath + ' Z' };
   });
 
@@ -278,8 +300,8 @@ export default function WealthChart({
             <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} role="img" aria-label="Wealth progress chart">
               <defs>
                 <linearGradient id="wealthFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1a5c42" stopOpacity="0.16" />
-                  <stop offset="100%" stopColor="#1a5c42" stopOpacity="0.01" />
+                  <stop offset="0%" stopColor="#1a5c42" stopOpacity="0.24" />
+                  <stop offset="100%" stopColor="#1a5c42" stopOpacity="0.03" />
                 </linearGradient>
               </defs>
               {yTicks.map((v, i) => (
@@ -301,7 +323,7 @@ export default function WealthChart({
               {hoverIdx !== null && pts[hoverIdx] !== undefined && (
                 <g>
                   <line x1={x(pts[hoverIdx])} x2={x(pts[hoverIdx])} y1={padT} y2={padT + ih} stroke="#e2e8f0" strokeWidth="1" />
-                  <circle cx={x(pts[hoverIdx])} cy={y(stackTotals[hoverIdx])} r="3.5" fill="#1a5c42" stroke="#fff" strokeWidth="1.8" />
+                  <circle cx={x(pts[hoverIdx])} cy={y(drawTotals[hoverIdx])} r="3.5" fill="#1a5c42" stroke="#fff" strokeWidth="1.8" />
                 </g>
               )}
               {xTicks.map((t, i) => (
