@@ -230,7 +230,15 @@ html, body {
   background: #f8fafc;
   border: 1px solid #edf1f7;
   border-radius: 16px;
-  padding: 4px 16px;
+  padding: 0 16px;
+}
+.savings-goal-list .goal-row:first-child {
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+}
+.savings-goal-list .goal-row:last-child {
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
 }
 .savings-goal-card {
   background: #fff;
@@ -543,6 +551,8 @@ html, body {
   .goal-detail-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .savings-goal-list { padding: 2px 12px; border-radius: 14px; }
+  .savings-goal-list { padding: 0 12px; border-radius: 14px; }
+  .savings-goal-list .goal-row:first-child { border-top-left-radius: 13px; border-top-right-radius: 13px; }
+  .savings-goal-list .goal-row:last-child { border-bottom-left-radius: 13px; border-bottom-right-radius: 13px; }
   .goal-row { padding: 12px; margin: 0 -12px; }
 }
