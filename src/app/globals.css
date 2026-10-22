@@ -414,7 +414,8 @@ html, body {
 .wallet-group-menu button:hover { background: #f8fafc; }
 .wallet-group-menu button.danger { color: #b91c1c; }
 .goal-row {
-  padding: 14px 2px;
+  padding: 14px 16px;
+  margin: 0 -16px;
   border-bottom: 1px solid #e2e8f0;
   cursor: pointer;
 }
@@ -485,6 +486,46 @@ html, body {
 }
 .goal-row-deposit:hover { background: #145239; }
 .goal-row-unallocated { font-size: 12px; color: #9ca3af; font-weight: 600; }
+
+/* Card view option */
+.savings-goal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+}
+.goal-card-box {
+  background: #fff;
+  border: 1px solid #e8ecf1;
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.goal-card-box:hover { box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+@media (max-width: 768px) {
+  .savings-goal-grid { grid-template-columns: 1fr; }
+}
+
+/* View toggle (List / Cards) */
+.view-toggle {
+  display: inline-flex;
+  background: #eef1f5;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+.view-toggle button {
+  border: none;
+  background: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.view-toggle button.active { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
 .goal-detail-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -503,5 +544,5 @@ html, body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .savings-goal-list { padding: 2px 12px; border-radius: 14px; }
-  .goal-row { padding: 12px 0; }
+  .goal-row { padding: 12px; margin: 0 -12px; }
 }
