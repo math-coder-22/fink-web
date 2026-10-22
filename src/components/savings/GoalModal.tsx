@@ -5,6 +5,11 @@ import type { SavingsGoal, GoalType } from '@/types/savings'
 import { futureValue } from '@/hooks/useSavings'
 import { AppIcon } from '@/components/ui/design'
 
+// Money inputs display thousand separators while typing; the form state
+// keeps plain numbers (sanitize on change).
+const digitsOnly = (v: string) => v.replace(/\D/g, '')
+const fmtMoney = (n: number) => (n ? n.toLocaleString('id-ID') : '')
+
 const inp: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1.5px solid #e4e1d9', borderRadius:'8px',
   fontSize:'14px', fontFamily:'inherit', outline:'none', background:'#f9fafb', color:'#111827',
@@ -63,6 +68,13 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
     setDirty(true)
     setForm(prev => ({ ...prev, [k]: v }))
   }
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !dirty) onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [dirty, onClose])
 
   function handleTypeChange(t: GoalType) {
     set('type', t)
@@ -175,8 +187,8 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
               <div style={row}>
                 <div>
                   <label style={lbl}>Monthly Expenses (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="5000000" value={form.expense || ''}
-                    onChange={e => calcDaruratTarget(parseFloat(e.target.value)||0, form.coverageTarget||6)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="5.000.000" value={fmtMoney(form.expense || 0)}
+                    onChange={e => calcDaruratTarget(parseFloat(digitsOnly(e.target.value))||0, form.coverageTarget||6)} />
                 </div>
                 <div>
                   <label style={lbl}>Target Coverage (Months)</label>
@@ -197,8 +209,8 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
               <div style={row}>
                 <div>
                   <label style={lbl}>Current Education Cost (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="100000000" value={form.eduCurrent||''}
-                    onChange={e => set('eduCurrent', parseFloat(e.target.value)||0)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="100.000.000" value={fmtMoney(form.eduCurrent || 0)}
+                    onChange={e => set('eduCurrent', parseFloat(digitsOnly(e.target.value))||0)} />
                 </div>
                 <div>
                   <label style={lbl}>Education Inflation (%/Year)</label>
@@ -217,8 +229,8 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
               <div style={row}>
                 <div>
                   <label style={lbl}>Current Monthly Expenses (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="10000000" value={form.pensionExp||''}
-                    onChange={e => set('pensionExp', parseFloat(e.target.value)||0)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="10.000.000" value={fmtMoney(form.pensionExp || 0)}
+                    onChange={e => set('pensionExp', parseFloat(digitsOnly(e.target.value))||0)} />
                 </div>
                 <div>
                   <label style={lbl}>Inflation (%/Year)</label>
@@ -234,8 +246,8 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
           {(['biasa','darurat','darurat_lanjutan','rumah','kendaraan','investasi'] as string[]).includes(form.type) && (
             <div>
               <label style={lbl}>Target Amount (Rp)</label>
-              <input required style={inp} type="number" min="0" placeholder="50000000" value={form.target||''}
-                onChange={e => set('target', parseFloat(e.target.value)||0)} />
+              <input required style={inp} type="text" inputMode="numeric" placeholder="50.000.000" value={fmtMoney(form.target || 0)}
+                onChange={e => set('target', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
           )}
 
@@ -243,13 +255,13 @@ export default function GoalModal({ goal, parents = [], onSave, onClose }: Props
           <div style={row}>
             <div>
               <label style={lbl}>Current Balance (Rp)</label>
-              <input style={inp} type="number" min="0" value={form.current||''} placeholder="0"
-                onChange={e => set('current', parseFloat(e.target.value)||0)} />
+              <input style={inp} type="text" inputMode="numeric" value={fmtMoney(form.current || 0)} placeholder="0"
+                onChange={e => set('current', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
             <div>
               <label style={lbl}>Actual Monthly Saving (Rp)</label>
-              <input style={inp} type="number" min="0" value={form.monthly||''} placeholder="0"
-                onChange={e => set('monthly', parseFloat(e.target.value)||0)} />
+              <input style={inp} type="text" inputMode="numeric" value={fmtMoney(form.monthly || 0)} placeholder="0"
+                onChange={e => set('monthly', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
           </div>
 
