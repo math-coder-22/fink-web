@@ -559,6 +559,22 @@ export function useSavings() {
     };
   }, [goals]);
 
+  // Bulk-set the parent (account/category) label: rename a category
+  // (to = new name) or delete it (to = null → children become Uncategorized).
+  const retagParent = useCallback(
+    async (from: string, to: string | null) => {
+      if (!userId) return;
+      const updatedAt = new Date().toISOString();
+      const next = goals.map((g) =>
+        (g.parent || "").trim() === from
+          ? { ...g, parent: to ? to : undefined, updatedAt }
+          : g,
+      );
+      await persistAll(next);
+    },
+    [goals, persistAll, userId],
+  );
+
   return {
     goals,
     loaded,
@@ -568,6 +584,7 @@ export function useSavings() {
     addGoal,
     updateGoal,
     deleteGoal,
+    retagParent,
     topupGoal,
     withdrawGoal,
     reconcileGoal,
