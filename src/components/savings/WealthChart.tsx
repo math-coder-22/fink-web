@@ -64,24 +64,30 @@ function balanceAt(s: GoalSeries, t: number): number {
   return v;
 }
 
-/* Catmull-Rom → cubic bezier, with control-point Y clamped to the segment's
-   own Y range so the curve never overshoots above/below its endpoints. */
-function smoothPath(coords: [number, number][]): string {
-  if (coords.length < 2) return coords.length ? `M${coords[0][0]},${coords[0][1]}` : '';
-  let d = `M${coords[0][0].toFixed(1)},${coords[0][1].toFixed(1)}`;
-  for (let i = 0; i < coords.length - 1; i++) {
-    const p0 = coords[Math.max(0, i - 1)];
-    const p1 = coords[i];
-    const p2 = coords[i + 1];
-    const p3 = coords[Math.min(coords.length - 1, i + 2)];
-    const lo = Math.min(p1[1], p2[1]);
-    const hi = Math.max(p1[1], p2[1]);
-    const clampY = (v: number) => Math.min(hi, Math.max(lo, v));
-    const c1: [number, number] = [p1[0] + (p2[0] - p0[0]) / 6, clampY(p1[1] + (p2[1] - p0[1]) / 6)];
-    const c2: [number, number] = [p2[0] - (p3[0] - p1[0]) / 6, clampY(p2[1] - (p3[1] - p1[1]) / 6)];
-    d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+/* Chaikin corner-cutting: repeatedly cuts each segment at 25%/75%, which
+   rounds every corner into a smooth curve while staying inside the local
+   range of the data (no overshoot) and keeping both endpoints exact. */
+function chaikin(coords: [number, number][], iterations: number): [number, number][] {
+  let pts = coords;
+  for (let k = 0; k < iterations; k++) {
+    if (pts.length < 3) break;
+    const out: [number, number][] = [pts[0]];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x1, y1] = pts[i];
+      const [x2, y2] = pts[i + 1];
+      out.push([x1 + (x2 - x1) * 0.25, y1 + (y2 - y1) * 0.25]);
+      out.push([x1 + (x2 - x1) * 0.75, y1 + (y2 - y1) * 0.75]);
+    }
+    out.push(pts[pts.length - 1]);
+    pts = out;
   }
-  return d;
+  return pts;
+}
+
+function linePath(coords: [number, number][]): string {
+  return chaikin(coords, 3)
+    .map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1))
+    .join(' ');
 }
 
 export default function WealthChart({
@@ -146,7 +152,7 @@ export default function WealthChart({
     const totals = values.map((row) => row.reduce((a, v) => a + v, 0));
     // Smoothed copies used ONLY for drawing the paths (tooltips, legend and
     // the change figure keep the true values). Endpoints stay exact.
-    const half = Math.max(0, Math.floor(Math.round(pts.length / 45) / 2));
+    const half = Math.max(0, Math.floor(Math.round(pts.length / 28) / 2));
     const smooth = (vals: number[]): number[] => {
       if (half === 0 || vals.length < 3) return vals;
       return vals.map((_, i) => {
@@ -194,7 +200,7 @@ export default function WealthChart({
   const y = (v: number) => padT + (1 - (v - yMin) / (yMax - yMin || 1)) * ih;
   const coordsOf = (series: number[]): [number, number][] => pts.map((t, i) => [x(t), y(series[i])]);
 
-  const totalLinePath = smoothPath(coordsOf(drawTotals));
+  const totalLinePath = linePath(coordsOf(drawTotals));
   const totalAreaPath = totalLinePath + ` L${x(end).toFixed(1)},${y(yMin).toFixed(1)} L${x(start).toFixed(1)},${y(yMin).toFixed(1)} Z`;
 
   const catAreas = visibleIdx.map((ci) => {
@@ -208,8 +214,8 @@ export default function WealthChart({
       bottom[pi] = b;
       top[pi] = b + valuesSmooth[ci][pi];
     });
-    const topPath = smoothPath(coordsOf(top));
-    const bottomPath = smoothPath(coordsOf(bottom).slice().reverse()).replace(/^M/, 'L');
+    const topPath = linePath(coordsOf(top));
+    const bottomPath = linePath(coordsOf(bottom).slice().reverse()).replace(/^M/, 'L');
     return { name: cats[ci].name, color: model.colorOf(cats[ci].name, ci), path: topPath + ' ' + bottomPath + ' Z' };
   });
 
