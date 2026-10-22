@@ -1,12 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SavingsGoal } from "@/types/savings";
 import { AppIcon } from "@/components/ui/design";
 
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
+
+// Amount inputs keep a digits-only state value but DISPLAY grouped with
+// thousand separators (e.g. 500000 -> "500.000") while typing.
+const digitsOnly = (v: string) => v.replace(/\D/g, "");
+const fmtDigits = (v: string) => (v ? Number(v).toLocaleString("id-ID") : "");
+
+// Escape closes a modal exactly like a backdrop click: only when it has no
+// unsaved input (the same dirty guard the backdrop uses).
+function useEscapeClose(isDirty: boolean, onClose: () => void) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDirty) onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isDirty, onClose]);
+}
 
 export function TopupModal({
   goal,
@@ -22,6 +39,7 @@ export function TopupModal({
   const [amt, setAmt] = useState(initialAmount && initialAmount > 0 ? String(Math.round(initialAmount)) : "");
   const [note, setNote] = useState("");
   const isDirty = amt !== "" || note !== "";
+  useEscapeClose(isDirty, onClose);
   const inp: CSSProperties = {
     width: "100%",
     padding: "9px 12px",
@@ -116,11 +134,11 @@ export function TopupModal({
             </label>
             <input
               autoFocus
-              type="number"
-              min="0"
+              type="text"
+              inputMode="numeric"
               placeholder="500.000"
-              value={amt}
-              onChange={(e) => setAmt(e.target.value)}
+              value={fmtDigits(amt)}
+              onChange={(e) => setAmt(digitsOnly(e.target.value))}
               style={{
                 ...inp,
                 fontFamily: "var(--font-mono), monospace",
@@ -151,22 +169,28 @@ export function TopupModal({
             />
           </div>
           <button
+            disabled={!(parseFloat(amt) > 0)}
             onClick={() =>
               parseFloat(amt) > 0 && onConfirm(parseFloat(amt), note)
             }
             style={{
-              background: "#1a5c42",
+              background: parseFloat(amt) > 0 ? "#1a5c42" : "#9ca3af",
               color: "#fff",
               border: "none",
               padding: "10px",
               borderRadius: "8px",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: parseFloat(amt) > 0 ? "pointer" : "not-allowed",
             }}
           >
             Deposit {amt ? fmt(parseFloat(amt) || 0) : "Fund"}
           </button>
+          {amt !== "" && !(parseFloat(amt) > 0) && (
+            <div style={{ fontSize: "11.5px", color: "#b91c1c", marginTop: "-4px" }}>
+              Enter an amount above Rp 0.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -186,6 +210,7 @@ export function WithdrawModal({
   const [note, setNote] = useState("");
   const [all, setAll] = useState(false);
   const isDirty = amt !== "" || note !== "" || all;
+  useEscapeClose(isDirty, onClose);
   const actualAmt = all ? goal.current : parseFloat(amt) || 0;
   const inp: CSSProperties = {
     width: "100%",
@@ -305,12 +330,11 @@ export function WithdrawModal({
               </label>
               <input
                 autoFocus
-                type="number"
-                min="0"
-                max={goal.current}
+                type="text"
+                inputMode="numeric"
                 placeholder="500.000"
-                value={amt}
-                onChange={(e) => setAmt(e.target.value)}
+                value={fmtDigits(amt)}
+                onChange={(e) => setAmt(digitsOnly(e.target.value))}
                 style={{
                   ...inp,
                   fontFamily: "var(--font-mono), monospace",
@@ -395,6 +419,7 @@ export function ReconcileModal({
   const isDirty =
     actual !== String(Math.round(goal.current || 0)) ||
     note !== "Savings balance reconcile";
+  useEscapeClose(isDirty, onClose);
   const actualNumber = parseFloat(actual) || 0;
   const diff = actualNumber - goal.current;
   const inp: CSSProperties = {
@@ -570,10 +595,10 @@ export function ReconcileModal({
             </label>
             <input
               autoFocus
-              type="number"
-              min="0"
-              value={actual}
-              onChange={(e) => setActual(e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={fmtDigits(actual)}
+              onChange={(e) => setActual(digitsOnly(e.target.value))}
               style={{
                 ...inp,
                 fontFamily: "var(--font-mono), monospace",
@@ -634,48 +659,3 @@ export function ReconcileModal({
   );
 }
 
-export function SummaryCard({
-  summary,
-  monthIn,
-  monthOut,
-}: {
-  summary: {
-    totalTarget: number;
-    totalCollected: number;
-    pct: number;
-    count: number;
-  };
-  monthIn: number;
-  monthOut: number;
-}) {
-  const { totalCollected, count } = summary;
-  const label: CSSProperties = { fontSize: '10.5px', fontWeight: 850, color: '#64748b', letterSpacing: '.04em' };
-  const big: CSSProperties = { fontSize: '19px', fontWeight: 950, color: '#111827', fontFamily: 'var(--font-mono), monospace', marginTop: '2px' };
-  const net = monthIn - monthOut;
-
-  return (
-    <div style={{ border: '1px solid #e3e7ee', borderRadius: '16px', background: '#fff', padding: '14px 16px', marginBottom: '14px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div>
-          <div style={label}>TOTAL BALANCE</div>
-          <div style={big}>{fmt(totalCollected)}</div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>across {count} savings</div>
-        </div>
-        <div>
-          <div style={label}>THIS MONTH</div>
-          <div style={{ ...big, color: net > 0 ? '#1a5c42' : net < 0 ? '#b91c1c' : '#111827' }}>
-            {net === 0 ? fmt(0) : `${net > 0 ? '+' : '\u2212'}${fmt(net)}`}
-          </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-            In {fmt(monthIn)} · Out {fmt(monthOut)}
-          </div>
-        </div>
-      </div>
-      {count === 0 && (
-        <div style={{ marginTop: '10px', fontSize: '11.5px', color: '#64748b' }}>
-          No active savings yet. Add one to start.
-        </div>
-      )}
-    </div>
-  );
-}
