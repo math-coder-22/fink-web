@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
@@ -9,13 +9,11 @@ import {
   TopupModal,
   WithdrawModal,
   ReconcileModal,
-  type GoalPlanData,
 } from "@/components/savings/SavingsModals";
 import { AppButton, EmptyState, PageHeader, AppIcon } from "@/components/ui/design";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FREE_PLAN_LIMITS } from "@/lib/subscription/limits";
-import { MONTHS_ORDER } from "@/components/layout/DashboardShell";
 import type { SavingsGoal } from "@/types/savings";
 import { sortGoalsByAdvisor } from "@/lib/finance/goals";
 
@@ -39,6 +37,7 @@ export default function TabunganPage() {
     withdrawGoal,
     reconcileGoal,
     changeStatus,
+    retagParent,
     error,
   } = useSavings();
   const [tab, setTab] = useState<TabKey>("active");
@@ -50,23 +49,32 @@ export default function TabunganPage() {
   const [reconcileId, setReconcileId] = useState<string | null>(null);
   const { isPremium } = useSubscription();
 
-  // Monthly allocation plan (income-aware): replaces the demotivating
-  // "total ideal needed per month" figure with a realistic plan.
-  const [planData, setPlanData] = useState<GoalPlanData | null>(null);
-  useEffect(() => {
+  // Wallet view: actual money movement this month, computed from goal
+  // histories (topups in, withdrawals out) — no allocation plan.
+  const { monthIn, monthOut, monthNetById } = useMemo(() => {
     const now = new Date();
-    const mk = MONTHS_ORDER[now.getMonth()];
-    fetch(`/api/advisor/summary?month=${mk}&year=${now.getFullYear()}`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j) => {
-        if (j?.data?.goalPlan) setPlanData({ items: j.data.goalPlanItems || j.data.goalInsights || [], plan: j.data.goalPlan });
-      })
-      .catch(() => {});
-  }, []);
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    let tin = 0;
+    let tout = 0;
+    const byId = new Map<string, number>();
+    goals.forEach((g) => {
+      let net = 0;
+      (g.history || []).forEach((tx) => {
+        const d = new Date(tx.date);
+        if (d.getFullYear() === y && d.getMonth() === m) {
+          if (tx.type === "topup") { net += tx.amount; tin += tx.amount; }
+          else { net -= tx.amount; tout += tx.amount; }
+        }
+      });
+      byId.set(g.id, net);
+    });
+    return { monthIn: tin, monthOut: tout, monthNetById: byId };
+  }, [goals]);
 
-  const suggestedById = useMemo(
-    () => new Map((planData?.items || []).map((i) => [i.id, i.suggestedMonthly > 0 ? i.suggestedMonthly : null] as const)),
-    [planData]
+  const parentNames = useMemo(
+    () => [...new Set(goals.map((g) => (g.parent || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [goals],
   );
 
   const tabCounts = useMemo(() => {
@@ -79,15 +87,35 @@ export default function TabunganPage() {
     return counts;
   }, [goals]);
 
-  const { sortedGoals, focusGoals, restGoals } = useMemo(() => {
+  const sortedGoals = useMemo(() => {
     const filtered = goals.filter((g) =>
       tab === "active" ? g.status === "active" || g.status === "pending" : g.status === tab,
     );
-    const sorted = sortGoalsByAdvisor(filtered, calcGoal);
-    const focus = sorted.filter((g) => g.focus);
-    const rest = sorted.filter((g) => !g.focus);
-    return { sortedGoals: sorted, focusGoals: focus, restGoals: rest };
+    return sortGoalsByAdvisor(filtered, calcGoal);
   }, [goals, tab]);
+
+  // Group the visible savings by parent (account/category); Uncategorized last.
+  const groups = useMemo(() => {
+    const map = new Map<string, SavingsGoal[]>();
+    sortedGoals.forEach((g) => {
+      const key = (g.parent || "").trim();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
+    });
+    return [...map.entries()].sort((a, b) =>
+      a[0] === "" ? 1 : b[0] === "" ? -1 : a[0].localeCompare(b[0]),
+    );
+  }, [sortedGoals]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = useCallback((name: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
 
   const calcById = useMemo(() => new Map(goals.map((g) => [g.id, calcGoal(g)])), [goals]);
   const goalsById = useMemo(() => new Map(goals.map((g) => [g.id, g])), [goals]);
@@ -101,7 +129,7 @@ export default function TabunganPage() {
       key={goal.id}
       goal={goal}
       calc={calcById.get(goal.id) ?? calcGoal(goal)}
-      suggestedMonthly={suggestedById.get(goal.id) ?? null}
+      monthNet={monthNetById.get(goal.id) ?? null}
       onEdit={setEditGoal}
       onTopup={(id) => { setTopupId(id); setTopupPreset(null); }}
       onQuickDeposit={(id, amount) => { setTopupId(id); setTopupPreset(amount); }}
@@ -111,43 +139,54 @@ export default function TabunganPage() {
       onDelete={deleteGoal}
       allGoals={goals}
     />
-  ), [calcById, suggestedById, changeStatus, deleteGoal, goals]);
+  ), [calcById, monthNetById, changeStatus, deleteGoal, goals]);
 
-  function GoalSection({
-    title,
-    subtitle,
-    items,
-    tone = "neutral",
-  }: {
-    title: string;
-    subtitle?: string;
-    items: SavingsGoal[];
-    tone?: "focus" | "priority" | "neutral" | "muted";
-  }) {
-    if (items.length === 0) return null;
-    const colors = {
-      focus: { bg: "#f0fdf4", border: "#bbf7d0", color: "#166534" },
-      priority: { bg: "#fff7ed", border: "#fed7aa", color: "#9a3412" },
-      neutral: { bg: "#f8fafc", border: "#e2e8f0", color: "#475569" },
-      muted: { bg: "#fafaf9", border: "#e7e5e4", color: "#78716c" },
-    }[tone];
+  const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteParentName, setDeleteParentName] = useState<string | null>(null);
+  const [groupMenu, setGroupMenu] = useState<string | null>(null);
 
+  function ParentGroup({ name, items }: { name: string; items: SavingsGoal[] }) {
+    const total = items.reduce((a, g) => a + (g.current || 0), 0);
+    const collapsed = collapsedGroups.has(name);
+    const display = name || "Uncategorized";
     return (
       <section style={{ marginBottom: "18px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: "10px" }}>
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color, borderRadius: 999, padding: "5px 10px", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".45px" }}>
-              {title}
-              <span style={{ opacity: .72 }}>({items.length})</span>
-            </div>
-            {subtitle && (
-              <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: 6, lineHeight: 1.45 }}>
-                {subtitle}
+        <div className="wallet-group-head">
+          <button className="wallet-group-title" onClick={() => toggleGroup(name)}>
+            <span className="wallet-group-chevron">{collapsed ? "\u25B8" : "\u25BE"}</span>
+            {display}
+            <span className="wallet-group-count">({items.length})</span>
+          </button>
+          <div className="wallet-group-right">
+            <span className="wallet-group-total">{"Rp " + Math.round(total).toLocaleString("id-ID")}</span>
+            {name && (
+              <div className="wallet-group-menu-wrap">
+                <button
+                  className="wallet-group-kebab"
+                  aria-label={`Actions for ${display}`}
+                  onClick={() => setGroupMenu(groupMenu === name ? null : name)}
+                >
+                  \u22EE
+                </button>
+                {groupMenu === name && (
+                  <>
+                    <div className="wallet-group-menu-backdrop" onClick={() => setGroupMenu(null)} />
+                    <div className="wallet-group-menu">
+                      <button onClick={() => { setGroupMenu(null); setRenameTarget(name); setRenameValue(name); }}>
+                        Rename category
+                      </button>
+                      <button className="danger" onClick={() => { setGroupMenu(null); setDeleteParentName(name); }}>
+                        Delete category
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
         </div>
-        <div className="savings-goal-list">{items.map(renderGoal)}</div>
+        {!collapsed && <div className="savings-goal-list">{items.map(renderGoal)}</div>}
       </section>
     );
   }
@@ -180,23 +219,23 @@ export default function TabunganPage() {
   return (
     <div className="savings-page">
       <PageHeader
-        title="Goals"
-        subtitle="Goal-based planning with auto priority, focus goals, and Advisor recommendations"
+        title="Wallets"
+        subtitle="Your savings, organized by account — balances first, targets optional"
       />
 
       {error && (
         <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#991b1b', fontSize:'12px', fontWeight:600, lineHeight:1.5 }}>
-          Goals error: {error}<br />
+          Wallets error: {error}<br />
           Make sure <b>savings_goals_schema.sql</b> has been run in Supabase.
         </div>
       )}
 
-      <SummaryCard summary={summary} plan={planData} />
+      <SummaryCard summary={summary} monthIn={monthIn} monthOut={monthOut} />
 
 
       {!isPremium && (
         <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:'14px', padding:'12px 14px', marginBottom:'14px', color:'#9a3412', fontSize:'12px', fontWeight:600 }}>
-          Paket Free: maksimal {FREE_PLAN_LIMITS.savingGoals} akun Goals. Saat ini: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
+          Free plan: up to {FREE_PLAN_LIMITS.savingGoals} savings. Currently: {goals.length}/{FREE_PLAN_LIMITS.savingGoals}.
         </div>
       )}
 
@@ -220,7 +259,7 @@ export default function TabunganPage() {
         </div>
         <div className="savings-tabs-action">
           <AppButton variant="secondary" onClick={openNewGoal}>
-            + New Goal
+            + New Saving
           </AppButton>
         </div>
       </div>
@@ -229,40 +268,72 @@ export default function TabunganPage() {
       {sortedGoals.length === 0 ? (
         <EmptyState
           icon={<AppIcon name="saving" size={24} />}
-          title="No goals in this category yet"
+          title="No savings in this category yet"
           action={
             tab === "active" ? (
               <AppButton onClick={openNewGoal}>
-                + Add First Goal
+                + Add First Saving
               </AppButton>
             ) : undefined
           }
         >
-          Your goals will appear here based on the selected status.
+          Your savings will appear here based on the selected status.
         </EmptyState>
-      ) : tab === "active" ? (
-        <>
-          <GoalSection
-            title="Focus"
-            subtitle="Your main planning priorities this period."
-            items={focusGoals}
-            tone="focus"
-          />
-          <GoalSection
-            title="All Goals"
-            subtitle="Sorted automatically by priority — most urgent first."
-            items={restGoals}
-            tone="neutral"
-          />
-        </>
       ) : (
-        <div className="savings-goal-list">{restGoals.map(renderGoal)}</div>
+        groups.map(([name, items]) => (
+          <ParentGroup key={name || "__none"} name={name} items={items} />
+        ))
+      )}
+
+      {renameTarget && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setRenameTarget(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(17,24,39,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+        >
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "20px", width: "100%", maxWidth: "340px", boxShadow: "0 20px 50px rgba(0,0,0,.25)" }}>
+            <div style={{ fontSize: "15px", fontWeight: 800, color: "#111827", marginBottom: "10px" }}>Rename category</div>
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e4e1d9", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", background: "#f9fafb", color: "#111827", marginBottom: "16px" }}
+            />
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setRenameTarget(null)}
+                style={{ border: "1.5px solid #e3e7ee", background: "#fff", color: "#374151", fontWeight: 700, borderRadius: "9px", padding: "8px 16px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const v = renameValue.trim();
+                  if (v && v !== renameTarget) retagParent(renameTarget, v);
+                  setRenameTarget(null);
+                }}
+                style={{ border: "none", background: "#1a5c42", color: "#fff", fontWeight: 700, borderRadius: "9px", padding: "8px 16px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteParentName && (
+        <ConfirmDialog
+          title="Delete category?"
+          message={<>Delete the &ldquo;{deleteParentName}&rdquo; category? Its savings move to Uncategorized — the savings themselves are not deleted.</>}
+          confirmLabel="Delete"
+          onConfirm={() => { retagParent(deleteParentName, null); setDeleteParentName(null); }}
+          onCancel={() => setDeleteParentName(null)}
+        />
       )}
 
       {limitNotice && (
         <ConfirmDialog
-          title="Goal limit reached"
-          message={<>The Free plan allows up to {FREE_PLAN_LIMITS.savingGoals} goals. Upgrade to Premium for unlimited goals.</>}
+          title="Saving limit reached"
+          message={<>The Free plan allows up to {FREE_PLAN_LIMITS.savingGoals} savings. Upgrade to Premium for unlimited savings.</>}
           confirmLabel="OK"
           onConfirm={() => setLimitNotice(false)}
           onCancel={() => setLimitNotice(false)}
@@ -272,6 +343,7 @@ export default function TabunganPage() {
       {showNew && (
         <GoalModal
           goal={null}
+          parents={parentNames}
           onSave={(data) => {
             addGoal(data);
             setShowNew(false);
@@ -282,6 +354,7 @@ export default function TabunganPage() {
       {editGoal && (
         <GoalModal
           goal={editGoal}
+          parents={parentNames}
           onSave={(data) => {
             updateGoal(editGoal.id, data);
             setEditGoal(null);
