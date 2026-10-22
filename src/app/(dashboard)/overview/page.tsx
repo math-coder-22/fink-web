@@ -6,6 +6,7 @@ import { useMonthContext, MONTH_NAMES, MONTHS_ORDER } from '@/components/layout/
 import { useBulanan } from '@/hooks/useBulanan'
 import { useSavings } from '@/hooks/useSavings'
 import { AppIcon, SectionCard, SectionHeader, PremiumLockCard, MetricCard as DesignMetricCard } from '@/components/ui/design'
+import CheckupCard from '@/components/dashboard/CheckupCard'
 import { useSubscription } from '@/hooks/useSubscription'
 import type { BudgetCategory, IncomeCategory, SavingRow, DebtRow, Transaction } from '@/types/database'
 import type { SavingsGoal } from '@/types/savings'
@@ -612,7 +613,7 @@ const QuickActionsSection = memo(function QuickActionsSection() {
   const actions = [
     { href:'/journal', icon:'transactions' as const, title:'Add Transaction', note:'Catat pemasukan atau pengeluaran' },
     { href:'/goals', icon:'goals' as const, title:'Update Goal', note:'Perbarui progres target keluarga' },
-    { href:'/advisor', icon:'advisor' as const, title:'Financial Checkup', note:'Lihat diagnosis dan saran FiNK' },
+    { href:'/overview#financial-checkup', icon:'advisor' as const, title:'Financial Checkup', note:'Lihat diagnosis dan saran FiNK' },
   ]
   return (
     <div className="overview-quick-actions" style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12, marginBottom:14 }}>
@@ -635,46 +636,6 @@ const QuickActionsSection = memo(function QuickActionsSection() {
     </div>
   )
 })
-
-const InsightPanel = memo(function InsightPanel({ insight, savingRate, expenseRate, emergencyMonths, monthlySurplus }: { insight: string; savingRate: number; expenseRate: number; emergencyMonths: number | null; monthlySurplus: number }) {
-  const alerts: { text: string; tone: 'good' | 'warn' | 'danger' }[] = []
-  if (monthlySurplus < 0) alerts.push({ text:'Cash flow bulan ini negatif. Cek kategori terbesar sebelum menambah alokasi baru.', tone:'danger' })
-  if (expenseRate > 80) alerts.push({ text:'Expense rate melewati 80% pemasukan. Ruang napas keuangan mulai sempit.', tone:'warn' })
-  if (savingRate >= 20) alerts.push({ text:'Saving rate sudah sehat. Pertahankan pola alokasi ini.', tone:'good' })
-  else if (savingRate > 0) alerts.push({ text:'Saving rate masih bisa dinaikkan bertahap menuju 20%.', tone:'warn' })
-  if (emergencyMonths !== null) {
-    if (emergencyMonths >= 6) alerts.push({ text:'Dana darurat sudah kuat untuk kebutuhan dasar beberapa bulan.', tone:'good' })
-    else if (emergencyMonths < 3) alerts.push({ text:'Dana darurat masih perlu diprioritaskan hingga minimal 3 bulan.', tone:'warn' })
-  }
-  const visibleAlerts = alerts.slice(0, 3)
-
-  return (
-    <Card style={{ marginBottom:'14px', borderRadius:18 }}>
-      <div style={{ padding:'16px', display:'grid', gridTemplateColumns:'minmax(0, 1.15fr) minmax(260px, .85fr)', gap:14, alignItems:'stretch' }} className="overview-insight-grid">
-        <div style={{ display:'flex', alignItems:'flex-start', gap:'12px' }}>
-          <div style={{ width:'38px', height:'38px', borderRadius:'13px', background:'#e8f5ef', color:'#1a5c42', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><AppIcon name="insight" size={18} /></div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:'13px', fontWeight:900, color:'#111827', marginBottom:'4px' }}>This Month Insight</div>
-            <div style={{ fontSize:'12.5px', color:'#4b5563', lineHeight:1.6 }}>{insight}</div>
-          </div>
-        </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          {visibleAlerts.length === 0 ? (
-            <div style={{ fontSize:12, color:'#94a3b8' }}>FiNK akan menampilkan catatan penting setelah data bulan ini lebih lengkap.</div>
-          ) : visibleAlerts.map((a, idx) => {
-            const color = a.tone === 'good' ? '#15803d' : a.tone === 'danger' ? '#b91c1c' : '#b7791f'
-            const bg = a.tone === 'good' ? '#f0fdf4' : a.tone === 'danger' ? '#fef2f2' : '#fffbeb'
-            return <div key={idx} style={{ border:`1px solid ${color}22`, background:bg, borderRadius:12, padding:'9px 11px', fontSize:11.5, color, lineHeight:1.4, fontWeight:700 }}>{a.text}</div>
-          })}
-        </div>
-      </div>
-      <style>{`
-        @media (max-width: 820px) { .overview-insight-grid { grid-template-columns: 1fr !important; } }
-      `}</style>
-    </Card>
-  )
-})
-
 
 function DashboardPremiumLock() {
   return (
@@ -1870,7 +1831,7 @@ const { curMonth, curYear } = useMonthContext()
       />
 
       {/* Financial insights */}
-      <InsightPanel insight={insight} savingRate={savingRate} expenseRate={expenseRate} emergencyMonths={emergencyMonths} monthlySurplus={monthlySurplusAfterUnpaid} />
+      <CheckupCard />
 
       {/* Hero daily progress */}
       <div className="overview-hero-chart" style={{ marginBottom:14 }}>
