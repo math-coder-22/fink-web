@@ -224,6 +224,16 @@ html, body {
   box-shadow: 0 1px 4px rgba(0,0,0,.1);
   font-weight: 800;
 }
+.fink-skeleton {
+  background: #e9edf3;
+  border-radius: 12px;
+  animation: finkPulse 1.2s ease-in-out infinite;
+}
+@keyframes finkPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
 .wealth-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 232px;
