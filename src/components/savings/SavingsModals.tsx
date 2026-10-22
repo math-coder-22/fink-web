@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SavingsGoal } from "@/types/savings";
 import { AppIcon } from "@/components/ui/design";
@@ -8,17 +8,38 @@ import { AppIcon } from "@/components/ui/design";
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
 
+// Amount inputs keep a digits-only state value but DISPLAY grouped with
+// thousand separators (e.g. 500000 -> "500.000") while typing.
+const digitsOnly = (v: string) => v.replace(/\D/g, "");
+const fmtDigits = (v: string) => (v ? Number(v).toLocaleString("id-ID") : "");
+
+// Escape closes a modal exactly like a backdrop click: only when it has no
+// unsaved input (the same dirty guard the backdrop uses).
+function useEscapeClose(isDirty: boolean, onClose: () => void) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDirty) onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isDirty, onClose]);
+}
+
 export function TopupModal({
   goal,
+  initialAmount,
   onConfirm,
   onClose,
 }: {
   goal: SavingsGoal;
+  initialAmount?: number;
   onConfirm: (amt: number, note: string) => void;
   onClose: () => void;
 }) {
-  const [amt, setAmt] = useState("");
+  const [amt, setAmt] = useState(initialAmount && initialAmount > 0 ? String(Math.round(initialAmount)) : "");
   const [note, setNote] = useState("");
+  const isDirty = amt !== "" || note !== "";
+  useEscapeClose(isDirty, onClose);
   const inp: CSSProperties = {
     width: "100%",
     padding: "9px 12px",
@@ -31,7 +52,7 @@ export function TopupModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
@@ -95,7 +116,7 @@ export function TopupModal({
         >
           <div style={{ fontSize: "13px", fontWeight: 600 }}>{goal.name}</div>
           <div style={{ fontSize: "12px", color: "#9ca3af" }}>
-            Terkumpul: {fmt(goal.current)} / {fmt(goal.target)}
+            Saved: {fmt(goal.current)} / {fmt(goal.target)}
           </div>
           <div>
             <label
@@ -113,11 +134,11 @@ export function TopupModal({
             </label>
             <input
               autoFocus
-              type="number"
-              min="0"
+              type="text"
+              inputMode="numeric"
               placeholder="500.000"
-              value={amt}
-              onChange={(e) => setAmt(e.target.value)}
+              value={fmtDigits(amt)}
+              onChange={(e) => setAmt(digitsOnly(e.target.value))}
               style={{
                 ...inp,
                 fontFamily: "var(--font-mono), monospace",
@@ -141,29 +162,35 @@ export function TopupModal({
             </label>
             <input
               type="text"
-              placeholder="Gaji bulan ini..."
+              placeholder="This month's salary..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={inp}
             />
           </div>
           <button
+            disabled={!(parseFloat(amt) > 0)}
             onClick={() =>
               parseFloat(amt) > 0 && onConfirm(parseFloat(amt), note)
             }
             style={{
-              background: "#1a5c42",
+              background: parseFloat(amt) > 0 ? "#1a5c42" : "#9ca3af",
               color: "#fff",
               border: "none",
               padding: "10px",
               borderRadius: "8px",
               fontSize: "14px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: parseFloat(amt) > 0 ? "pointer" : "not-allowed",
             }}
           >
             Deposit {amt ? fmt(parseFloat(amt) || 0) : "Fund"}
           </button>
+          {amt !== "" && !(parseFloat(amt) > 0) && (
+            <div style={{ fontSize: "11.5px", color: "#b91c1c", marginTop: "-4px" }}>
+              Enter an amount above Rp 0.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -182,6 +209,8 @@ export function WithdrawModal({
   const [amt, setAmt] = useState("");
   const [note, setNote] = useState("");
   const [all, setAll] = useState(false);
+  const isDirty = amt !== "" || note !== "" || all;
+  useEscapeClose(isDirty, onClose);
   const actualAmt = all ? goal.current : parseFloat(amt) || 0;
   const inp: CSSProperties = {
     width: "100%",
@@ -195,7 +224,7 @@ export function WithdrawModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
@@ -301,12 +330,11 @@ export function WithdrawModal({
               </label>
               <input
                 autoFocus
-                type="number"
-                min="0"
-                max={goal.current}
+                type="text"
+                inputMode="numeric"
                 placeholder="500.000"
-                value={amt}
-                onChange={(e) => setAmt(e.target.value)}
+                value={fmtDigits(amt)}
+                onChange={(e) => setAmt(digitsOnly(e.target.value))}
                 style={{
                   ...inp,
                   fontFamily: "var(--font-mono), monospace",
@@ -342,7 +370,7 @@ export function WithdrawModal({
             </label>
             <input
               type="text"
-              placeholder="Dipakai untuk..."
+              placeholder="Used for..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               style={inp}
@@ -387,7 +415,11 @@ export function ReconcileModal({
   onClose: () => void;
 }) {
   const [actual, setActual] = useState(String(Math.round(goal.current || 0)));
-  const [note, setNote] = useState("Reconcile saldo tabungan");
+  const [note, setNote] = useState("Savings balance reconcile");
+  const isDirty =
+    actual !== String(Math.round(goal.current || 0)) ||
+    note !== "Savings balance reconcile";
+  useEscapeClose(isDirty, onClose);
   const actualNumber = parseFloat(actual) || 0;
   const diff = actualNumber - goal.current;
   const inp: CSSProperties = {
@@ -403,7 +435,7 @@ export function ReconcileModal({
   return (
     <div
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDirty) onClose();
       }}
       style={{
         position: "fixed",
@@ -439,12 +471,12 @@ export function ReconcileModal({
             <div
               style={{ fontSize: "15px", fontWeight: 700, color: "#92400e" }}
             >
-              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Saldo</span>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:7 }}><AppIcon name="scale" size={15} />Reconcile Balance</span>
             </div>
             <div
               style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}
             >
-              Sesuaikan saldo aktual Smart Saving
+              Adjust the actual savings balance
             </div>
           </div>
           <button
@@ -501,7 +533,7 @@ export function ReconcileModal({
                   letterSpacing: ".5px",
                 }}
               >
-                Saldo App
+                App Balance
               </div>
               <div
                 style={{
@@ -531,7 +563,7 @@ export function ReconcileModal({
                   letterSpacing: ".5px",
                 }}
               >
-                Selisih
+                Difference
               </div>
               <div
                 style={{
@@ -559,14 +591,14 @@ export function ReconcileModal({
                 letterSpacing: ".5px",
               }}
             >
-              Saldo Aktual Saat Ini (Rp)
+              Actual Current Balance (Rp)
             </label>
             <input
               autoFocus
-              type="number"
-              min="0"
-              value={actual}
-              onChange={(e) => setActual(e.target.value)}
+              type="text"
+              inputMode="numeric"
+              value={fmtDigits(actual)}
+              onChange={(e) => setActual(digitsOnly(e.target.value))}
               style={{
                 ...inp,
                 fontFamily: "var(--font-mono), monospace",
@@ -586,7 +618,7 @@ export function ReconcileModal({
                 letterSpacing: ".5px",
               }}
             >
-              Keterangan
+              Note
             </label>
             <input
               type="text"
@@ -613,13 +645,13 @@ export function ReconcileModal({
                 actualNumber >= 0 && diff !== 0 ? "pointer" : "not-allowed",
             }}
           >
-            Simpan Reconcile
+            Save Reconcile
           </button>
           <div
             style={{ fontSize: "11.5px", color: "#9ca3af", lineHeight: 1.5 }}
           >
-            Jika saldo aktual lebih besar, riwayat akan menjadi setor dana. Jika
-            lebih kecil, riwayat akan menjadi tarik dana.
+            If the actual balance is higher, the history entry becomes a deposit. If
+            lower, it becomes a withdrawal.
           </div>
         </div>
       </div>
@@ -627,67 +659,3 @@ export function ReconcileModal({
   );
 }
 
-export function SummaryCard({
-  summary,
-}: {
-  summary: {
-    totalTarget: number;
-    totalCollected: number;
-    totalMonthly: number;
-    pct: number;
-    count: number;
-  };
-}) {
-  const { totalTarget, totalCollected, totalMonthly, pct, count } = summary;
-  return (
-    <div className="savings-summary-card">
-      <div className="savings-summary-top">
-        <div className="savings-summary-block">
-          <div className="savings-summary-label">Total Dana Terkumpul</div>
-          <div className="savings-summary-value">{fmt(totalCollected)}</div>
-          <div className="savings-summary-note">dari {fmt(totalTarget)}</div>
-        </div>
-
-        <div className="savings-summary-block">
-          <div className="savings-summary-label">Kebutuhan/Bulan</div>
-          <div className="savings-summary-value">{fmt(totalMonthly)}</div>
-          <div className="savings-summary-note">{count} goal aktif</div>
-        </div>
-
-        <div className="savings-summary-progress-wrap">
-          <div className="savings-summary-label">Progress Keseluruhan</div>
-          <div className="savings-progress-line">
-            <div
-              className="savings-progress-fill"
-              style={{ width: `${Math.min(100, pct)}%` }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "10.5px",
-              opacity: 0.74,
-            }}
-          >
-            <span>Akumulasi semua target</span>
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontWeight: 800,
-              }}
-            >
-              {Math.round(pct)}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="savings-summary-tip">
-        {count === 0
-          ? "Belum ada goal aktif. Tambah goal untuk mulai merencanakan tabungan."
-          : `Butuh ${fmt(totalMonthly)}/bulan untuk mencapai semua ${count} target aktif.`}
-      </div>
-    </div>
-  );
-}

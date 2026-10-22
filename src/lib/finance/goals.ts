@@ -75,26 +75,26 @@ const PRIORITY_WEIGHT: Record<GoalPriorityLevel, number> = {
 
 export function goalTypeLabel(type: SavingsGoal['type']) {
   const map: Record<SavingsGoal['type'], string> = {
-    darurat: 'Dana Darurat',
-    darurat_lanjutan: 'Dana Darurat', // legacy
-    rumah: 'Rumah',
-    kendaraan: 'Kendaraan',
-    pendidikan: 'Pendidikan',
-    pensiun: 'Pensiun',
-    investasi: 'Investasi',
-    biasa: 'Tabungan Umum',
+    darurat: 'Emergency Fund',
+    darurat_lanjutan: 'Emergency Fund', // legacy
+    rumah: 'Home',
+    kendaraan: 'Vehicle',
+    pendidikan: 'Education',
+    pensiun: 'Retirement',
+    investasi: 'Investment',
+    biasa: 'General Savings',
   }
-  return map[type] || 'Tabungan Umum'
+  return map[type] || 'General Savings'
 }
 
 export function priorityLabel(priority: GoalPriorityLevel) {
   const map: Record<GoalPriorityLevel, string> = {
-    critical: 'Kritis',
-    high: 'Tinggi',
-    medium: 'Sedang',
-    low: 'Rendah',
-    maintain: 'Pertahankan',
-    paused: 'Ditunda',
+    critical: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    maintain: 'Maintain',
+    paused: 'Paused',
   }
   return map[priority]
 }
@@ -125,7 +125,7 @@ function fmt(n: number) {
 }
 
 function monthLabel(months: number | null) {
-  if (months === null || !Number.isFinite(months) || months <= 0) return 'Belum ada estimasi'
+  if (months === null || !Number.isFinite(months) || months <= 0) return 'No estimate yet'
   const m = Math.ceil(months)
   if (m <= 1) return 'About 1 month'
   if (m < 12) return `About ${m} months`
@@ -210,22 +210,22 @@ function feasibilityFromAllocation(goal: SavingsGoal, monthlyNeeded: number, sug
 }
 
 function feasibilityMessage(goal: SavingsGoal, status: GoalFeasibilityStatus, idealMonthly: number, suggestedMonthly: number, eta: string) {
-  if (status === 'complete') return 'Target ini sudah selesai. Simpan sebagai referensi atau pindahkan ke daftar target selesai.'
-  if (status === 'unknown') return 'FiNK membutuhkan alokasi bulanan agar estimasi target ini lebih akurat.'
-  if (status === 'realistic') return `Target ini masih cukup realistis dengan pola alokasi saat ini. Estimated completion: ${eta}.`
-  if (status === 'aggressive') return `Timeline ini masih memungkinkan, tetapi membutuhkan konsistensi alokasi. Alokasi ideal berada di sekitar ${fmt(idealMonthly)} per month.`
-  return `Timeline ini kemungkinan cukup berat dengan kapasitas alokasi saat ini. Pertimbangkan untuk meningkatkan pemasukan, memperpanjang timeline, atau menyesuaikan nilai target.`
+  if (status === 'complete') return 'This goal is complete. Keep it as a reference or move it to your completed list.'
+  if (status === 'unknown') return 'FiNK needs a monthly allocation to estimate this goal more accurately.'
+  if (status === 'realistic') return `This goal looks realistic with your current allocation pattern. Estimated completion: ${eta}.`
+  if (status === 'aggressive') return `This timeline is possible but needs allocation consistency. The ideal allocation is around ${fmt(idealMonthly)} per month.`
+  return `This timeline looks heavy for your current allocation capacity. Consider increasing income, extending the timeline, or adjusting the target value.`
 }
 
 export function goalRecommendation(goal: SavingsGoal, calc: GoalCalcResult, priority: GoalPriorityLevel, health: GoalHealthStatus, allGoals: SavingsGoal[] = [], suggestedMonthly?: number) {
   const monthlyNeeded = Math.round(calc.monthlyNeeded || 0)
   const monthly = Math.round(suggestedMonthly ?? goal.monthly ?? 0)
 
-  if (health === 'complete') return 'Target sudah selesai. Simpan sebagai referensi atau pindahkan ke daftar target selesai.'
-  if (priority === 'paused') return 'Biarkan target ini dalam status jeda sampai fondasi keuangan yang lebih penting sudah stabil.'
+  if (health === 'complete') return 'Goal complete. Keep it as a reference or move it to your completed list.'
+  if (priority === 'paused') return 'Keep this goal paused until your more important financial foundations are stable.'
   if (goal.type === 'darurat') {
     const coverage = calc.coverage ?? emergencyCoverage(goal)
-    if (coverage < 3) return 'Prioritaskan target ini hingga mampu menutupi minimal 3 bulan pengeluaran.'
+    if (coverage < 3) return 'Prioritize this goal until it covers at least 3 months of expenses.'
     if (coverage < 6) return 'Continue building this until it reaches the safer 6-month zone.'
     return 'Primary emergency fund is safe. Maintain it and avoid overfunding cash.'
   }
@@ -233,29 +233,29 @@ export function goalRecommendation(goal: SavingsGoal, calc: GoalCalcResult, prio
     const primary = getPrimaryEmergency(allGoals, goal.id)
     const primaryCoverage = primary ? emergencyCoverage(primary) : 6
     if (primaryCoverage < 6) return 'Keep this secondary buffer lower priority until the primary emergency fund reaches 6 months.'
-    if ((calc.progress || 0) >= 0.5) return 'Cadangan lanjutan ini sudah memiliki dasar yang cukup baik. Pertahankan secara bertahap sambil memprioritaskan target yang lebih penting.'
+    if ((calc.progress || 0) >= 0.5) return 'This extended buffer has a solid base. Maintain it gradually while prioritizing more important goals.'
     return 'Add gradually as a conservative buffer after the primary emergency fund is safe.'
   }
-  if (priority === 'maintain') return 'Target ini sudah berada di zona cukup aman. Pertahankan alokasi saat ini tanpa menjadikannya prioritas berlebihan.'
-  if (monthlyNeeded > 0 && monthly < monthlyNeeded * 0.9) return `Alokasi ideal berada di sekitar ${fmt(monthlyNeeded)} per bulan, tetapi FiNK dapat menyusun ritme yang lebih realistis berdasarkan pemasukan.`
-  if (monthly > 0 && monthly >= monthlyNeeded) return `Alokasi saat ini sebesar ${fmt(monthly)} sudah cukup untuk timeline yang dipilih.`
-  if (goal.type === 'pensiun' || goal.type === 'investasi') return 'Pertahankan alokasi yang stabil. Target ini penting, tetapi jangan sampai menggeser target jangka pendek yang lebih mendesak.'
-  return 'Tetapkan alokasi bulanan agar FiNK dapat memperkirakan timeline target dengan lebih akurat.'
+  if (priority === 'maintain') return 'This goal is already in a safe zone. Maintain the current allocation without over-prioritizing it.'
+  if (monthlyNeeded > 0 && monthly < monthlyNeeded * 0.9) return `The ideal allocation is around ${fmt(monthlyNeeded)} per month, but FiNK can arrange a more realistic rhythm based on your income.`
+  if (monthly > 0 && monthly >= monthlyNeeded) return `Your current allocation of ${fmt(monthly)} is enough for the chosen timeline.`
+  if (goal.type === 'pensiun' || goal.type === 'investasi') return 'Keep a stable allocation. This goal matters, but not at the expense of more urgent short-term goals.'
+  return 'Set a monthly allocation so FiNK can estimate the goal timeline more accurately.'
 }
 
 export function goalReason(goal: SavingsGoal, calc: GoalCalcResult, priority: GoalPriorityLevel, allGoals: SavingsGoal[] = []) {
   const mode = goal.priorityMode || 'auto'
-  if (mode === 'manual') return 'Prioritas target ini diatur secara manual oleh pengguna.'
-  if (goal.type === 'darurat') return 'Dana darurat adalah fondasi utama sebelum mengejar target tambahan.'
+  if (mode === 'manual') return 'This goal priority is set manually by you.'
+  if (goal.type === 'darurat') return 'An emergency fund is the main foundation before chasing additional goals.'
   if (goal.type === 'darurat_lanjutan') {
     const primary = getPrimaryEmergency(allGoals, goal.id)
     const primaryCoverage = primary ? emergencyCoverage(primary) : 6
     if (primaryCoverage < 6) return 'Primary emergency fund is not yet fully safe, so this extended buffer stays lower priority.'
     return 'Extended emergency is a secondary buffer; it is useful, but not always the main focus.'
   }
-  if (priority === 'high') return 'Target ini cukup sensitif terhadap waktu atau tertinggal dari kecepatan menabung saat ini.'
-  if (priority === 'low' || priority === 'maintain') return 'Target ini dapat berjalan pelan-pelan sambil mendahulukan target dengan prioritas lebih tinggi.'
-  return 'Berdasarkan timeline, progres, jenis target, dan alokasi bulanan saat ini.'
+  if (priority === 'high') return 'This goal is time-sensitive or lagging behind the current saving pace.'
+  if (priority === 'low' || priority === 'maintain') return 'This goal can move slowly while higher-priority goals come first.'
+  return 'Based on timeline, progress, goal type, and current monthly allocation.'
 }
 
 export function buildGoalAdvisorItem(goal: SavingsGoal, calc: GoalCalcResult, allGoals: SavingsGoal[] = [], suggestedMonthly?: number): GoalAdvisorItem {
@@ -350,11 +350,11 @@ export function applyIncomeAwareGoalPlan(items: GoalAdvisorItem[], safeCapacity:
       feasibilityMessage: feasibilityMessage({ status: item.health === 'complete' ? 'complete' : 'active' } as SavingsGoal, feasibility, item.idealMonthly, suggestedMonthly, realisticEtaLabel),
       allocationGap: Math.max(0, item.idealMonthly - suggestedMonthly),
       recommendation: feasibility === 'unrealistic'
-        ? 'Timeline ini mungkin membutuhkan tambahan pemasukan, waktu yang lebih panjang, atau nilai target yang lebih realistis agar tetap sehat.'
+        ? 'This timeline may need extra income, a longer timeline, or a more realistic target value to stay healthy.'
         : feasibility === 'aggressive'
-          ? `Alokasi yang realistis bulan ini sekitar ${fmt(suggestedMonthly)}. Tetap beri ruang fleksibilitas pada timeline target.`
+          ? `A realistic allocation this month is around ${fmt(suggestedMonthly)}. Keep some flexibility in the target timeline.`
           : suggestedMonthly > 0
-            ? `Alokasikan sekitar ${fmt(suggestedMonthly)} bulan ini agar target tetap bergerak maju.`
+            ? `Allocate around ${fmt(suggestedMonthly)} this month to keep the goal moving forward.`
             : item.recommendation,
     }
   })
@@ -367,12 +367,12 @@ export function applyIncomeAwareGoalPlan(items: GoalAdvisorItem[], safeCapacity:
   else if (totalIdealMonthly > safe) status = 'stretched'
 
   const message = status === 'healthy'
-    ? 'Struktur pemasukan saat ini masih mampu mendukung timeline target dengan disiplin alokasi yang wajar.'
+    ? 'Your current income comfortably supports the goal timelines with disciplined allocation.'
     : status === 'stretched'
       ? 'Some timelines are ambitious. FiNK will prioritize the most important goals first and keep the plan realistic.'
       : status === 'overloaded'
-        ? 'Target aktif Anda membutuhkan alokasi lebih besar daripada kapasitas aman pemasukan saat ini. Tambahan pemasukan, timeline yang lebih panjang, atau jumlah target fokus yang lebih sedikit dapat membantu.'
-        : 'Kapasitas alokasi aman bulan ini belum cukup. Stabilkan arus kas terlebih dahulu sebelum mempercepat target.'
+        ? 'Your active goals need more allocation than your current safe income capacity. Extra income, longer timelines, or fewer focus goals can help.'
+        : 'Safe allocation capacity is not enough this month. Stabilize cash flow first before accelerating goals.'
 
   return {
     items: planned,

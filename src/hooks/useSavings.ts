@@ -492,7 +492,7 @@ export function useSavings() {
   );
 
   const reconcileGoal = useCallback(
-    async (id: string, actual: number, note = "Reconcile saldo tabungan") => {
+    async (id: string, actual: number, note = "Savings balance reconcile") => {
       if (!userId) return;
       const next = goals.map((g) => {
         if (g.id !== id) return g;
@@ -503,7 +503,7 @@ export function useSavings() {
           id: uid(),
           type: diff > 0 ? "topup" : "withdraw",
           amount: Math.abs(diff),
-          note: note || `Reconcile saldo ke ${safeActual.toLocaleString("id-ID")}`,
+          note: note || `Reconcile balance to ${safeActual.toLocaleString("id-ID")}`,
           date: new Date().toISOString(),
         };
         const status =
@@ -559,6 +559,22 @@ export function useSavings() {
     };
   }, [goals]);
 
+  // Bulk-set the parent (account/category) label: rename a category
+  // (to = new name) or delete it (to = null → children become Uncategorized).
+  const retagParent = useCallback(
+    async (from: string, to: string | null) => {
+      if (!userId) return;
+      const updatedAt = new Date().toISOString();
+      const next = goals.map((g) =>
+        (g.parent || "").trim() === from
+          ? { ...g, parent: to ? to : undefined, updatedAt }
+          : g,
+      );
+      await persistAll(next);
+    },
+    [goals, persistAll, userId],
+  );
+
   return {
     goals,
     loaded,
@@ -568,6 +584,7 @@ export function useSavings() {
     addGoal,
     updateGoal,
     deleteGoal,
+    retagParent,
     topupGoal,
     withdrawGoal,
     reconcileGoal,

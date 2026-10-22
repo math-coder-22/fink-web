@@ -1,9 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { SavingsGoal, GoalType } from '@/types/savings'
 import { futureValue } from '@/hooks/useSavings'
 import { AppIcon } from '@/components/ui/design'
+
+// Money inputs display thousand separators while typing; the form state
+// keeps plain numbers (sanitize on change).
+const digitsOnly = (v: string) => v.replace(/\D/g, '')
+const fmtMoney = (n: number) => (n ? n.toLocaleString('id-ID') : '')
 
 const inp: React.CSSProperties = {
   width:'100%', padding:'9px 12px', border:'1.5px solid #e4e1d9', borderRadius:'8px',
@@ -21,7 +26,7 @@ const row: React.CSSProperties = { display:'grid', gridTemplateColumns:'1fr 1fr'
 type FormData = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt'>
 
 const defaultForm = (): FormData => ({
-  name:'', type:'biasa', status:'active',
+  name:'', parent:'', type:'biasa', status:'active',
   target:0, current:0, monthly:0, deadline:'',
   useInvest:false, returnRate:8,
   expense:0, coverageTarget:6,
@@ -35,25 +40,41 @@ const defaultForm = (): FormData => ({
 
 interface Props {
   goal:    SavingsGoal | null   // null = tambah baru
+  parents?: string[]
   onSave:  (data: FormData) => void
   onClose: () => void
 }
 
-export default function GoalModal({ goal, onSave, onClose }: Props) {
+export default function GoalModal({ goal, parents = [], onSave, onClose }: Props) {
   const [form, setForm] = useState<FormData>(defaultForm())
+  const initialRef = useRef<FormData | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
     if (goal) {
       const { id, createdAt, updatedAt, ...rest } = goal
-      setForm({ ...defaultForm(), ...rest })
+      const populated = { ...defaultForm(), ...rest }
+      setForm(populated)
+      initialRef.current = populated
     } else {
-      setForm(defaultForm())
+      const fresh = defaultForm()
+      setForm(fresh)
+      initialRef.current = fresh
     }
   }, [goal])
 
   function set<K extends keyof FormData>(k: K, v: FormData[K]) {
+    setDirty(true)
     setForm(prev => ({ ...prev, [k]: v }))
   }
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !dirty) onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [dirty, onClose])
 
   function handleTypeChange(t: GoalType) {
     set('type', t)
@@ -71,15 +92,18 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    let finalForm = { ...form }
+    let finalForm = { ...form, parent: (form.parent || '').trim() || undefined }
 
-    // Auto-hitung target pendidikan dari inflasi
-    if (form.type === 'pendidikan' && form.eduCurrent && form.deadline) {
+    // Auto-hitung target pendidikan dari inflasi — hanya jika field setup-nya diubah
+    const init = initialRef.current
+    const eduSetupChanged = !init || init.eduCurrent !== form.eduCurrent || init.eduInflasi !== form.eduInflasi || init.deadline !== form.deadline
+    if (form.type === 'pendidikan' && eduSetupChanged && form.eduCurrent && form.deadline) {
       const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       finalForm.target = futureValue(form.eduCurrent, form.eduInflasi || 8, years)
     }
-    // Auto-hitung target pensiun: 25x annual expense
-    if (form.type === 'pensiun' && form.pensionExp && form.deadline) {
+    // Auto-hitung target pensiun: 25x annual expense — hanya jika field setup-nya diubah
+    const pensionSetupChanged = !init || init.pensionExp !== form.pensionExp || init.pensionInflasi !== form.pensionInflasi || init.deadline !== form.deadline
+    if (form.type === 'pensiun' && pensionSetupChanged && form.pensionExp && form.deadline) {
       const years = Math.max(0, (new Date(form.deadline).getTime() - Date.now()) / (1000*60*60*24*365))
       const futureAnnual = futureValue(form.pensionExp * 12, form.pensionInflasi || 5, years)
       finalForm.target = 25 * futureAnnual
@@ -91,13 +115,13 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
   const isEdit = !!goal
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget && !dirty) onClose() }}
       style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
       <div style={{ background:'#fff', borderRadius:'22px', width:'100%', maxWidth:'520px', maxHeight:'90vh', overflow:'hidden', boxShadow:'0 24px 64px rgba(0,0,0,.18)' }}>
 
         {/* Header */}
         <div style={{ padding:'18px 22px', borderBottom:'1px solid #e4e1d9', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#fff' }}>
-          <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Goal' : 'Add New Goal'}</span></div>
+          <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Saving' : 'Add New Saving'}</span></div>
           <button aria-label="Close" onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
         </div>
 
@@ -105,32 +129,42 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
           {/* Nama */}
           <div>
-            <label style={lbl}>Nama Tujuan</label>
+            <label style={lbl}>Saving Name</label>
             <input required style={inp} value={form.name} placeholder="Example: Family Emergency Fund"
               onChange={e => set('name', e.target.value)} />
+          </div>
+
+          {/* Akun / Kategori (parent) */}
+          <div>
+            <label style={lbl}>Account / Category</label>
+            <input style={inp} value={form.parent || ''} placeholder="Example: Jago — leave empty for Uncategorized"
+              onChange={e => set('parent', e.target.value)} list="fink-goal-parents" autoComplete="off" />
+            <datalist id="fink-goal-parents">
+              {parents.map(p => <option key={p} value={p} />)}
+            </datalist>
+            <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'4px' }}>Groups this saving under an account, e.g. Jago, BSI, Bibit. Type a new name to create a new group.</div>
           </div>
 
           {/* Jenis + Status */}
           <div style={row}>
             <div>
-              <label style={lbl}>Jenis Tujuan</label>
+              <label style={lbl}>Goal Type</label>
               <select style={sel} value={form.type === 'darurat_lanjutan' ? 'darurat' : form.type} onChange={e => handleTypeChange(e.target.value as GoalType)}>
-                <option value="biasa">Tabungan Umum</option>
-                <option value="darurat">Dana Darurat</option>
-                <option value="rumah">Rumah</option>
-                <option value="kendaraan">Kendaraan</option>
-                <option value="pendidikan">Pendidikan</option>
-                <option value="pensiun">Pensiun</option>
-                <option value="investasi">Investasi</option>
+                <option value="biasa">General Savings</option>
+                <option value="darurat">Emergency Fund</option>
+                <option value="rumah">Home</option>
+                <option value="kendaraan">Vehicle</option>
+                <option value="pendidikan">Education</option>
+                <option value="pensiun">Retirement</option>
+                <option value="investasi">Investment</option>
               </select>
             </div>
             <div>
               <label style={lbl}>Status</label>
               <select style={sel} value={form.status} onChange={e => set('status', e.target.value as SavingsGoal['status'])}>
-                <option value="active">Aktif</option>
-                <option value="pending">Pending</option>
-                <option value="complete">Selesai</option>
-                <option value="archived">Arsip</option>
+                <option value="active">Active</option>
+                <option value="complete">Completed</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -144,26 +178,6 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <input type="checkbox" checked={!!form.focus} onChange={e => set('focus', e.target.checked)}
                 style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
             </label>
-            <div style={row}>
-              <div>
-                <label style={lbl}>Priority Mode</label>
-                <select style={sel} value={form.priorityMode || 'auto'} onChange={e => set('priorityMode', e.target.value as SavingsGoal['priorityMode'])}>
-                  <option value="auto">Auto priority</option>
-                  <option value="manual">Manual priority</option>
-                </select>
-              </div>
-              <div>
-                <label style={lbl}>Manual Priority</label>
-                <select style={sel} value={form.manualPriority || 'medium'} disabled={(form.priorityMode || 'auto') !== 'manual'} onChange={e => set('manualPriority', e.target.value as SavingsGoal['manualPriority'])}>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                  <option value="maintain">Maintain</option>
-                  <option value="paused">Paused</option>
-                </select>
-              </div>
-            </div>
           </div>
 
           {/* Dana Darurat fields */}
@@ -173,8 +187,8 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <div style={row}>
                 <div>
                   <label style={lbl}>Monthly Expenses (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="5000000" value={form.expense || ''}
-                    onChange={e => calcDaruratTarget(parseFloat(e.target.value)||0, form.coverageTarget||6)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="5.000.000" value={fmtMoney(form.expense || 0)}
+                    onChange={e => calcDaruratTarget(parseFloat(digitsOnly(e.target.value))||0, form.coverageTarget||6)} />
                 </div>
                 <div>
                   <label style={lbl}>Target Coverage (Months)</label>
@@ -195,8 +209,8 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <div style={row}>
                 <div>
                   <label style={lbl}>Current Education Cost (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="100000000" value={form.eduCurrent||''}
-                    onChange={e => set('eduCurrent', parseFloat(e.target.value)||0)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="100.000.000" value={fmtMoney(form.eduCurrent || 0)}
+                    onChange={e => set('eduCurrent', parseFloat(digitsOnly(e.target.value))||0)} />
                 </div>
                 <div>
                   <label style={lbl}>Education Inflation (%/Year)</label>
@@ -215,8 +229,8 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               <div style={row}>
                 <div>
                   <label style={lbl}>Current Monthly Expenses (Rp)</label>
-                  <input style={inp} type="number" min="0" placeholder="10000000" value={form.pensionExp||''}
-                    onChange={e => set('pensionExp', parseFloat(e.target.value)||0)} />
+                  <input style={inp} type="text" inputMode="numeric" placeholder="10.000.000" value={fmtMoney(form.pensionExp || 0)}
+                    onChange={e => set('pensionExp', parseFloat(digitsOnly(e.target.value))||0)} />
                 </div>
                 <div>
                   <label style={lbl}>Inflation (%/Year)</label>
@@ -232,22 +246,22 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
           {(['biasa','darurat','darurat_lanjutan','rumah','kendaraan','investasi'] as string[]).includes(form.type) && (
             <div>
               <label style={lbl}>Target Amount (Rp)</label>
-              <input required style={inp} type="number" min="0" placeholder="50000000" value={form.target||''}
-                onChange={e => set('target', parseFloat(e.target.value)||0)} />
+              <input required style={inp} type="text" inputMode="numeric" placeholder="50.000.000" value={fmtMoney(form.target || 0)}
+                onChange={e => set('target', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
           )}
 
-          {/* Dana terkumpul + tabungan/bln */}
+          {/* Saved + monthly saving */}
           <div style={row}>
             <div>
               <label style={lbl}>Current Balance (Rp)</label>
-              <input style={inp} type="number" min="0" value={form.current||''} placeholder="0"
-                onChange={e => set('current', parseFloat(e.target.value)||0)} />
+              <input style={inp} type="text" inputMode="numeric" value={fmtMoney(form.current || 0)} placeholder="0"
+                onChange={e => set('current', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
             <div>
               <label style={lbl}>Actual Monthly Saving (Rp)</label>
-              <input style={inp} type="number" min="0" value={form.monthly||''} placeholder="0"
-                onChange={e => set('monthly', parseFloat(e.target.value)||0)} />
+              <input style={inp} type="text" inputMode="numeric" value={fmtMoney(form.monthly || 0)} placeholder="0"
+                onChange={e => set('monthly', parseFloat(digitsOnly(e.target.value))||0)} />
             </div>
           </div>
 
@@ -258,21 +272,58 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
               onChange={e => set('deadline', e.target.value)} />
           </div>
 
-          {/* Investasi toggle */}
-          <div style={{ background:'#f7f8fa', borderRadius:'10px', padding:'12px' }}>
-            <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', gap:'12px' }}>
-              <div>
-                <div style={{ fontSize:'13px', fontWeight:600 }}>Use Investment Return</div>
-                <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'1px' }}>Calculate using investment return assumption</div>
-              </div>
-              <input type="checkbox" checked={form.useInvest} onChange={e => set('useInvest', e.target.checked)}
-                style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
-            </label>
-            {form.useInvest && (
-              <div style={{ marginTop:'10px' }}>
-                <label style={lbl}>Investment Return (%/Year)</label>
-                <input style={inp} type="number" min="0" max="50" value={form.returnRate}
-                  onChange={e => set('returnRate', parseFloat(e.target.value)||0)} />
+          {/* Advanced settings */}
+          <div style={{ border:'1px solid #e3e7ee', borderRadius:'10px', overflow:'hidden' }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(v => !v)}
+              aria-expanded={showAdvanced}
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 12px', border:'none', background: showAdvanced ? '#f7f8fa' : '#fff', cursor:'pointer', fontFamily:'inherit' }}
+            >
+              <span style={{ fontSize:'13px', fontWeight:700, color:'#374151' }}>Advanced settings</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition:'transform .15s' }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </button>
+            {showAdvanced && (
+              <div style={{ padding:'12px', display:'flex', flexDirection:'column', gap:'12px', borderTop:'1px solid #f1f5f9' }}>
+                <div style={row}>
+                  <div>
+                    <label style={lbl}>Priority Mode</label>
+                    <select style={sel} value={form.priorityMode || 'auto'} onChange={e => set('priorityMode', e.target.value as SavingsGoal['priorityMode'])}>
+                      <option value="auto">Auto priority</option>
+                      <option value="manual">Manual priority</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Manual Priority</label>
+                    <select style={sel} value={form.manualPriority || 'medium'} disabled={(form.priorityMode || 'auto') !== 'manual'} onChange={e => set('manualPriority', e.target.value as SavingsGoal['manualPriority'])}>
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                      <option value="maintain">Maintain</option>
+                      <option value="paused">Paused</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ background:'#f7f8fa', borderRadius:'10px', padding:'12px' }}>
+                  <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', gap:'12px' }}>
+                    <div>
+                      <div style={{ fontSize:'13px', fontWeight:600 }}>Use Investment Return</div>
+                      <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'1px' }}>Calculate using investment return assumption</div>
+                    </div>
+                    <input type="checkbox" checked={form.useInvest} onChange={e => set('useInvest', e.target.checked)}
+                      style={{ width:'16px', height:'16px', accentColor:'#1a5c42', flexShrink:0 }} />
+                  </label>
+                  {form.useInvest && (
+                    <div style={{ marginTop:'10px' }}>
+                      <label style={lbl}>Investment Return (%/Year)</label>
+                      <input style={inp} type="number" min="0" max="50" value={form.returnRate}
+                        onChange={e => set('returnRate', parseFloat(e.target.value)||0)} />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
