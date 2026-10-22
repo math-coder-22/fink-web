@@ -14,6 +14,15 @@ import { buildGoalAdvisorItem, goalTypeLabel } from "@/lib/finance/goals";
 const fmt = (n: number) =>
   "Rp " + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
 
+// Progress label that stays informative at both extremes: one decimal for
+// tiny shares of giant targets (0.3%, not 0%), capped at 100%.
+const fmtPct = (progress: number) => {
+  if (!Number.isFinite(progress) || progress <= 0) return "0%";
+  if (progress >= 1) return "100%";
+  const pct = progress * 100;
+  return pct < 9.95 ? pct.toFixed(1) + "%" : Math.round(pct) + "%";
+};
+
 function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
   const map = {
     complete: { bg: "#dbeafe", color: "#1e40af", label: "Complete" },
@@ -37,35 +46,6 @@ function TrackBadge({ status }: { status: GoalCalcResult["trackStatus"] }) {
       }}
     >
       {s.label}
-    </span>
-  );
-}
-
-function FeasibilityBadge({ status, label }: { status: string; label: string }) {
-  const map: Record<string, { bg: string; color: string; border: string }> = {
-    realistic: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
-    aggressive: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
-    unrealistic: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
-    unknown: { bg: "#f8fafc", color: "#475569", border: "#e2e8f0" },
-    complete: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-  };
-  const t = map[status] || map.unknown;
-  return (
-    <span
-      style={{
-        fontSize: "9.5px",
-        fontWeight: 800,
-        padding: "2px 7px",
-        borderRadius: "99px",
-        background: t.bg,
-        color: t.color,
-        border: `1px solid ${t.border}`,
-        textTransform: "uppercase" as const,
-        letterSpacing: ".3px",
-        whiteSpace: "nowrap" as const,
-      }}
-    >
-      {label}
     </span>
   );
 }
@@ -95,8 +75,17 @@ function DetailActionMenu({
     function handler(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    function keyHandler(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("mousedown", handler);
+      document.addEventListener("keydown", keyHandler);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", keyHandler);
+    };
   }, [open]);
 
   const item = (label: React.ReactNode, color: string, onClick: () => void) => (
@@ -196,7 +185,15 @@ function DetailActionMenu({
 }
 
 /* ─── HISTORY PANEL ─── */
-function HistoryPanel({ history }: { history: GoalTransaction[] }) {
+function HistoryPanel({ history, currentBalance }: { history: GoalTransaction[]; currentBalance: number }) {
+  // Running balance after each entry, reconstructed backwards from today's
+  // balance (entries are stored newest-first).
+  const totalDelta = history.reduce((a, h) => a + (h.type === "topup" ? h.amount : -h.amount), 0);
+  let running = currentBalance - totalDelta;
+  const rows = [...history].reverse().map((h) => {
+    running += h.type === "topup" ? h.amount : -h.amount;
+    return { h, balanceAfter: running };
+  });
   return (
     <div style={{ border: "1px solid #f0f0ee", borderRadius: 14, background: "#fafaf9", overflow: "hidden" }}>
       <div
@@ -230,7 +227,7 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
         </div>
       ) : (
         <div style={{ maxHeight: "260px", overflowY: "auto" as const }}>
-          {[...history].reverse().map((h, i) => (
+          {rows.map(({ h, balanceAfter }, i) => (
             <div
               key={h.id}
               style={{
@@ -267,17 +264,22 @@ function HistoryPanel({ history }: { history: GoalTransaction[] }) {
                   })}
                 </div>
               </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontWeight: 800,
-                  fontSize: "13px",
-                  color: h.type === "topup" ? "#065f46" : "#b45309",
-                  whiteSpace: "nowrap" as const,
-                }}
-              >
-                {h.type === "topup" ? "+" : "−"}
-                {fmt(h.amount)}
+              <div style={{ textAlign: "right" as const }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono), monospace",
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    color: h.type === "topup" ? "#065f46" : "#b45309",
+                    whiteSpace: "nowrap" as const,
+                  }}
+                >
+                  {h.type === "topup" ? "+" : "−"}
+                  {fmt(h.amount)}
+                </div>
+                <div style={{ fontSize: "10.5px", color: "#9ca3af", fontWeight: 600, marginTop: 2, whiteSpace: "nowrap" as const }}>
+                  Balance {fmt(balanceAfter)}
+                </div>
               </div>
             </div>
           ))}
@@ -318,6 +320,13 @@ function GoalDetailModal({
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
   if (!mounted) return null;
 
   return createPortal(
@@ -409,7 +418,7 @@ function GoalDetailModal({
             <div className="savings-goal-progress" style={{ height: 7 }}>
               <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
             </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: progColor, minWidth: 46, textAlign: "right" }}>{pct}%</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: progColor, minWidth: 46, textAlign: "right" }}>{fmtPct(calc.progress)}</div>
           </div>
 
           <div className="goal-detail-stat-grid">
@@ -427,14 +436,14 @@ function GoalDetailModal({
               {advisor.mode === "manual" ? "Manual priority" : "Auto priority"} · {advisor.reason}
             </div>
             <div style={{ marginTop: 6, fontSize: 12, color: "#64748b", fontWeight: 750, lineHeight: 1.55 }}>
-              ETA by current allocation: {advisor.etaLabel} · Ideal/month: {fmt(advisor.idealMonthly)}
+              Estimated completion: {advisor.etaLabel} · Needed/month: {fmt(advisor.idealMonthly)}
             </div>
           </div>
 
           {goal.type === "darurat" && calc.coverage !== undefined && (
             <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 750, color: calc.coverageStatus === "Risiko Tinggi" ? "#991b1b" : calc.coverageStatus === "Aman" ? "#065f46" : "#92400e" }}>
-              {calc.coverageStatus} · {calc.coverage.toFixed(1)}× pengeluaran
-              {(calc.excessDana ?? 0) > 0 && <span style={{ color: "#065f46" }}> · Kelebihan {fmt(calc.excessDana!)}</span>}
+              {calc.coverageStatus} · {calc.coverage.toFixed(1)}× monthly expenses
+              {(calc.excessDana ?? 0) > 0 && <span style={{ color: "#065f46" }}> · Excess {fmt(calc.excessDana!)}</span>}
             </div>
           )}
 
@@ -476,7 +485,7 @@ function GoalDetailModal({
           )}
 
           <div style={{ marginTop: 16 }}>
-            <HistoryPanel history={goal.history || []} />
+            <HistoryPanel history={goal.history || []} currentBalance={goal.current || 0} />
           </div>
         </div>
       </div>
@@ -561,7 +570,7 @@ function GoalCard({
           <div className="savings-goal-progress">
             <div style={{ background: progColor, width: `${Math.min(100, pct)}%` }} />
           </div>
-          <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
+          <span className="savings-goal-pct" style={{ color: progColor }}>{fmtPct(calc.progress)}</span>
         </div>
         <div className="goal-row-foot">
           <div className="goal-row-amounts">{fmt(goal.current)}{calc.targetNow > 0 && (<> <span>of</span> {fmt(calc.targetNow)}</>)}</div>
