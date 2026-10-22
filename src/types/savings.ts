@@ -17,6 +17,7 @@ export interface GoalTransaction {
 export interface SavingsGoal {
   id:          string
   name:        string
+  parent?:     string   // account/category label (e.g. "Jago", "Bibit"); empty = Uncategorized
   type:        GoalType
   status:      GoalStatus
   target:      number
