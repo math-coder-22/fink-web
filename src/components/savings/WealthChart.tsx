@@ -64,30 +64,22 @@ function balanceAt(s: GoalSeries, t: number): number {
   return v;
 }
 
-/* Chaikin corner-cutting: repeatedly cuts each segment at 25%/75%, which
-   rounds every corner into a smooth curve while staying inside the local
-   range of the data (no overshoot) and keeping both endpoints exact. */
-function chaikin(coords: [number, number][], iterations: number): [number, number][] {
-  let pts = coords;
-  for (let k = 0; k < iterations; k++) {
-    if (pts.length < 3) break;
-    const out: [number, number][] = [pts[0]];
-    for (let i = 0; i < pts.length - 1; i++) {
-      const [x1, y1] = pts[i];
-      const [x2, y2] = pts[i + 1];
-      out.push([x1 + (x2 - x1) * 0.25, y1 + (y2 - y1) * 0.25]);
-      out.push([x1 + (x2 - x1) * 0.75, y1 + (y2 - y1) * 0.75]);
+/* Step path through daily samples: the balance holds flat until the day it
+   changes, then jumps — the realistic shape of savings over time. */
+function stepCoords(coords: [number, number][]): [number, number][] {
+  const out: [number, number][] = [];
+  coords.forEach((c, i) => {
+    if (i === 0) out.push(c);
+    else {
+      out.push([c[0], coords[i - 1][1]]);
+      out.push(c);
     }
-    out.push(pts[pts.length - 1]);
-    pts = out;
-  }
-  return pts;
+  });
+  return out;
 }
 
-function linePath(coords: [number, number][]): string {
-  return chaikin(coords, 3)
-    .map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1))
-    .join(' ');
+function pathFrom(coords: [number, number][]): string {
+  return coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
 }
 
 export default function WealthChart({
@@ -150,44 +142,15 @@ export default function WealthChart({
 
     const values = pts.map((t) => cats.map((c) => c.series.reduce((a, s) => a + balanceAt(s, t), 0)));
     const totals = values.map((row) => row.reduce((a, v) => a + v, 0));
-    // Smoothed copies used ONLY for drawing the paths (tooltips, legend and
-    // the change figure keep the true values). A Gaussian kernel with sigma
-    // ~2% of the point count turns each balance step into a gentle sigmoid
-    // ease (~\u00B13 sigma wide) instead of a straight ramp with sharp knees.
-    // Endpoints stay exact.
-    const sigma = Math.max(1.2, pts.length * 0.02);
-    const radius = Math.max(1, Math.min(pts.length - 1, Math.ceil(sigma * 3)));
-    const kernel: number[] = [];
-    for (let k = -radius; k <= radius; k++) kernel.push(Math.exp(-(k * k) / (2 * sigma * sigma)));
-    const smooth = (vals: number[]): number[] => {
-      if (vals.length < 3) return vals;
-      return vals.map((_, i) => {
-        if (i === 0 || i === vals.length - 1) return vals[i];
-        let wsum = 0;
-        let vsum = 0;
-        for (let k = -radius; k <= radius; k++) {
-          const j = i + k;
-          if (j < 0 || j >= vals.length) continue;
-          const w = kernel[k + radius];
-          wsum += w;
-          vsum += vals[j] * w;
-        }
-        return vsum / wsum;
-      });
-    };
-    const totalsSmooth = smooth(totals);
-    const valuesSmooth = cats.map((_, ci) => smooth(values.map((row) => row[ci])));
-    return { start, end, pts, cats, colorOf, values, totals, totalsSmooth, valuesSmooth };
+    return { start, end, pts, cats, colorOf, values, totals };
   }, [active, range]);
 
-  const { start, end, pts, cats, values, totals, totalsSmooth, valuesSmooth } = model;
+  const { start, end, pts, cats, values, totals } = model;
   const visibleIdx = cats.map((c, i) => (hidden.has(c.name) ? -1 : i)).filter((i) => i >= 0);
   const stackTotals = pts.map((_, pi) =>
     mode === 'categories' ? visibleIdx.reduce((a, ci) => a + values[pi][ci], 0) : totals[pi],
   );
-  const drawTotals = pts.map((_, pi) =>
-    mode === 'categories' ? visibleIdx.reduce((a, ci) => a + valuesSmooth[ci][pi], 0) : totalsSmooth[pi],
-  );
+  const drawTotals = stackTotals;
   const firstTotal = stackTotals[0] ?? 0;
   const lastTotal = stackTotals[stackTotals.length - 1] ?? 0;
   const change = lastTotal - firstTotal;
@@ -211,7 +174,7 @@ export default function WealthChart({
   const y = (v: number) => padT + (1 - (v - yMin) / (yMax - yMin || 1)) * ih;
   const coordsOf = (series: number[]): [number, number][] => pts.map((t, i) => [x(t), y(series[i])]);
 
-  const totalLinePath = linePath(coordsOf(drawTotals));
+  const totalLinePath = pathFrom(stepCoords(coordsOf(drawTotals)));
   const totalAreaPath = totalLinePath + ` L${x(end).toFixed(1)},${y(yMin).toFixed(1)} L${x(start).toFixed(1)},${y(yMin).toFixed(1)} Z`;
 
   const catAreas = visibleIdx.map((ci) => {
@@ -220,13 +183,13 @@ export default function WealthChart({
     pts.forEach((_, pi) => {
       let b = 0;
       visibleIdx.forEach((vj) => {
-        if (vj < ci) b += valuesSmooth[vj][pi];
+        if (vj < ci) b += values[pi][vj];
       });
       bottom[pi] = b;
-      top[pi] = b + valuesSmooth[ci][pi];
+      top[pi] = b + values[pi][ci];
     });
-    const topPath = linePath(coordsOf(top));
-    const bottomPath = linePath(coordsOf(bottom).slice().reverse()).replace(/^M/, 'L');
+    const topPath = pathFrom(stepCoords(coordsOf(top)));
+    const bottomPath = pathFrom(stepCoords(coordsOf(bottom)).slice().reverse()).replace(/^M/, 'L');
     return { name: cats[ci].name, color: model.colorOf(cats[ci].name, ci), path: topPath + ' ' + bottomPath + ' Z' };
   });
 
