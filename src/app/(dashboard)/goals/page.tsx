@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
@@ -41,6 +41,17 @@ export default function TabunganPage() {
     error,
   } = useSavings();
   const [tab, setTab] = useState<TabKey>("active");
+  const [view, setView] = useState<"list" | "card">("list");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("fink-wallets-view");
+      if (v === "card" || v === "list") setView(v);
+    } catch {}
+  }, []);
+  const changeView = useCallback((v: "list" | "card") => {
+    setView(v);
+    try { localStorage.setItem("fink-wallets-view", v); } catch {}
+  }, []);
   const [editGoal, setEditGoal] = useState<SavingsGoal | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [topupId, setTopupId] = useState<string | null>(null);
@@ -130,6 +141,7 @@ export default function TabunganPage() {
       goal={goal}
       calc={calcById.get(goal.id) ?? calcGoal(goal)}
       monthNet={monthNetById.get(goal.id) ?? null}
+      variant={view}
       onEdit={setEditGoal}
       onTopup={(id) => { setTopupId(id); setTopupPreset(null); }}
       onQuickDeposit={(id, amount) => { setTopupId(id); setTopupPreset(amount); }}
@@ -139,7 +151,7 @@ export default function TabunganPage() {
       onDelete={deleteGoal}
       allGoals={goals}
     />
-  ), [calcById, monthNetById, changeStatus, deleteGoal, goals]);
+  ), [calcById, monthNetById, changeStatus, deleteGoal, goals, view]);
 
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -153,13 +165,12 @@ export default function TabunganPage() {
     return (
       <section style={{ marginBottom: "18px" }}>
         <div className="wallet-group-head">
-          <button className="wallet-group-title" onClick={() => toggleGroup(name)}>
-            <span className="wallet-group-chevron">{collapsed ? "\u25B8" : "\u25BE"}</span>
-            {display}
-            <span className="wallet-group-count">({items.length})</span>
-          </button>
-          <div className="wallet-group-right">
-            <span className="wallet-group-total">{"Rp " + Math.round(total).toLocaleString("id-ID")}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <button className="wallet-group-title" onClick={() => toggleGroup(name)}>
+              <span className="wallet-group-chevron">{collapsed ? "\u25B8" : "\u25BE"}</span>
+              {display}
+              <span className="wallet-group-count">({items.length})</span>
+            </button>
             {name && (
               <div className="wallet-group-menu-wrap">
                 <button
@@ -172,7 +183,7 @@ export default function TabunganPage() {
                 {groupMenu === name && (
                   <>
                     <div className="wallet-group-menu-backdrop" onClick={() => setGroupMenu(null)} />
-                    <div className="wallet-group-menu">
+                    <div className="wallet-group-menu" style={{ left: 0, right: "auto" }}>
                       <button onClick={() => { setGroupMenu(null); setRenameTarget(name); setRenameValue(name); }}>
                         Rename category
                       </button>
@@ -185,8 +196,13 @@ export default function TabunganPage() {
               </div>
             )}
           </div>
+          <span className="wallet-group-total">{"Rp " + Math.round(total).toLocaleString("id-ID")}</span>
         </div>
-        {!collapsed && <div className="savings-goal-list">{items.map(renderGoal)}</div>}
+        {!collapsed && (
+          view === "card"
+            ? <div className="savings-goal-grid">{items.map(renderGoal)}</div>
+            : <div className="savings-goal-list">{items.map(renderGoal)}</div>
+        )}
       </section>
     );
   }
@@ -257,7 +273,11 @@ export default function TabunganPage() {
             );
           })}
         </div>
-        <div className="savings-tabs-action">
+        <div className="savings-tabs-action" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="view-toggle" role="group" aria-label="View">
+            <button className={view === "list" ? "active" : ""} onClick={() => changeView("list")}>List</button>
+            <button className={view === "card" ? "active" : ""} onClick={() => changeView("card")}>Cards</button>
+          </div>
           <AppButton variant="secondary" onClick={openNewGoal}>
             + New Saving
           </AppButton>
