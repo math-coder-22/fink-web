@@ -293,7 +293,7 @@ function GoalDetailModal({
   advisor,
   pct,
   progColor,
-  suggestedMonthly = null,
+  monthNet = null,
   onClose,
   onTopup,
   onWithdraw,
@@ -307,7 +307,7 @@ function GoalDetailModal({
   advisor: ReturnType<typeof buildGoalAdvisorItem>;
   pct: number;
   progColor: string;
-  suggestedMonthly?: number | null;
+  monthNet?: number | null;
   onClose: () => void;
   onTopup: () => void;
   onWithdraw: () => void;
@@ -416,7 +416,7 @@ function GoalDetailModal({
             <div className="goal-detail-stat"><div className="savings-label">Saved</div><div className="savings-value" style={{ color: progColor }}>{fmt(goal.current)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Target</div><div className="savings-value small">{fmt(calc.targetNow)}</div></div>
             <div className="goal-detail-stat"><div className="savings-label">Gap</div><div className="savings-value small">{fmt(calc.sisa)}</div></div>
-            <div className="goal-detail-stat"><div className="savings-label">Planned this month</div><div className="savings-value" style={{ color: "#1a5c42" }}>{suggestedMonthly != null ? fmt(suggestedMonthly) : <span style={{ fontSize: 12, color: "#9ca3af" }}>Not allocated</span>}</div></div>
+            <div className="goal-detail-stat"><div className="savings-label">This month</div><div className="savings-value" style={{ color: monthNet ? (monthNet > 0 ? "#1a5c42" : "#b91c1c") : "#9ca3af" }}>{monthNet ? `${monthNet > 0 ? "+" : "−"}${fmt(monthNet)}` : <span style={{ fontSize: 12, color: "#9ca3af" }}>No activity</span>}</div></div>
           </div>
 
           <div style={{ marginTop: 16, padding: "13px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
@@ -489,7 +489,7 @@ function GoalDetailModal({
 interface Props {
   goal: SavingsGoal;
   calc: GoalCalcResult;
-  suggestedMonthly?: number | null;
+  monthNet?: number | null;
   onEdit: (g: SavingsGoal) => void;
   onTopup: (id: string) => void;
   onQuickDeposit?: (id: string, amount: number) => void;
@@ -503,7 +503,7 @@ interface Props {
 function GoalCard({
   goal,
   calc,
-  suggestedMonthly = null,
+  monthNet = null,
   onEdit,
   onTopup,
   onQuickDeposit,
@@ -536,7 +536,6 @@ function GoalCard({
         <div className="goal-row-top">
           <div className="goal-row-title">
             <span className="goal-row-name">{goal.name}</span>
-            <TrackBadge status={calc.trackStatus} />
           </div>
           <div className="savings-kebab-wrap" onClick={(e) => e.stopPropagation()}>
             <DetailActionMenu
@@ -563,26 +562,26 @@ function GoalCard({
           <span className="savings-goal-pct" style={{ color: progColor }}>{pct}%</span>
         </div>
         <div className="goal-row-foot">
-          <div className="goal-row-amounts">{fmt(goal.current)} <span>of</span> {fmt(calc.targetNow)}</div>
-          {suggestedMonthly != null ? (
-            <div className="goal-row-plan">
-              <span className="goal-row-plan-text">This month <strong>{fmt(suggestedMonthly)}</strong></span>
-              <button
-                className="goal-row-deposit"
-                onClick={(e) => { e.stopPropagation(); onQuickDeposit?.(goal.id, suggestedMonthly); }}
-              >
-                Deposit
-              </button>
-            </div>
-          ) : (
-            <span className="goal-row-unallocated">Not allocated this month</span>
-          )}
+          <div className="goal-row-amounts">{fmt(goal.current)}{calc.targetNow > 0 && (<> <span>of</span> {fmt(calc.targetNow)}</>)}</div>
+          <div className="goal-row-plan">
+            {monthNet ? (
+              <span className="goal-row-plan-text">This month <strong style={{ color: monthNet > 0 ? "#1a5c42" : "#b91c1c" }}>{monthNet > 0 ? "+" : "−"}{fmt(monthNet)}</strong></span>
+            ) : (
+              <span className="goal-row-unallocated">No activity this month</span>
+            )}
+            <button
+              className="goal-row-deposit"
+              onClick={(e) => { e.stopPropagation(); if ((goal.monthly || 0) > 0) onQuickDeposit?.(goal.id, goal.monthly); else onTopup(goal.id); }}
+            >
+              Deposit
+            </button>
+          </div>
         </div>
       </div>
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Delete goal?"
+          title="Delete saving?"
           message={<>Delete &ldquo;{goal.name}&rdquo;? This cannot be undone.</>}
           confirmLabel="Delete"
           onConfirm={() => { setConfirmDelete(false); setShowDetail(false); onDelete(goal.id); }}
@@ -597,7 +596,7 @@ function GoalCard({
           advisor={advisor}
           pct={pct}
           progColor={progColor}
-          suggestedMonthly={suggestedMonthly}
+          monthNet={monthNet}
           onClose={() => setShowDetail(false)}
           onTopup={() => {
             setShowDetail(false);
