@@ -5,7 +5,6 @@ import { useSavings, calcGoal } from "@/hooks/useSavings";
 import GoalCard from "@/components/savings/GoalCard";
 import GoalModal from "@/components/savings/GoalModal";
 import {
-  SummaryCard,
   TopupModal,
   WithdrawModal,
   ReconcileModal,
@@ -221,9 +220,7 @@ export default function TabunganPage() {
         </div>
       )}
 
-      <SummaryCard summary={summary} monthIn={monthIn} monthOut={monthOut} />
-
-      <WealthChart goals={goals} />
+      <WealthChart goals={goals} totalBalance={summary.totalCollected} count={summary.count} monthIn={monthIn} monthOut={monthOut} />
 
 
       {!isPremium && (
