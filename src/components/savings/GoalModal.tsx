@@ -21,7 +21,7 @@ const row: React.CSSProperties = { display:'grid', gridTemplateColumns:'1fr 1fr'
 type FormData = Omit<SavingsGoal, 'id' | 'createdAt' | 'updatedAt'>
 
 const defaultForm = (): FormData => ({
-  name:'', type:'biasa', status:'active',
+  name:'', parent:'', type:'biasa', status:'active',
   target:0, current:0, monthly:0, deadline:'',
   useInvest:false, returnRate:8,
   expense:0, coverageTarget:6,
@@ -35,11 +35,12 @@ const defaultForm = (): FormData => ({
 
 interface Props {
   goal:    SavingsGoal | null   // null = tambah baru
+  parents?: string[]
   onSave:  (data: FormData) => void
   onClose: () => void
 }
 
-export default function GoalModal({ goal, onSave, onClose }: Props) {
+export default function GoalModal({ goal, parents = [], onSave, onClose }: Props) {
   const [form, setForm] = useState<FormData>(defaultForm())
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -74,7 +75,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    let finalForm = { ...form }
+    let finalForm = { ...form, parent: (form.parent || '').trim() || undefined }
 
     // Auto-hitung target pendidikan dari inflasi
     if (form.type === 'pendidikan' && form.eduCurrent && form.deadline) {
@@ -100,7 +101,7 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
         {/* Header */}
         <div style={{ padding:'18px 22px', borderBottom:'1px solid #e4e1d9', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#fff' }}>
-          <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Goal' : 'Add New Goal'}</span></div>
+          <div style={{ fontSize:'16px', fontWeight:700 }}><span style={{ display:'inline-flex', alignItems:'center', gap:7 }}>{isEdit ? <AppIcon name="edit" size={16} /> : <AppIcon name="goals" size={16} />}{isEdit ? 'Edit Saving' : 'Add New Saving'}</span></div>
           <button aria-label="Close" onClick={onClose} style={{ width:'28px', height:'28px', border:'none', background:'#f3f4f6', borderRadius:'10px', cursor:'pointer', color:'#4b5563', display:'inline-flex', alignItems:'center', justifyContent:'center' }}><AppIcon name="close" size={16} /></button>
         </div>
 
@@ -108,9 +109,20 @@ export default function GoalModal({ goal, onSave, onClose }: Props) {
 
           {/* Nama */}
           <div>
-            <label style={lbl}>Goal Name</label>
+            <label style={lbl}>Saving Name</label>
             <input required style={inp} value={form.name} placeholder="Example: Family Emergency Fund"
               onChange={e => set('name', e.target.value)} />
+          </div>
+
+          {/* Akun / Kategori (parent) */}
+          <div>
+            <label style={lbl}>Account / Category</label>
+            <input style={inp} value={form.parent || ''} placeholder="Example: Jago — leave empty for Uncategorized"
+              onChange={e => set('parent', e.target.value)} list="fink-goal-parents" autoComplete="off" />
+            <datalist id="fink-goal-parents">
+              {parents.map(p => <option key={p} value={p} />)}
+            </datalist>
+            <div style={{ fontSize:'11.5px', color:'#9ca3af', marginTop:'4px' }}>Groups this saving under an account, e.g. Jago, BSI, Bibit. Type a new name to create a new group.</div>
           </div>
 
           {/* Jenis + Status */}
