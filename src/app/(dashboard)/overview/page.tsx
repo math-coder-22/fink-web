@@ -135,7 +135,7 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
   }
 
   return (
-    <Card style={{ borderRadius:20, overflow:'hidden' }}>
+    <Card style={{ borderRadius:20, overflow:'hidden', height:'100%', display:'flex', flexDirection:'column' }}>
       <div style={{ padding:'14px 16px 4px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap' }}>
         <div>
           <div style={{ fontSize:16, fontWeight:950, color:'#111827' }}>Monthly Comparison</div>
@@ -146,17 +146,17 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
 
       <div className="monthly-css-chart" style={{ padding:'16px 18px 18px', position:'relative' }}>
         {chartData.length === 0 ? (
-          <div style={{ height:260, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'#94a3b8' }}>
+          <div style={{ height:336, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'#94a3b8' }}>
             Belum ada data historis untuk ditampilkan.
           </div>
         ) : (
           <>
             <div className="monthly-css-plot" style={{
               display:'grid',
-              gridTemplateColumns:'54px minmax(0, 1fr)',
+              gridTemplateColumns:'46px minmax(0, 1fr)',
               gap:10,
-              height:260,
-              minHeight:260,
+              height:336,
+              minHeight:336,
             }}>
               <div style={{ display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'2px 0 0' }}>
                 {ticks.map((tick, idx) => (
@@ -177,10 +177,9 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
                   position:'relative',
                   height:'100%',
                   display:'grid',
-                  gridTemplateColumns:`repeat(${chartData.length}, minmax(58px, 1fr))`,
-                  gap:14,
+                  gridTemplateColumns:`repeat(${chartData.length}, minmax(0, 1fr))`,
+                  gap:10,
                   alignItems:'end',
-                  overflowX:'auto',
                   padding:'0 2px',
                 }}>
                   {chartData.map(item => {
@@ -194,9 +193,9 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
                       <div
                         key={item.label}
                         onMouseLeave={() => setHovered(null)}
-                        style={{ minWidth:58, height:'100%', display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center' }}
+                        style={{ minWidth:0, height:'100%', display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center' }}
                       >
-                        <div style={{ flex:1, width:'100%', display:'flex', justifyContent:'center', alignItems:'flex-end', gap:6 }}>
+                        <div style={{ flex:1, width:'100%', display:'flex', justifyContent:'center', alignItems:'flex-end', gap:4 }}>
                           {bars.map(bar => (
                             <div
                               key={bar.key}
@@ -205,8 +204,8 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
                               style={{
                                 height:barHeight(bar.value),
                                 minHeight:bar.value > 0 ? 4 : 0,
-                                width:18,
-                                borderRadius:'7px 7px 4px 4px',
+                                width:14,
+                                borderRadius:'6px 6px 3px 3px',
                                 background:bar.color,
                                 opacity:bar.value > 0 ? .92 : .55,
                                 transition:'opacity .15s ease, transform .15s ease',
@@ -231,15 +230,14 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
               </div>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'54px minmax(0, 1fr)', gap:10, marginTop:8 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'46px minmax(0, 1fr)', gap:10, marginTop:8 }}>
               <div />
               <div style={{
                 borderTop:'1px solid #edf1f5',
                 paddingTop:10,
                 display:'grid',
-                gridTemplateColumns:`repeat(${chartData.length}, minmax(58px, 1fr))`,
-                gap:14,
-                overflowX:'auto',
+                gridTemplateColumns:`repeat(${chartData.length}, minmax(0, 1fr))`,
+                gap:10,
               }}>
                 {chartData.map(item => (
                   <div
@@ -247,7 +245,7 @@ const MonthlyComparisonChart = memo(function MonthlyComparisonChart({ data }: { 
                     onMouseEnter={e => showTooltip(e, item, 'Monthly Summary', item.income - item.expense - item.saving)}
                     onMouseMove={moveTooltip}
                     onMouseLeave={() => setHovered(null)}
-                    style={{ minWidth:58, textAlign:'center', fontSize:10.5, fontWeight:850, color:'#64748b', whiteSpace:'nowrap', cursor:'default' }}
+                    style={{ minWidth:0, textAlign:'center', fontSize:10.5, fontWeight:850, color:'#64748b', whiteSpace:'nowrap', cursor:'default' }}
                   >
                     {item.label}
                   </div>
@@ -792,7 +790,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
   const width = Math.max(320, Math.round(measuredW))
   const height = width < 600 ? 300 : 310
   const pad = width < 600 ? { l:50, r:12, t:24, b:32 } : { l:54, r:24, t:24, b:32 }
-  const axisFs = width < 600 ? 9 : 10
+  const axisFs = 10.5
   const axisLabelX = pad.l - 8
   const plotW = width - pad.l - pad.r
   const plotH = height - pad.t - pad.b
@@ -826,7 +824,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
     ? `${balancePath} L ${x(past[past.length - 1].day).toFixed(2)} ${(height-pad.b).toFixed(2)} L ${x(past[0].day).toFixed(2)} ${(height-pad.b).toFixed(2)} Z`
     : ''
 
-  const ticks = [1, Math.max(1, Math.round(daysInMonth/3)), Math.max(1, Math.round(daysInMonth*2/3)), daysInMonth]
+  const ticks = Array.from(new Set([1, 8, 15, 22, daysInMonth].filter(d => d <= daysInMonth)))
   const balanceStatus = netMovement >= 0
     ? 'Your money flow is still positive this month.'
     : 'Outflow is higher than income so far this month.'
@@ -970,7 +968,7 @@ const DailyProgressCard = memo(function DailyProgressCard({
           })}
 
           {ticks.map(day => (
-            <text key={day} x={x(day)} y={height-9} textAnchor="middle" fontSize="10" fill="#64748b">{day}</text>
+            <text key={day} x={x(day)} y={height-9} textAnchor="middle" fontSize="10.5" fill="#64748b">{day}</text>
           ))}
 
           <line x1={x(visibleDay)} x2={x(visibleDay)} y1={pad.t} y2={height-pad.b} stroke="#94a3b8" strokeDasharray="4 4" strokeWidth="1" />
@@ -1193,6 +1191,22 @@ const DailyProgressCard = memo(function DailyProgressCard({
 
 const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, currentTotalAssets }: { data: MonthlyTrendItem[]; currentTotalAssets: number }) {
   const [hoveredAsset, setHoveredAsset] = useState<{ label:string; assets:number; x:number; y:number } | null>(null)
+  // Responsive chart: measure the card width (same approach as Daily Progress)
+  // so the SVG renders at its real size and fonts stay consistent across charts.
+  const chartWrapRef = useRef<HTMLDivElement | null>(null)
+  const [measuredW, setMeasuredW] = useState(1180)
+  useEffect(() => {
+    const el = chartWrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const update = () => {
+      const w = el.clientWidth
+      if (w > 0) setMeasuredW(prev => (Math.abs(prev - w) < 1 ? prev : w))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const trend = useMemo(() => {
     const baseData = data.slice(-6)
     if (!baseData.length) {
@@ -1207,9 +1221,9 @@ const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, curren
     })
   }, [data, currentTotalAssets])
 
-  const width = 980
-  const height = 190
-  const pad = { l:18, r:18, t:10, b:34 }
+  const width = Math.max(320, Math.round(measuredW))
+  const height = width < 600 ? 240 : 230
+  const pad = { l:56, r:18, t:14, b:36 }
   const rawMax = Math.max(1, ...trend.map(d=>d.assets))
   const rawMin = Math.min(...trend.map(d=>d.assets))
   const spread = Math.max(1, rawMax - rawMin)
@@ -1254,8 +1268,8 @@ const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, curren
           {growth !== null && <div style={{ marginTop:4, fontSize:10.5, color:growth >= 0 ? '#15803d' : '#b91c1c', fontWeight:850 }}>{growth >= 0 ? '↑' : '↓'} {Math.abs(Math.round(growth))}% vs awal periode</div>}
         </div>
       </div>
-      <div style={{ padding:'0 10px 6px', position:'relative' }}>
-        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ width:'100%', height:175, display:'block' }}>
+      <div ref={chartWrapRef} style={{ padding:'0 10px 6px', position:'relative' }}>
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ width:'100%', height:height, display:'block' }}>
           <defs>
             <linearGradient id="assetAreaFiNK" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#15803d" stopOpacity=".20" />
@@ -1265,7 +1279,12 @@ const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, curren
           {[0,.5,1].map((r,i)=>{
             const val = minVal + (maxVal-minVal)*r
             const yy = y(val)
-            return <line key={i} x1={pad.l} x2={width-pad.r} y1={yy} y2={yy} stroke="#edf1f5" strokeWidth="1" />
+            return (
+              <g key={i}>
+                <line x1={pad.l} x2={width-pad.r} y1={yy} y2={yy} stroke="#edf1f5" strokeWidth="1" />
+                <text x={pad.l - 8} y={yy + 4} textAnchor="end" fontSize="10.5" fill="#64748b">{fmtShort(val).replace('Rp ', '')}</text>
+              </g>
+            )
           })}
           {area && (
             <path d={area} fill="url(#assetAreaFiNK)">
@@ -1285,8 +1304,8 @@ const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, curren
             >
               <circle cx={x(i)} cy={y(d.assets)} r="8" fill="transparent" />
               <circle cx={x(i)} cy={y(d.assets)} r="4" fill="#15803d" stroke="#fff" strokeWidth="2" />
-              <text x={x(i)} y={height-18} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="700">{d.label}</text>
-              <text x={x(i)} y={height-5} textAnchor="middle" fontSize="9.5" fill="#94a3b8">{fmtShort(d.assets).replace('Rp ','')}</text>
+              <text x={x(i)} y={height-18} textAnchor="middle" fontSize="10.5" fill="#64748b" fontWeight="700">{d.label}</text>
+              <text x={x(i)} y={height-5} textAnchor="middle" fontSize="10" fill="#94a3b8">{fmtShort(d.assets).replace('Rp ','')}</text>
             </g>
           ))}
 
@@ -1329,9 +1348,9 @@ const TotalAssetsTrendChart = memo(function TotalAssetsTrendChart({ data, curren
           <div
             style={{
               position:'absolute',
-              left: Math.min(Math.max(hoveredAsset.x + 14, 12), 820),
+              left: Math.min(Math.max(hoveredAsset.x + 14, 12), Math.max(12, width - 190)),
               top: Math.max(hoveredAsset.y - 70, 10),
-              transform: hoveredAsset.x > 700 ? 'translateX(-100%)' : 'none',
+              transform: hoveredAsset.x > width - 210 ? 'translateX(-100%)' : 'none',
               background:'#111827',
               color:'#fff',
               borderRadius:12,
@@ -1629,7 +1648,7 @@ const { curMonth, curYear } = useMonthContext()
       </div>
 
       {/* Daily progress + monthly comparison side by side */}
-      <div className="overview-chart-pair" style={{ display:'grid', gridTemplateColumns:'3fr 2fr', gap:14, marginBottom:14, alignItems:'stretch' }}>
+      <div className="overview-chart-pair" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14, alignItems:'stretch' }}>
         <div className="overview-hero-chart">
           <DailyProgressCard
             tx={tx}
